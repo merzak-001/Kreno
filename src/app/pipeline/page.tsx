@@ -302,6 +302,16 @@ export default function PipelinePage() {
             </span>
           </div>
 
+          {/* Aligned Column Header for 13"+ screens */}
+          <div className="hidden lg:grid grid-cols-12 gap-3 px-6 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-100/70 dark:bg-slate-850/70 rounded-xl border border-slate-200 dark:border-slate-800 select-none">
+            <div className="col-span-3">Session &amp; Centre</div>
+            <div className="col-span-2">Catégories &amp; Effectif</div>
+            <div className="col-span-2">Épreuves Programmées</div>
+            <div className="col-span-2 text-center">Résultats / Succès</div>
+            <div className="col-span-2 text-center">Frais de Session</div>
+            <div className="col-span-1 text-right">Actions</div>
+          </div>
+
           {examSessions.map(session => {
             const isExpanded = !!expandedDates[session.date];
             const passRate = session.totalCandidates > 0 ? Math.round((session.passedCount / session.totalCandidates) * 100) : 0;
@@ -311,54 +321,61 @@ export default function PipelinePage() {
                 key={session.date}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-all duration-200"
               >
-                {/* Accordion Summary Row (Clickable) */}
+                {/* Accordion Summary Row - Perfectly Aligned Grid */}
                 <div 
                   onClick={() => toggleAccordion(session.date)}
-                  className="p-5 flex items-center justify-between flex-wrap gap-4 cursor-pointer hover:bg-slate-50/70 dark:hover:bg-slate-850/60 transition select-none"
+                  className="p-4 lg:grid lg:grid-cols-12 flex flex-col gap-4 items-center cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-850/70 transition select-none"
                 >
-                  {/* Left: Date & Center */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center font-bold text-slate-700 dark:text-slate-300 shrink-0 border border-slate-200 dark:border-slate-700">
+                  {/* Col 1: Date & Center (col-span-3) */}
+                  <div className="lg:col-span-3 flex items-center gap-3.5 w-full">
+                    <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center font-bold text-slate-700 dark:text-slate-300 shrink-0 border border-slate-200 dark:border-slate-700">
                       <Calendar className="w-5 h-5 text-emerald-600" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-black text-slate-900 dark:text-white font-mono">
-                          Session du {session.date}
+                        <h4 className="text-sm font-black text-slate-900 dark:text-white font-mono truncate">
+                          {session.date}
                         </h4>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
                           !session.isPast 
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' 
-                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                         }`}>
-                          {!session.isPast ? 'Session Prochaine' : 'Session Clôturée'}
+                          {!session.isPast ? 'À venir' : 'Clôturée'}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{session.center}</span>
-                        <span>•</span>
-                        <span>{session.examiner}</span>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                        {session.center}
                       </p>
                     </div>
                   </div>
 
-                  {/* Center: Badges by Category & by Exam */}
-                  <div className="flex items-center gap-4 flex-wrap text-xs">
-                    {/* Category Breakdown */}
-                    <div className="flex items-center gap-1.5">
+                  {/* Col 2: Categories & Total Candidates (col-span-2) */}
+                  <div className="lg:col-span-2 flex flex-col justify-center w-full gap-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block lg:hidden">
+                      Catégories ({session.totalCandidates} candidats)
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       {Object.entries(session.categoriesCount).map(([cat, count]) => (
                         <span 
                           key={cat} 
                           className={`px-2 py-0.5 rounded-md font-bold font-mono text-[11px] border ${getCategoryBadgeClass(cat)}`}
                         >
-                          Cat. {cat}: {count}
+                          {cat} ({count})
                         </span>
                       ))}
                     </div>
+                    <span className="text-[10px] text-slate-400 font-mono font-semibold hidden lg:block">
+                      {session.totalCandidates} candidat{session.totalCandidates > 1 ? 's' : ''} au total
+                    </span>
+                  </div>
 
-                    {/* Exam Type Breakdown */}
-                    <div className="flex items-center gap-1.5">
+                  {/* Col 3: Exam Types Breakdown (col-span-2) */}
+                  <div className="lg:col-span-2 flex flex-col justify-center w-full gap-1">
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block lg:hidden">
+                      Épreuves
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       {session.examTypesCount.code > 0 && (
                         <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-[10px] border border-blue-200 dark:border-blue-800">
                           {session.examTypesCount.code} Code
@@ -375,43 +392,66 @@ export default function PipelinePage() {
                         </span>
                       )}
                     </div>
+                  </div>
 
-                    {/* Results: e.g. 12/20 passed */}
-                    <div className="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center gap-2">
-                      <Award className="w-4 h-4 text-emerald-600" />
-                      <div>
-                        <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">
+                  {/* Col 4: Results (col-span-2) */}
+                  <div className="lg:col-span-2 flex justify-start lg:justify-center w-full">
+                    <div className="w-full max-w-[170px] px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        session.passedCount > 0 
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' 
+                          : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                      }`}>
+                        <Award className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-mono font-black text-slate-900 dark:text-white text-xs block leading-tight">
                           {session.passedCount}/{session.totalCandidates} Admis
                         </span>
-                        <span className="text-[10px] text-slate-400 block font-sans">
-                          {session.pendingCount > 0 ? `(${session.pendingCount} en attente)` : `(${passRate}% réussite)`}
+                        <span className="text-[10px] text-slate-400 dark:text-slate-400 block truncate">
+                          {session.pendingCount > 0 ? `${session.pendingCount} en attente` : `${passRate}% réussite`}
                         </span>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Financial situation */}
-                    <div className="px-3 py-1.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2 text-xs">
-                      <DollarSign className="w-4 h-4 text-emerald-600" />
-                      <div>
-                        <span className="font-mono font-bold text-emerald-800 dark:text-emerald-300">
+                  {/* Col 5: Financial Situation (col-span-2) */}
+                  <div className="lg:col-span-2 flex justify-start lg:justify-center w-full">
+                    <div className={`w-full max-w-[170px] px-3 py-2 rounded-xl border flex items-center gap-2.5 ${
+                      session.unpaidFeesCount === 0 
+                        ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60' 
+                        : 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60'
+                    }`}>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        session.unpaidFeesCount === 0 
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300' 
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300'
+                      }`}>
+                        <DollarSign className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-mono font-black text-slate-900 dark:text-white text-xs block leading-tight">
                           {session.feesPaidTotal.toLocaleString()} DZD
                         </span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">
+                        <span className={`text-[10px] font-bold block truncate ${
+                          session.unpaidFeesCount === 0 
+                            ? 'text-emerald-600 dark:text-emerald-400' 
+                            : 'text-amber-600 dark:text-amber-400'
+                        }`}>
                           {session.unpaidFeesCount === 0 ? 'Frais 100% Réglés' : `${session.unpaidFeesCount} Impayé(s)`}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Right Actions & Accordion Toggle */}
-                  <div className="flex items-center gap-2">
+                  {/* Col 6: Actions (col-span-1) */}
+                  <div className="lg:col-span-1 flex items-center justify-end gap-1.5 w-full">
                     <button
                       onClick={(e) => handleOpenPrint(session, e)}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                      title="Imprimer le bordereau officiel pour l'inspecteur"
+                      className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer shadow-2xs"
+                      title="Imprimer le Bordereau Officiel (Modèle 03)"
                     >
-                      <Printer className="w-3.5 h-3.5" />
-                      <span>Bordereau Officiel</span>
+                      <Printer className="w-4 h-4 text-emerald-600" />
                     </button>
 
                     <button
@@ -419,7 +459,7 @@ export default function PipelinePage() {
                         e.stopPropagation();
                         setConfirmModal({
                           isOpen: true,
-                          title: `Supprimer la session d'examen du ${session.date}`,
+                          title: `Supprimer la session du ${session.date}`,
                           message: `Êtes-vous certain de vouloir supprimer cette session ? Tous les candidats inscrits (${session.totalCandidates}) seront déprogrammés pour cette date.`,
                           warningNote: 'Cette opération est irréversible et sera enregistrée dans le journal d\'audit.',
                           confirmText: 'Supprimer la session',
@@ -429,13 +469,13 @@ export default function PipelinePage() {
                           },
                         });
                       }}
-                      className="p-1.5 hover:bg-rose-100 dark:hover:bg-rose-950/60 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
+                      className="p-2 hover:bg-rose-100 dark:hover:bg-rose-950/60 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
                       title="Supprimer cette session d'examen"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
 
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300">
+                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </div>
