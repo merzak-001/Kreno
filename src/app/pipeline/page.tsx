@@ -303,12 +303,15 @@ export default function PipelinePage() {
           </div>
 
           {/* Aligned Column Header for 13"+ screens */}
-          <div className="hidden lg:grid grid-cols-12 gap-3 px-6 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-100/70 dark:bg-slate-850/70 rounded-xl border border-slate-200 dark:border-slate-800 select-none">
-            <div className="col-span-3">Session &amp; Centre</div>
+          <div className="hidden lg:grid grid-cols-12 gap-3 px-6 py-3 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-100 dark:bg-slate-850 rounded-xl border border-slate-200 dark:border-slate-800 select-none shadow-2xs">
+            <div className="col-span-3 flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Session &amp; Centre d&apos;Examen</span>
+            </div>
             <div className="col-span-2">Catégories &amp; Effectif</div>
-            <div className="col-span-2">Épreuves Programmées</div>
-            <div className="col-span-2 text-center">Résultats / Succès</div>
-            <div className="col-span-2 text-center">Frais de Session</div>
+            <div className="col-span-3 text-center">Épreuves Réparties (Code • Créneau • Conduite)</div>
+            <div className="col-span-2 text-center">Taux de Réussite</div>
+            <div className="col-span-1 text-center">Frais Réglés</div>
             <div className="col-span-1 text-right">Actions</div>
           </div>
 
@@ -319,16 +322,16 @@ export default function PipelinePage() {
             return (
               <div 
                 key={session.date}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-all duration-200"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-700"
               >
                 {/* Accordion Summary Row - Perfectly Aligned Grid */}
                 <div 
                   onClick={() => toggleAccordion(session.date)}
-                  className="p-4 lg:grid lg:grid-cols-12 flex flex-col gap-4 items-center cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-850/70 transition select-none"
+                  className="p-4 lg:grid lg:grid-cols-12 flex flex-col gap-4 items-center cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-850/60 transition select-none"
                 >
                   {/* Col 1: Date & Center (col-span-3) */}
                   <div className="lg:col-span-3 flex items-center gap-3.5 w-full">
-                    <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center font-bold text-slate-700 dark:text-slate-300 shrink-0 border border-slate-200 dark:border-slate-700">
+                    <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center font-bold text-slate-700 dark:text-slate-300 shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs">
                       <Calendar className="w-5 h-5 text-emerald-600" />
                     </div>
                     <div className="min-w-0">
@@ -336,7 +339,7 @@ export default function PipelinePage() {
                         <h4 className="text-sm font-black text-slate-900 dark:text-white font-mono truncate">
                           {session.date}
                         </h4>
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                           !session.isPast 
                             ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
                             : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
@@ -351,7 +354,7 @@ export default function PipelinePage() {
                   </div>
 
                   {/* Col 2: Categories & Total Candidates (col-span-2) */}
-                  <div className="lg:col-span-2 flex flex-col justify-center w-full gap-1.5">
+                  <div className="lg:col-span-2 flex flex-col justify-center w-full gap-1">
                     <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block lg:hidden">
                       Catégories ({session.totalCandidates} candidats)
                     </span>
@@ -359,48 +362,68 @@ export default function PipelinePage() {
                       {Object.entries(session.categoriesCount).map(([cat, count]) => (
                         <span 
                           key={cat} 
-                          className={`px-2 py-0.5 rounded-md font-bold font-mono text-[11px] border ${getCategoryBadgeClass(cat)}`}
+                          className={`px-2 py-0.5 rounded-md font-bold font-mono text-[11px] border shadow-2xs ${getCategoryBadgeClass(cat)}`}
                         >
-                          {cat} ({count})
+                          {cat}: <strong className="font-black">{count}</strong>
                         </span>
                       ))}
                     </div>
-                    <span className="text-[10px] text-slate-400 font-mono font-semibold hidden lg:block">
+                    <span className="text-[10.5px] text-slate-400 dark:text-slate-500 font-mono font-semibold hidden lg:block">
                       {session.totalCandidates} candidat{session.totalCandidates > 1 ? 's' : ''} au total
                     </span>
                   </div>
 
-                  {/* Col 3: Exam Types Breakdown (col-span-2) */}
-                  <div className="lg:col-span-2 flex flex-col justify-center w-full gap-1">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block lg:hidden">
-                      Épreuves
+                  {/* Col 3: Structured 3-Slot Exam Grid (col-span-3) - Perfectly aligned across all rows */}
+                  <div className="lg:col-span-3 flex flex-col justify-center w-full">
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block lg:hidden mb-1">
+                      Épreuves Programmées
                     </span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {session.examTypesCount.code > 0 && (
-                        <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-[10px] border border-blue-200 dark:border-blue-800">
-                          {session.examTypesCount.code} Code
+                    <div className="grid grid-cols-3 gap-1.5 w-full bg-slate-50 dark:bg-slate-850 p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                      {/* Code slot */}
+                      <div className={`px-2 py-1 rounded-lg text-center flex flex-col items-center justify-center border transition ${
+                        session.examTypesCount.code > 0
+                          ? 'bg-blue-50 dark:bg-blue-950/70 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300'
+                          : 'bg-transparent border-transparent text-slate-400 dark:text-slate-600'
+                      }`}>
+                        <span className="text-[9px] uppercase font-bold tracking-wider">Code</span>
+                        <span className="font-mono font-black text-xs">
+                          {session.examTypesCount.code > 0 ? session.examTypesCount.code : '—'}
                         </span>
-                      )}
-                      {session.examTypesCount.creneau > 0 && (
-                        <span className="px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold text-[10px] border border-purple-200 dark:border-purple-800">
-                          {session.examTypesCount.creneau} Créneau
+                      </div>
+
+                      {/* Créneau slot */}
+                      <div className={`px-2 py-1 rounded-lg text-center flex flex-col items-center justify-center border transition ${
+                        session.examTypesCount.creneau > 0
+                          ? 'bg-purple-50 dark:bg-purple-950/70 border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-300'
+                          : 'bg-transparent border-transparent text-slate-400 dark:text-slate-600'
+                      }`}>
+                        <span className="text-[9px] uppercase font-bold tracking-wider">Créneau</span>
+                        <span className="font-mono font-black text-xs">
+                          {session.examTypesCount.creneau > 0 ? session.examTypesCount.creneau : '—'}
                         </span>
-                      )}
-                      {session.examTypesCount.circulation > 0 && (
-                        <span className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-bold text-[10px] border border-amber-200 dark:border-amber-800">
-                          {session.examTypesCount.circulation} Conduite
+                      </div>
+
+                      {/* Conduite slot */}
+                      <div className={`px-2 py-1 rounded-lg text-center flex flex-col items-center justify-center border transition ${
+                        session.examTypesCount.circulation > 0
+                          ? 'bg-amber-50 dark:bg-amber-950/70 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
+                          : 'bg-transparent border-transparent text-slate-400 dark:text-slate-600'
+                      }`}>
+                        <span className="text-[9px] uppercase font-bold tracking-wider">Conduite</span>
+                        <span className="font-mono font-black text-xs">
+                          {session.examTypesCount.circulation > 0 ? session.examTypesCount.circulation : '—'}
                         </span>
-                      )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Col 4: Results (col-span-2) */}
                   <div className="lg:col-span-2 flex justify-start lg:justify-center w-full">
-                    <div className="w-full max-w-[170px] px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center gap-2.5">
+                    <div className="w-full max-w-[170px] px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 flex items-center gap-2.5 shadow-2xs">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                         session.passedCount > 0 
                           ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' 
-                          : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                          : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                       }`}>
                         <Award className="w-4 h-4" />
                       </div>
@@ -408,39 +431,30 @@ export default function PipelinePage() {
                         <span className="font-mono font-black text-slate-900 dark:text-white text-xs block leading-tight">
                           {session.passedCount}/{session.totalCandidates} Admis
                         </span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-400 block truncate">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
                           {session.pendingCount > 0 ? `${session.pendingCount} en attente` : `${passRate}% réussite`}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Col 5: Financial Situation (col-span-2) */}
-                  <div className="lg:col-span-2 flex justify-start lg:justify-center w-full">
-                    <div className={`w-full max-w-[170px] px-3 py-2 rounded-xl border flex items-center gap-2.5 ${
+                  {/* Col 5: Financial Situation (col-span-1) */}
+                  <div className="lg:col-span-1 flex justify-start lg:justify-center w-full">
+                    <div className={`w-full px-2.5 py-1.5 rounded-xl border flex flex-col items-center justify-center text-center shadow-2xs ${
                       session.unpaidFeesCount === 0 
                         ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60' 
                         : 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60'
                     }`}>
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                      <span className="font-mono font-black text-slate-900 dark:text-white text-xs block leading-tight">
+                        {session.feesPaidTotal.toLocaleString()} DZD
+                      </span>
+                      <span className={`text-[9px] font-black uppercase tracking-wider block truncate ${
                         session.unpaidFeesCount === 0 
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300' 
-                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300'
+                          ? 'text-emerald-600 dark:text-emerald-400' 
+                          : 'text-amber-600 dark:text-amber-400'
                       }`}>
-                        <DollarSign className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="font-mono font-black text-slate-900 dark:text-white text-xs block leading-tight">
-                          {session.feesPaidTotal.toLocaleString()} DZD
-                        </span>
-                        <span className={`text-[10px] font-bold block truncate ${
-                          session.unpaidFeesCount === 0 
-                            ? 'text-emerald-600 dark:text-emerald-400' 
-                            : 'text-amber-600 dark:text-amber-400'
-                        }`}>
-                          {session.unpaidFeesCount === 0 ? 'Frais 100% Réglés' : `${session.unpaidFeesCount} Impayé(s)`}
-                        </span>
-                      </div>
+                        {session.unpaidFeesCount === 0 ? '100% Réglé' : `${session.unpaidFeesCount} Impayé(s)`}
+                      </span>
                     </div>
                   </div>
 
@@ -448,10 +462,10 @@ export default function PipelinePage() {
                   <div className="lg:col-span-1 flex items-center justify-end gap-1.5 w-full">
                     <button
                       onClick={(e) => handleOpenPrint(session, e)}
-                      className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition cursor-pointer shadow-2xs"
-                      title="Imprimer le Bordereau Officiel (Modèle 03)"
+                      className="p-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded-xl transition cursor-pointer shadow-2xs border border-emerald-200 dark:border-emerald-800"
+                      title="Imprimer le Bordereau Officiel A4 (Modèle 03)"
                     >
-                      <Printer className="w-4 h-4 text-emerald-600" />
+                      <Printer className="w-4 h-4" />
                     </button>
 
                     <button
