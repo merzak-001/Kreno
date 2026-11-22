@@ -202,7 +202,7 @@ export default function PipelinePage() {
     <div className="space-y-6">
       
       {/* Top Header & Actions */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between flex-wrap gap-4 transition-colors">
+      <div className="bg-card-bg p-6 rounded-3xl border border-card-border shadow-xs flex items-center justify-between flex-wrap gap-4 transition-colors">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 font-bold text-[11px]">
@@ -210,7 +210,7 @@ export default function PipelinePage() {
             </span>
             <span className="text-xs text-slate-400">• Sécurité Routière / Daïra d&apos;Aïn Oulmene</span>
           </div>
-          <h2 className="text-xl font-black text-slate-900 dark:text-white">
+          <h2 className="text-xl font-black text-slate-900 dark:text-slate-200">
             Sessions d&apos;Examens & Convocations Hebdomadaires
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -225,7 +225,7 @@ export default function PipelinePage() {
               onClick={() => setViewMode('sessions')}
               className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                 viewMode === 'sessions'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                  ? 'bg-card-bg text-slate-900 dark:text-slate-200 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
               }`}
             >
@@ -235,7 +235,7 @@ export default function PipelinePage() {
               onClick={() => setViewMode('kanban')}
               className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                 viewMode === 'kanban'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                  ? 'bg-card-bg text-slate-900 dark:text-slate-200 shadow-xs'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
               }`}
             >
@@ -245,7 +245,7 @@ export default function PipelinePage() {
 
           <button
             onClick={() => setIsNewSessionOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-hover active:scale-95 text-white rounded-xl text-xs font-semibold transition shadow-xs cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Programmer une Journée d&apos;Examen</span>
@@ -255,33 +255,33 @@ export default function PipelinePage() {
 
       {/* Analytics Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+        <div className="p-4 bg-card-bg rounded-2xl border border-card-border shadow-2xs">
           <span className="text-slate-500 dark:text-slate-400 font-sans block font-semibold mb-1">Sessions Programmées</span>
           <div className="flex items-baseline justify-between">
-            <strong className="text-2xl font-black text-slate-900 dark:text-white">{examSessions.length}</strong>
+            <strong className="text-2xl font-bold text-slate-900 dark:text-slate-200">{examSessions.length}</strong>
             <span className="text-[10px] text-slate-400 font-sans">journées</span>
           </div>
         </div>
 
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+        <div className="p-4 bg-card-bg rounded-2xl border border-card-border shadow-2xs">
           <span className="text-slate-500 dark:text-slate-400 font-sans block font-semibold mb-1">Total Candidats Présentés</span>
           <div className="flex items-baseline justify-between">
-            <strong className="text-2xl font-black text-blue-600 dark:text-blue-400">{totalExamsConducted}</strong>
+            <strong className="text-2xl font-bold text-primary">{totalExamsConducted}</strong>
             <span className="text-[10px] text-slate-400 font-sans">passages enregistrés</span>
           </div>
         </div>
 
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+        <div className="p-4 bg-card-bg rounded-2xl border border-card-border shadow-2xs">
           <span className="text-slate-500 dark:text-slate-400 font-sans block font-semibold mb-1">Taux Global de Réussite</span>
           <div className="flex items-baseline justify-between">
-            <strong className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{totalPassedAll}</strong>
+            <strong className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{totalPassedAll}</strong>
             <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold font-sans">
               {totalExamsConducted > 0 ? `${Math.round((totalPassedAll / totalExamsConducted) * 100)}% de succès` : '-'}
             </span>
           </div>
         </div>
 
-        <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+        <div className="p-4 bg-card-bg rounded-2xl border border-card-border shadow-2xs">
           <span className="text-slate-500 dark:text-slate-400 font-sans block font-semibold mb-1">Frais d&apos;Examen Encaissés</span>
           <div className="flex items-baseline justify-between">
             <strong className="text-xl font-black text-purple-600 dark:text-purple-400">{totalFeesAll.toLocaleString()}</strong>
@@ -303,9 +303,9 @@ export default function PipelinePage() {
           </div>
 
           {/* Aligned Column Header for 13"+ screens */}
-          <div className="hidden lg:grid grid-cols-12 gap-3 px-6 py-3 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-100 dark:bg-slate-850 rounded-xl border border-slate-200 dark:border-slate-800 select-none shadow-2xs">
+          <div className="hidden lg:grid grid-cols-12 gap-3 px-6 py-3 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-100 dark:bg-card-bg rounded-xl border border-card-border select-none shadow-2xs">
             <div className="col-span-3 flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+              <Calendar className="w-3.5 h-3.5 text-blue-600" />
               <span>Session &amp; Centre d&apos;Examen</span>
             </div>
             <div className="col-span-2">Catégories &amp; Effectif</div>
@@ -322,7 +322,7 @@ export default function PipelinePage() {
             return (
               <div 
                 key={session.date}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-700"
+                className="bg-card-bg rounded-2xl border border-card-border shadow-xs overflow-hidden transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-700"
               >
                 {/* Accordion Summary Row - Perfectly Aligned Grid */}
                 <div 
@@ -331,18 +331,18 @@ export default function PipelinePage() {
                 >
                   {/* Col 1: Date & Center (col-span-3) */}
                   <div className="lg:col-span-3 flex items-center gap-3.5 w-full">
-                    <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center font-bold text-slate-700 dark:text-slate-300 shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs">
-                      <Calendar className="w-5 h-5 text-emerald-600" />
+                    <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center font-bold text-slate-700 dark:text-slate-300 shrink-0 border border-card-border shadow-2xs">
+                      <Calendar className="w-5 h-5 text-blue-600" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-black text-slate-900 dark:text-white font-mono truncate">
+                        <h4 className="text-sm font-black text-slate-900 dark:text-slate-200 font-mono truncate">
                           {session.date}
                         </h4>
                         <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                           !session.isPast 
                             ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
-                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-card-border'
                         }`}>
                           {!session.isPast ? 'À venir' : 'Clôturée'}
                         </span>
@@ -378,7 +378,7 @@ export default function PipelinePage() {
                     <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block lg:hidden mb-1">
                       Épreuves Programmées
                     </span>
-                    <div className="grid grid-cols-3 gap-1.5 w-full bg-slate-50 dark:bg-slate-850 p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+                    <div className="grid grid-cols-3 gap-1.5 w-full bg-slate-50 dark:bg-card-bg p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
                       {/* Code slot */}
                       <div className={`px-2 py-1 rounded-lg text-center flex flex-col items-center justify-center border transition ${
                         session.examTypesCount.code > 0
@@ -419,16 +419,16 @@ export default function PipelinePage() {
 
                   {/* Col 4: Results (col-span-2) */}
                   <div className="lg:col-span-2 flex justify-start lg:justify-center w-full">
-                    <div className="w-full max-w-[170px] px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 flex items-center gap-2.5 shadow-2xs">
+                    <div className="w-full max-w-[170px] px-3 py-2 rounded-xl bg-slate-50 dark:bg-card-bg border border-card-border flex items-center gap-2.5 shadow-2xs">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                         session.passedCount > 0 
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' 
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300' 
                           : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                       }`}>
                         <Award className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <span className="font-mono font-black text-slate-900 dark:text-white text-xs block leading-tight">
+                        <span className="font-mono font-black text-slate-900 dark:text-slate-200 text-xs block leading-tight">
                           {session.passedCount}/{session.totalCandidates} Admis
                         </span>
                         <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
@@ -442,15 +442,15 @@ export default function PipelinePage() {
                   <div className="lg:col-span-1 flex justify-start lg:justify-center w-full">
                     <div className={`w-full px-2.5 py-1.5 rounded-xl border flex flex-col items-center justify-center text-center shadow-2xs ${
                       session.unpaidFeesCount === 0 
-                        ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60' 
+                        ? 'bg-blue-50/70 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800/60' 
                         : 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60'
                     }`}>
-                      <span className="font-mono font-black text-slate-900 dark:text-white text-xs block leading-tight">
+                      <span className="font-mono font-black text-slate-900 dark:text-slate-200 text-xs block leading-tight">
                         {session.feesPaidTotal.toLocaleString()} DZD
                       </span>
                       <span className={`text-[9px] font-black uppercase tracking-wider block truncate ${
                         session.unpaidFeesCount === 0 
-                          ? 'text-emerald-600 dark:text-emerald-400' 
+                          ? 'text-brand-primary' 
                           : 'text-amber-600 dark:text-amber-400'
                       }`}>
                         {session.unpaidFeesCount === 0 ? '100% Réglé' : `${session.unpaidFeesCount} Impayé(s)`}
@@ -462,7 +462,7 @@ export default function PipelinePage() {
                   <div className="lg:col-span-1 flex items-center justify-end gap-1.5 w-full">
                     <button
                       onClick={(e) => handleOpenPrint(session, e)}
-                      className="p-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded-xl transition cursor-pointer shadow-2xs border border-emerald-200 dark:border-emerald-800"
+                      className="p-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/70 dark:hover:bg-blue-900 text-brand-primary dark:text-brand-soft rounded-xl transition cursor-pointer shadow-2xs border border-blue-200 dark:border-blue-800"
                       title="Imprimer le Bordereau Officiel A4 (Modèle 03)"
                     >
                       <Printer className="w-4 h-4" />
@@ -497,10 +497,10 @@ export default function PipelinePage() {
 
                 {/* Drop-down Expandable Panel */}
                 {isExpanded && (
-                  <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 p-4 transition-all animate-in fade-in duration-150">
-                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
+                  <div className="border-t border-card-border bg-slate-50/50 dark:bg-slate-950/40 p-4 transition-all animate-in fade-in duration-150">
+                    <div className="border border-card-border rounded-xl overflow-hidden bg-card-bg shadow-2xs">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50 dark:bg-slate-850 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+                        <thead className="bg-slate-50 dark:bg-card-bg text-slate-500 dark:text-slate-400 font-semibold border-b border-card-border">
                           <tr>
                             <th className="p-3 w-10 text-center">N°</th>
                             <th className="p-3">Candidat & Dossier</th>
@@ -512,7 +512,7 @@ export default function PipelinePage() {
                             <th className="p-3 text-right">Fiche</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tbody className="divide-y divide-card-border">
                           {session.entries.map(({ student, exam }, idx) => {
                             const isPaid = exam.fee_paid;
                             const fee = exam.fee_amount || 2000;
@@ -528,7 +528,7 @@ export default function PipelinePage() {
                                 </td>
 
                                 <td className="p-3">
-                                  <span className="font-bold text-slate-900 dark:text-white block">
+                                  <span className="font-bold text-slate-900 dark:text-slate-200 block">
                                     {student.first_name} {student.last_name}
                                   </span>
                                   <span className="text-[10px] text-slate-400 font-mono">
@@ -563,7 +563,7 @@ export default function PipelinePage() {
                                   <div className="flex items-center justify-center gap-1.5">
                                     <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
                                       isPaid
-                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
                                         : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
                                     }`}>
                                       {isPaid ? 'Payé (2 000 DZD)' : 'Impayé (2 000 DZD)'}
@@ -573,7 +573,7 @@ export default function PipelinePage() {
                                       className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition cursor-pointer ${
                                         isPaid 
                                           ? 'text-slate-400 hover:text-rose-600' 
-                                          : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs'
+                                          : 'bg-brand-primary hover:bg-brand-primary-hover text-white shadow-2xs'
                                       }`}
                                       title={isPaid ? 'Marquer comme non réglé' : 'Encaisser les frais maintenant'}
                                     >
@@ -584,7 +584,7 @@ export default function PipelinePage() {
 
                                 <td className="p-3 text-center font-mono">
                                   {remaining === 0 ? (
-                                    <span className="text-emerald-600 font-bold text-[11px]">Soldé</span>
+                                    <span className="text-blue-600 font-bold text-[11px]">Soldé</span>
                                   ) : (
                                     <span className="text-amber-600 font-bold text-[11px]">
                                       Reste {remaining.toLocaleString()} DZD
@@ -599,8 +599,8 @@ export default function PipelinePage() {
                                       onClick={() => handleResultChange(student.id, exam.id, 'passed')}
                                       className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${
                                         exam.result === 'passed'
-                                          ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-600/30 font-black'
-                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-700'
+                                          ? 'bg-brand-primary text-white shadow-xs ring-2 ring-blue-600/30 font-black'
+                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-700'
                                       }`}
                                       title="Déclarer Admis (Succès)"
                                     >
@@ -640,7 +640,7 @@ export default function PipelinePage() {
                                         setSelectedStudent(student);
                                         setIsSummaryOpen(true);
                                       }}
-                                      className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition cursor-pointer"
+                                      className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 transition cursor-pointer"
                                       title="Consulter Fiche Synthèse"
                                     >
                                       <Eye className="w-4 h-4" />
@@ -686,12 +686,12 @@ export default function PipelinePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Column 1: Code */}
-          <div className="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div className="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-2xl border border-card-border space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-card-border">
               <div className="flex items-center gap-2">
                 <span className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs">1</span>
                 <div>
-                  <h3 className="font-bold text-xs text-slate-900 dark:text-white">Étape 1: Code de la Route</h3>
+                  <h3 className="font-bold text-xs text-slate-900 dark:text-slate-200">Étape 1: Code de la Route</h3>
                   <span className="text-[10px] text-slate-400">Examen Théorique</span>
                 </div>
               </div>
@@ -708,11 +708,11 @@ export default function PipelinePage() {
                     setSelectedStudent(st);
                     setIsSummaryOpen(true);
                   }}
-                  className="bg-white dark:bg-slate-800/90 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs space-y-3 hover:border-emerald-500 transition cursor-pointer"
+                  className="bg-white dark:bg-slate-800/90 p-4 rounded-xl border border-card-border shadow-2xs space-y-3 hover:border-blue-700 transition cursor-pointer"
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="font-bold text-slate-900 dark:text-white text-xs block hover:text-emerald-600">
+                      <span className="font-bold text-slate-900 dark:text-slate-200 text-xs block hover:text-blue-600">
                         {st.first_name} {st.last_name}
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono">{st.dossier_number}</span>
@@ -731,12 +731,12 @@ export default function PipelinePage() {
           </div>
 
           {/* Column 2: Créneau */}
-          <div className="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div className="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-2xl border border-card-border space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-card-border">
               <div className="flex items-center gap-2">
                 <span className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center font-bold text-xs">2</span>
                 <div>
-                  <h3 className="font-bold text-xs text-slate-900 dark:text-white">Étape 2: Créneau (Kreno)</h3>
+                  <h3 className="font-bold text-xs text-slate-900 dark:text-slate-200">Étape 2: Créneau (Kreno)</h3>
                   <span className="text-[10px] text-slate-400">Épreuve sur Piste</span>
                 </div>
               </div>
@@ -753,11 +753,11 @@ export default function PipelinePage() {
                     setSelectedStudent(st);
                     setIsSummaryOpen(true);
                   }}
-                  className="bg-white dark:bg-slate-800/90 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs space-y-3 hover:border-emerald-500 transition cursor-pointer"
+                  className="bg-white dark:bg-slate-800/90 p-4 rounded-xl border border-card-border shadow-2xs space-y-3 hover:border-blue-700 transition cursor-pointer"
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="font-bold text-slate-900 dark:text-white text-xs block hover:text-emerald-600">
+                      <span className="font-bold text-slate-900 dark:text-slate-200 text-xs block hover:text-blue-600">
                         {st.first_name} {st.last_name}
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono">{st.dossier_number}</span>
@@ -776,16 +776,16 @@ export default function PipelinePage() {
           </div>
 
           {/* Column 3: Circulation */}
-          <div className="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div className="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-2xl border border-card-border space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-card-border">
               <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">3</span>
+                <span className="w-7 h-7 rounded-lg bg-brand-primary text-white flex items-center justify-center font-bold text-xs">3</span>
                 <div>
-                  <h3 className="font-bold text-xs text-slate-900 dark:text-white">Étape 3: Conduite (Circulation)</h3>
+                  <h3 className="font-bold text-xs text-slate-900 dark:text-slate-200">Étape 3: Conduite (Circulation)</h3>
                   <span className="text-[10px] text-slate-400">Circuit Routier Final</span>
                 </div>
               </div>
-              <span className="text-[11px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full font-mono">
+              <span className="text-[11px] bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 font-bold px-2 py-0.5 rounded-full font-mono">
                 {circulationCandidates.length}
               </span>
             </div>
@@ -798,11 +798,11 @@ export default function PipelinePage() {
                     setSelectedStudent(st);
                     setIsSummaryOpen(true);
                   }}
-                  className="bg-white dark:bg-slate-800/90 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs space-y-3 hover:border-emerald-500 transition cursor-pointer"
+                  className="bg-white dark:bg-slate-800/90 p-4 rounded-xl border border-card-border shadow-2xs space-y-3 hover:border-blue-700 transition cursor-pointer"
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="font-bold text-slate-900 dark:text-white text-xs block hover:text-emerald-600">
+                      <span className="font-bold text-slate-900 dark:text-slate-200 text-xs block hover:text-blue-600">
                         {st.first_name} {st.last_name}
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono">{st.dossier_number}</span>
@@ -813,7 +813,7 @@ export default function PipelinePage() {
                   </div>
                   <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-700 text-[11px] text-slate-500">
                     <span>Créneau validé</span>
-                    <span className="text-emerald-600 font-bold">Circulation</span>
+                    <span className="text-blue-600 font-bold">Circulation</span>
                   </div>
                 </div>
               ))}

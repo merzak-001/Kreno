@@ -30,7 +30,7 @@ export function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-60 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-slate-900 dark:text-slate-100 animate-in fade-in-50 zoom-in-95 duration-150">
+      <div className="bg-card-bg rounded-2xl w-full max-w-md shadow-2xl border border-card-border overflow-hidden text-slate-900 dark:text-slate-100 animate-in fade-in-50 zoom-in-95 duration-150">
         
         {/* Header with warning icon */}
         <div className="p-6 pb-4 flex items-start gap-4">
@@ -43,7 +43,7 @@ export function ConfirmModal({
           </div>
 
           <div className="flex-1">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-200 mb-1">
               {title}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -68,7 +68,7 @@ export function ConfirmModal({
         )}
 
         {/* Footer Actions */}
-        <div className="p-6 pt-4 flex items-center justify-end gap-3 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 mt-4">
+        <div className="p-6 pt-4 flex items-center justify-end gap-3 bg-slate-50 dark:bg-card-bg border-t border-card-border mt-4">
           <button
             type="button"
             onClick={onCancel}
@@ -83,7 +83,7 @@ export function ConfirmModal({
             className={`px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-md transition cursor-pointer flex items-center gap-2 ${
               danger
                 ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20 active:scale-95'
-                : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20 active:scale-95'
+                : 'bg-brand-primary hover:bg-brand-primary-hover shadow-blue-950/30 active:scale-95'
             }`}
           >
             <Trash2 className="w-3.5 h-3.5" />

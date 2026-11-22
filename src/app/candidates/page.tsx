@@ -61,23 +61,23 @@ export default function CandidatesPage() {
   return (
     <div className="space-y-6">
       {/* Title & Filters */}
-      <div className="flex items-center justify-between flex-wrap gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
+      <div className="flex items-center justify-between flex-wrap gap-4 bg-card-bg p-5 rounded-2xl border border-card-border shadow-xs transition-colors">
         <div>
-          <h2 className="text-lg font-black text-slate-900 dark:text-white">Registre des Candidats & Dossiers</h2>
+          <h2 className="text-lg font-black text-slate-900 dark:text-slate-200">Registre des Candidats & Dossiers</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {filteredStudents.length} candidats trouvés • <strong>Cliquez sur une ligne</strong> pour ouvrir la fiche synthèse (historique, paiements, examens).
           </p>
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto text-xs">
-          <span className="font-semibold text-slate-500 dark:text-slate-400 mr-2">Filtrer par Catégorie:</span>
+          <span className="font-medium text-slate-500 dark:text-slate-400 mr-2">Filtrer par Catégorie:</span>
           {['all', 'B', 'A', 'C', 'D', 'BE'].map(cat => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
                 categoryFilter === cat 
-                  ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-xs' 
+                  ? 'bg-primary text-white shadow-xs' 
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
@@ -88,9 +88,9 @@ export default function CandidatesPage() {
       </div>
 
       {/* Candidates List Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
+      <div className="bg-card-bg rounded-2xl border border-card-border shadow-xs overflow-hidden transition-colors">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-50 dark:bg-slate-850 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+          <thead className="bg-slate-50 dark:bg-black/20 text-slate-600 dark:text-slate-400 font-semibold border-b border-card-border">
             <tr>
               <th className="p-4">Dossier</th>
               <th className="p-4">Candidat</th>
@@ -104,7 +104,7 @@ export default function CandidatesPage() {
               <th className="p-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-card-border">
             {filteredStudents.map(st => {
               const codePassed = st.exams.some(e => e.exam_type === 'code' && e.result === 'passed');
               const creneauPassed = st.exams.some(e => e.exam_type === 'creneau' && e.result === 'passed');
@@ -117,11 +117,11 @@ export default function CandidatesPage() {
                   onClick={() => handleRowClick(st)}
                   className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition cursor-pointer group"
                 >
-                  <td className="p-4 font-mono font-bold text-slate-700 dark:text-slate-300 group-hover:text-emerald-600">
+                  <td className="p-4 font-mono font-bold text-slate-700 dark:text-slate-300 group-hover:text-brand-primary">
                     {st.dossier_number}
                   </td>
                   <td className="p-4">
-                    <span className="font-bold text-slate-900 dark:text-white text-sm block group-hover:text-emerald-600">
+                    <span className="font-bold text-slate-900 dark:text-slate-200 text-sm block group-hover:text-brand-primary">
                       {st.first_name} {st.last_name}
                     </span>
                     <span className="text-[10px] text-slate-400">Inscrit le {st.deposit_date}</span>
@@ -130,43 +130,43 @@ export default function CandidatesPage() {
                   
                   {/* Eye-friendly distinct category badge */}
                   <td className="p-4">
-                    <span className={`px-2.5 py-1 rounded-lg font-black text-xs border ${getCategoryBadgeClass(st.requested_category)}`}>
+                    <span className={`px-2.5 py-1 rounded-lg text-xs border ${getCategoryBadgeClass(st.requested_category)}`}>
                       Cat. {st.requested_category}
                     </span>
                   </td>
 
                   <td className="p-4">
-                    <span className="font-mono text-slate-700 dark:text-slate-300 block font-bold">{st.phone_number}</span>
+                    <span className="font-mono text-slate-700 dark:text-slate-300 block font-semibold">{st.phone_number}</span>
                     <span className="text-[11px] text-slate-400">{st.birth_commune}</span>
                   </td>
                   <td className="p-4 text-center">
                     {codePassed ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-[10px]">Admis</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400/90 font-medium text-[10px] border border-emerald-200/50 dark:border-emerald-800/30">Admis</span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px]">En cours</span>
+                      <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-black/20 text-slate-500 dark:text-slate-400 text-[10px]">En cours</span>
                     )}
                   </td>
                   <td className="p-4 text-center">
                     {creneauPassed ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-[10px]">Admis</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400/90 font-medium text-[10px] border border-emerald-200/50 dark:border-emerald-800/30">Admis</span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px]">En attente</span>
+                      <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-black/20 text-slate-500 dark:text-slate-400 text-[10px]">En attente</span>
                     )}
                   </td>
                   <td className="p-4 text-center">
                     {circPassed ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-[10px]">Admis</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400/90 font-medium text-[10px] border border-emerald-200/50 dark:border-emerald-800/30">Admis</span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px]">En attente</span>
+                      <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-black/20 text-slate-500 dark:text-slate-400 text-[10px]">En attente</span>
                     )}
                   </td>
                   <td className="p-4 text-center">
                     {remaining === 0 ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-[10px]">
+                      <span className="px-2 py-0.5 rounded-full bg-brand-soft/20 text-brand-dark dark:text-brand-soft font-medium text-[10px] border border-brand-soft/30">
                         Soldé ({st.amount_paid.toLocaleString()} DZD)
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-bold text-[10px]">
+                      <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400/90 font-medium text-[10px] border border-amber-200/50 dark:border-amber-800/30">
                         Reste {remaining.toLocaleString()} DZD
                       </span>
                     )}
@@ -177,7 +177,7 @@ export default function CandidatesPage() {
                     <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
                       <button
                         onClick={() => handleRowClick(st)}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 hover:text-emerald-600 transition cursor-pointer"
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 transition cursor-pointer"
                         title="Fiche Synthèse Popup"
                       >
                         <Eye className="w-4 h-4" />

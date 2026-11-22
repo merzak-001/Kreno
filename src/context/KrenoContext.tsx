@@ -18,9 +18,13 @@ import {
   AuditLogEntry
 } from '@/types/kreno';
 
+export type ColorPalette = 'ocean' | 'warm';
+
 interface KrenoContextType {
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
+  palette: ColorPalette;
+  setPalette: (palette: ColorPalette) => void;
   lang: 'fr' | 'ar';
   setLang: (lang: 'fr' | 'ar') => void;
   userRole: UserRole;
@@ -1019,6 +1023,7 @@ const KrenoContext = createContext<KrenoContextType | undefined>(undefined);
 
 export function KrenoProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>('light');
+  const [palette, setPaletteState] = useState<ColorPalette>('ocean');
   const [lang, setLangState] = useState<'fr' | 'ar'>('fr');
   const [userRole, setUserRoleState] = useState<UserRole>('owner');
   const [school, setSchool] = useState<School>(DEFAULT_SCHOOL);
@@ -1039,6 +1044,14 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         } else {
           document.documentElement.classList.remove('dark');
         }
+      }
+
+      const savedPalette = localStorage.getItem('kreno_palette') as ColorPalette | null;
+      if (savedPalette) {
+        setPaletteState(savedPalette);
+        document.documentElement.setAttribute('data-palette', savedPalette);
+      } else {
+        document.documentElement.setAttribute('data-palette', 'ocean');
       }
 
       const savedLang = localStorage.getItem('kreno_lang') as 'fr' | 'ar' | null;
@@ -1108,6 +1121,12 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
+  };
+
+  const setPalette = (newPalette: ColorPalette) => {
+    setPaletteState(newPalette);
+    localStorage.setItem('kreno_palette', newPalette);
+    document.documentElement.setAttribute('data-palette', newPalette);
   };
 
   const setLang = (newLang: 'fr' | 'ar') => {
@@ -1739,6 +1758,8 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       value={{
         theme,
         setTheme,
+        palette,
+        setPalette,
         lang,
         setLang,
         userRole,

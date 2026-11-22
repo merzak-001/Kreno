@@ -76,15 +76,15 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
       <div 
         className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
       >
-        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-5xl max-h-[96vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-slate-900 dark:text-slate-100">
+        <div className="bg-card-bg rounded-2xl w-full max-w-5xl max-h-[96vh] flex flex-col shadow-2xl border border-card-border overflow-hidden text-slate-900 dark:text-slate-100">
           {/* Modal Topbar */}
-          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-850 shrink-0">
+          <div className="px-6 py-4 border-b border-card-border flex items-center justify-between bg-slate-50 dark:bg-card-bg shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/70 text-brand-primary dark:text-brand-soft flex items-center justify-center font-bold">
                 <Printer className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-200">
                   Édition & Impression des Documents Réglementaires (Format A4)
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -96,7 +96,7 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
             <div className="flex items-center gap-3">
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
+                className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary hover:bg-brand-primary-hover active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-950/30 transition cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <span>Imprimer sur Papier A4</span>
@@ -116,7 +116,7 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
               onClick={() => setSelectedDoc('dossier')}
               className={`px-4 py-2 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 selectedDoc === 'dossier' 
-                  ? 'bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 shadow-xs border border-slate-200 dark:border-slate-700' 
+                  ? 'bg-card-bg text-blue-800 dark:text-blue-300 shadow-xs border border-card-border' 
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700'
               }`}
             >
@@ -127,7 +127,7 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
               onClick={() => setSelectedDoc('medical')}
               className={`px-4 py-2 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 selectedDoc === 'medical' 
-                  ? 'bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 shadow-xs border border-slate-200 dark:border-slate-700' 
+                  ? 'bg-card-bg text-blue-800 dark:text-blue-300 shadow-xs border border-card-border' 
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700'
               }`}
             >
@@ -138,7 +138,7 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
               onClick={() => setSelectedDoc('contract')}
               className={`px-4 py-2 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 selectedDoc === 'contract' 
-                  ? 'bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 shadow-xs border border-slate-200 dark:border-slate-700' 
+                  ? 'bg-card-bg text-blue-800 dark:text-blue-300 shadow-xs border border-card-border' 
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700'
               }`}
             >
@@ -149,7 +149,7 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
               onClick={() => setSelectedDoc('livret')}
               className={`px-4 py-2 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer ${
                 selectedDoc === 'livret' 
-                  ? 'bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 shadow-xs border border-slate-200 dark:border-slate-700' 
+                  ? 'bg-card-bg text-blue-800 dark:text-blue-300 shadow-xs border border-card-border' 
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700'
               }`}
             >

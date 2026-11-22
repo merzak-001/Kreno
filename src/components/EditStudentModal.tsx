@@ -63,16 +63,16 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-slate-900 dark:text-slate-100">
+      <div className="bg-card-bg rounded-2xl w-full max-w-2xl shadow-2xl border border-card-border overflow-hidden text-slate-900 dark:text-slate-100">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-850">
+        <div className="px-6 py-4 border-b border-card-border flex items-center justify-between bg-slate-50 dark:bg-card-bg">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold">
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-200">
                 Modifier le Dossier Candidat
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -100,7 +100,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 required
                 value={formData.last_name}
                 onChange={e => setFormData({ ...formData, last_name: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl border border-card-border bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200"
               />
             </div>
 
@@ -111,7 +111,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 required
                 value={formData.first_name}
                 onChange={e => setFormData({ ...formData, first_name: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl border border-card-border bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200"
               />
             </div>
           </div>
@@ -124,7 +124,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 dir="rtl"
                 value={formData.last_name_ar}
                 onChange={e => setFormData({ ...formData, last_name_ar: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl border border-card-border bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200"
               />
             </div>
 
@@ -135,7 +135,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 dir="rtl"
                 value={formData.first_name_ar}
                 onChange={e => setFormData({ ...formData, first_name_ar: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl border border-card-border bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200"
               />
             </div>
           </div>
@@ -149,7 +149,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 maxLength={18}
                 value={formData.nin}
                 onChange={e => setFormData({ ...formData, nin: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl border border-card-border bg-white dark:bg-slate-800 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200"
               />
             </div>
 
@@ -160,7 +160,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 required
                 value={formData.phone_number}
                 onChange={e => setFormData({ ...formData, phone_number: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl border border-card-border bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200"
               />
             </div>
           </div>
@@ -171,7 +171,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
               <select
                 value={formData.requested_category}
                 onChange={e => setFormData({ ...formData, requested_category: e.target.value as LicenseCategory })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl border border-card-border bg-white dark:bg-slate-800 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200"
               >
                 <option value="A1">Catégorie A1 (Moto légère)</option>
                 <option value="A">Catégorie A (Moto)</option>
@@ -193,7 +193,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 required
                 value={formData.birth_date}
                 onChange={e => setFormData({ ...formData, birth_date: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl border border-card-border bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200"
               />
             </div>
 
@@ -204,7 +204,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 required
                 value={formData.total_package_price}
                 onChange={e => setFormData({ ...formData, total_package_price: Number(e.target.value) })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl border border-card-border bg-white dark:bg-slate-800 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200"
               />
             </div>
           </div>
@@ -216,7 +216,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 type="text"
                 value={formData.birth_commune}
                 onChange={e => setFormData({ ...formData, birth_commune: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl border border-card-border bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200"
               />
             </div>
 
@@ -226,13 +226,13 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 type="text"
                 value={formData.birth_wilaya}
                 onChange={e => setFormData({ ...formData, birth_wilaya: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+                className="w-full px-3 py-2 rounded-xl border border-card-border bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-200"
               />
             </div>
           </div>
 
           {/* Footer Actions */}
-          <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-200 dark:border-slate-800">
+          <div className="pt-4 flex items-center justify-end gap-3 border-t border-card-border">
             <button
               type="button"
               onClick={onClose}
@@ -242,7 +242,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 active:scale-95 transition cursor-pointer flex items-center gap-2"
+              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-brand-primary text-white text-xs font-bold shadow-md shadow-blue-600/20 active:scale-95 transition cursor-pointer flex items-center gap-2"
             >
               <Save className="w-4 h-4" />
               <span>Enregistrer les modifications</span>

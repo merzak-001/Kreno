@@ -11,7 +11,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { addStudent } = useKreno();
 
   return (
-    <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex antialiased transition-colors">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans flex antialiased transition-colors">
       {/* 1. Left Sidebar strictly on the left */}
       <Suspense fallback={<div className="w-72 bg-slate-900 h-screen fixed left-0 top-0" />}>
         <Sidebar />

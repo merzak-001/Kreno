@@ -49,7 +49,7 @@ export default function SettingsPage() {
 
   if (!isOwner) {
     return (
-      <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-3">
+      <div className="bg-card-bg p-12 rounded-2xl border border-card-border text-center space-y-3">
         <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">Accès Restreint</h3>
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Seul le Propriétaire (Gérant de l&apos;auto-école) peut modifier les paramètres généraux, jours ouvrables et tarifs.
@@ -81,8 +81,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       {/* Page Title */}
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
-        <h2 className="text-lg font-black text-slate-900 dark:text-white">Paramètres Généraux de l&apos;Établissement</h2>
+      <div className="bg-card-bg p-5 rounded-2xl border border-card-border shadow-xs transition-colors">
+        <h2 className="text-lg font-black text-slate-900 dark:text-slate-200">Paramètres Généraux de l&apos;Établissement</h2>
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Configuration de la langue du système, des jours d&apos;ouverture hebdomadaires (Samedi au Jeudi par défaut), des unités de 01 heure et des frais d&apos;examen.
         </p>
@@ -92,10 +92,10 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Language Selection Card */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <Languages className="w-5 h-5 text-emerald-600" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Langue de l&apos;Interface Applicative</h3>
+        <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
+          <div className="flex items-center gap-2 pb-3 border-b border-card-border">
+            <Languages className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Langue de l&apos;Interface Applicative</h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Sélectionnez la langue par défaut. Votre choix est mémorisé sur ce poste de travail jusqu&apos;à modification ultérieure.
@@ -107,13 +107,13 @@ export default function SettingsPage() {
               onClick={() => setLang('fr')}
               className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
                 lang === 'fr'
-                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 ring-2 ring-emerald-500/20'
-                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                  ? 'border-blue-700 bg-blue-50 dark:bg-blue-950/50 text-blue-900 dark:text-blue-200 ring-2 ring-blue-600/20'
+                  : 'border-card-border bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-black text-sm">Français (France / DZ)</span>
-                {lang === 'fr' && <Check className="w-4 h-4 text-emerald-600" />}
+                {lang === 'fr' && <Check className="w-4 h-4 text-blue-600" />}
               </div>
               <span className="text-[11px] text-slate-500 dark:text-slate-400">
                 Mode standard avec zéro caractère arabe dans les menus et interfaces de gestion.
@@ -125,13 +125,13 @@ export default function SettingsPage() {
               onClick={() => setLang('ar')}
               className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
                 lang === 'ar'
-                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 ring-2 ring-emerald-500/20'
-                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                  ? 'border-blue-700 bg-blue-50 dark:bg-blue-950/50 text-blue-900 dark:text-blue-200 ring-2 ring-blue-600/20'
+                  : 'border-card-border bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-black text-sm">Mode Hybride (FR/AR)</span>
-                {lang === 'ar' && <Check className="w-4 h-4 text-emerald-600" />}
+                {lang === 'ar' && <Check className="w-4 h-4 text-blue-600" />}
               </div>
               <span className="text-[11px] text-slate-500 dark:text-slate-400">
                 Permet l&apos;affichage bilingue pour l&apos;impression directe des documents administratifs.
@@ -141,10 +141,10 @@ export default function SettingsPage() {
         </div>
 
         {/* Standard Exam Fee & Tariff */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <DollarSign className="w-5 h-5 text-emerald-600" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Droits & Frais d&apos;Examen par Passage</h3>
+        <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
+          <div className="flex items-center gap-2 pb-3 border-b border-card-border">
+            <DollarSign className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Droits & Frais d&apos;Examen par Passage</h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Tarif réglementaire des frais administratifs exigibles à chaque épreuve d&apos;examen (Code, Créneau, Conduite).
@@ -161,13 +161,13 @@ export default function SettingsPage() {
                   step="500"
                   value={settings.standard_exam_fee || 2000}
                   onChange={(e) => updateSettings({ standard_exam_fee: Number(e.target.value) })}
-                  className="w-40 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-900 dark:text-white"
+                  className="w-40 px-3 py-2 bg-white dark:bg-slate-800 border border-card-border rounded-xl font-mono font-bold text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none text-slate-900 dark:text-slate-200"
                 />
                 <span className="text-xs font-bold text-slate-500">DZD / épreuve</span>
               </div>
             </div>
 
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/40 text-xs text-emerald-800 dark:text-emerald-300">
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800/40 text-xs text-blue-800 dark:text-blue-200">
               <span className="font-bold block">Rappel sur les encaissements :</span>
               <span>Chaque fois qu&apos;un candidat passe un examen, le système enregistre automatiquement cette ligne de frais et permet de marquer son encaissement.</span>
             </div>
@@ -180,10 +180,10 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Working Days */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
-          <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <Calendar className="w-5 h-5 text-emerald-600" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Jours Ouvrables Hebdomadaires</h3>
+        <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
+          <div className="flex items-center gap-2 pb-3 border-b border-card-border">
+            <Calendar className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Jours Ouvrables Hebdomadaires</h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Par défaut en Algérie : <strong>du Samedi au Jeudi</strong>. Vendredi est le jour de repos légal. Le générateur de planning automatique respecte strictement ces jours.
@@ -197,8 +197,8 @@ export default function SettingsPage() {
                   key={d.id} 
                   className={`flex items-center justify-between p-3 rounded-xl border transition cursor-pointer text-xs ${
                     isChecked 
-                      ? 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-slate-900 dark:text-white font-bold' 
-                      : 'bg-slate-50/50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-400 font-medium'
+                      ? 'bg-blue-50/50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-900 text-slate-900 dark:text-slate-200 font-bold' 
+                      : 'bg-slate-50/50 dark:bg-slate-800/40 border-card-border text-slate-400 font-medium'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -206,7 +206,7 @@ export default function SettingsPage() {
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => toggleDay(d.id)}
-                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-600"
                     />
                     <span>{d.label}</span>
                   </div>
@@ -221,10 +221,10 @@ export default function SettingsPage() {
 
         {/* Working Hours & Unit */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-              <Clock className="w-5 h-5 text-emerald-600" />
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Créneaux Horaires Quotidiens (Unité 01 Heure)</h3>
+          <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
+            <div className="flex items-center gap-2 pb-3 border-b border-card-border">
+              <Clock className="w-5 h-5 text-blue-600" />
+              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Créneaux Horaires Quotidiens (Unité 01 Heure)</h3>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-xs">
@@ -234,7 +234,7 @@ export default function SettingsPage() {
                   type="time"
                   value={settings.start_hour}
                   onChange={(e) => updateSettings({ start_hour: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono font-bold text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-card-border rounded-lg font-mono font-bold text-slate-900 dark:text-slate-200"
                 />
               </div>
 
@@ -244,22 +244,22 @@ export default function SettingsPage() {
                   type="time"
                   value={settings.end_hour}
                   onChange={(e) => updateSettings({ end_hour: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-mono font-bold text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-card-border rounded-lg font-mono font-bold text-slate-900 dark:text-slate-200"
                 />
               </div>
             </div>
 
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
-              <span className="font-bold block text-slate-900 dark:text-white">Unité de séance standard:</span>
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-card-border text-xs text-slate-600 dark:text-slate-300">
+              <span className="font-bold block text-slate-900 dark:text-slate-200">Unité de séance standard:</span>
               <span>1 séance = <strong>01 heure fixe</strong> (ex: 08:00 - 09:00, 09:00 - 10:00). Pause déjeuner de 12:00 à 13:00.</span>
             </div>
           </div>
 
           {/* School Legal Info */}
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-              <Building className="w-5 h-5 text-emerald-600" />
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Agrément & Établissement</h3>
+          <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
+            <div className="flex items-center gap-2 pb-3 border-b border-card-border">
+              <Building className="w-5 h-5 text-blue-600" />
+              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Agrément & Établissement</h3>
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-xs">
@@ -285,24 +285,24 @@ export default function SettingsPage() {
       </div>
 
       {/* Row 3: Exceptions & Unavailability Manager (Day or Half-Day) */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
-        <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+      <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
+        <div className="flex items-center gap-2 pb-3 border-b border-card-border">
           <AlertTriangle className="w-5 h-5 text-amber-600" />
-          <h3 className="font-bold text-sm text-slate-900 dark:text-white">Indisponibilités & Fermetures Exceptionnelles</h3>
+          <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Indisponibilités & Fermetures Exceptionnelles</h3>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400">
           En cas d&apos;indisponibilité (journée complète ou demi-journée : matinée ou après-midi), déclarez-la ci-dessous. Le système réajuste les plannings automatiquement.
         </p>
 
         {/* Form to add unavailability */}
-        <form onSubmit={handleAddUnavailable} className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+        <form onSubmit={handleAddUnavailable} className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-card-border grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
           <div>
             <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Date d&apos;indisponibilité:</label>
             <input
               type="date"
               value={unDate}
               onChange={(e) => setUnDate(e.target.value)}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-mono font-bold text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 bg-card-bg border border-card-border rounded-lg font-mono font-bold text-slate-900 dark:text-slate-200"
               required
             />
           </div>
@@ -312,7 +312,7 @@ export default function SettingsPage() {
             <select
               value={unPeriod}
               onChange={(e) => setUnPeriod(e.target.value as any)}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 bg-card-bg border border-card-border rounded-lg font-bold text-slate-900 dark:text-slate-200"
             >
               <option value="full_day">Journée entière (Toute la journée)</option>
               <option value="morning">Matinée uniquement (08h - 12h)</option>
@@ -327,7 +327,7 @@ export default function SettingsPage() {
               value={unReason}
               onChange={(e) => setUnReason(e.target.value)}
               placeholder="ex: Maintenance véhicule ou jour férié"
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 bg-card-bg border border-card-border rounded-lg text-slate-900 dark:text-slate-200"
               required
             />
           </div>
@@ -335,7 +335,7 @@ export default function SettingsPage() {
           <div className="flex items-end">
             <button
               type="submit"
-              className="w-full py-2 bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+              className="w-full py-2 bg-slate-900 hover:bg-slate-800 dark:bg-brand-primary dark:hover:bg-blue-800 text-white rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Plus className="w-4 h-4" /> Enregistrer l&apos;absence
             </button>
@@ -346,9 +346,9 @@ export default function SettingsPage() {
         <div className="space-y-2 pt-2">
           {settings.unavailable_periods.length > 0 ? (
             settings.unavailable_periods.map(p => (
-              <div key={p.id} className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between text-xs">
+              <div key={p.id} className="p-3 bg-white dark:bg-slate-800 border border-card-border rounded-xl flex items-center justify-between text-xs">
                 <div>
-                  <span className="font-mono font-bold text-slate-900 dark:text-white mr-2">{p.date}</span>
+                  <span className="font-mono font-bold text-slate-900 dark:text-slate-200 mr-2">{p.date}</span>
                   <span className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 text-[10px] mr-2">
                     {p.period === 'full_day' ? 'Journée complète' : p.period === 'morning' ? 'Matinée (08h-12h)' : 'Après-midi (13h-17h)'}
                   </span>

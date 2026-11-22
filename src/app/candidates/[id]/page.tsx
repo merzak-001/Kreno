@@ -154,14 +154,14 @@ function CandidateProfileContent() {
 
           <button
             onClick={() => setIsPrintModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>Imprimer les Dossiers Officiels</span>
           </button>
           <button
             onClick={() => setIsExamModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-brand-primary text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
           >
             <Award className="w-4 h-4" />
             <span>Enregistrer un Examen</span>
@@ -170,9 +170,9 @@ function CandidateProfileContent() {
       </div>
 
       {/* Candidate Profile Header Card */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between flex-wrap gap-4">
+      <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 text-xl font-black">
+          <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-card-border flex items-center justify-center text-slate-600 dark:text-slate-300 text-xl font-black">
             {candidate.first_name[0]}{candidate.last_name[0]}
           </div>
           <div>
@@ -184,7 +184,7 @@ function CandidateProfileContent() {
                 Dossier N° {candidate.dossier_number}
               </span>
             </div>
-            <h1 className="text-xl font-black text-slate-900 dark:text-white">
+            <h1 className="text-xl font-black text-slate-900 dark:text-slate-200">
               {candidate.first_name} {candidate.last_name}
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -196,7 +196,7 @@ function CandidateProfileContent() {
         {/* Quick Contacts */}
         <div className="flex items-center gap-6 text-xs text-slate-600">
           <div className="flex items-center gap-2">
-            <Phone className="w-4 h-4 text-emerald-600" />
+            <Phone className="w-4 h-4 text-blue-600" />
             <span className="font-mono font-bold text-slate-800">{candidate.phone_number}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ function CandidateProfileContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
             <h3 className="font-bold text-sm text-slate-900 border-b pb-2 flex items-center gap-2">
-              <User className="w-4 h-4 text-emerald-600" />
+              <User className="w-4 h-4 text-blue-600" />
               État Civil & Identité
             </h3>
             <div className="grid grid-cols-2 gap-y-3 text-xs">
@@ -275,7 +275,7 @@ function CandidateProfileContent() {
               </div>
               <div>
                 <span className="text-slate-400 block">Groupe Sanguin:</span>
-                <strong className="font-mono text-emerald-700 font-bold">{candidate.blood_type || 'O+'}</strong>
+                <strong className="font-mono text-brand-primary dark:text-brand-soft font-bold">{candidate.blood_type || 'O+'}</strong>
               </div>
               <div>
                 <span className="text-slate-400 block">Date de Naissance:</span>
@@ -298,7 +298,7 @@ function CandidateProfileContent() {
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
             <h3 className="font-bold text-sm text-slate-900 border-b pb-2 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-emerald-600" />
+              <MapPin className="w-4 h-4 text-blue-600" />
               Coordonnées & Inscription
             </h3>
             <div className="grid grid-cols-2 gap-y-3 text-xs">
@@ -343,7 +343,7 @@ function CandidateProfileContent() {
             </div>
             <button
               onClick={() => setIsExamModalOpen(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-blue-600 hover:bg-brand-primary text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
             >
               <Award className="w-4 h-4" />
               <span>Saisir une Note d&apos;Examen</span>
@@ -357,11 +357,11 @@ function CandidateProfileContent() {
               const isPassed = codeAttempts.some(e => e.result === 'passed');
 
               return (
-                <div className={`p-5 rounded-2xl border ${isPassed ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-slate-200'} space-y-3`}>
+                <div className={`p-5 rounded-2xl border ${isPassed ? 'bg-blue-50/50 border-blue-200' : 'bg-white border-slate-200'} space-y-3`}>
                   <div className="flex justify-between items-start">
                     <span className="text-xs font-bold text-blue-700 uppercase">Étape 1</span>
                     {isPassed ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">Admis</span>
+                      <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">Admis</span>
                     ) : (
                       <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">En cours</span>
                     )}
@@ -374,7 +374,7 @@ function CandidateProfileContent() {
                     {codeAttempts.map(a => (
                       <div key={a.id} className="flex justify-between text-[11px]">
                         <span>Tentative {a.attempt_number} ({a.exam_date || 'En attente'}):</span>
-                        <strong className={a.result === 'passed' ? 'text-emerald-700' : 'text-rose-700'}>
+                        <strong className={a.result === 'passed' ? 'text-blue-700' : 'text-rose-700'}>
                           {a.result === 'passed' ? 'Admis' : a.result === 'failed' ? 'Ajourné' : 'Programmé'}
                         </strong>
                       </div>
@@ -391,11 +391,11 @@ function CandidateProfileContent() {
               const isPassed = creneauAttempts.some(e => e.result === 'passed');
 
               return (
-                <div className={`p-5 rounded-2xl border ${!codePassed ? 'opacity-50 bg-slate-50 border-slate-200' : isPassed ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-slate-200'} space-y-3`}>
+                <div className={`p-5 rounded-2xl border ${!codePassed ? 'opacity-50 bg-slate-50 border-slate-200' : isPassed ? 'bg-blue-50/50 border-blue-200' : 'bg-white border-slate-200'} space-y-3`}>
                   <div className="flex justify-between items-start">
                     <span className="text-xs font-bold text-amber-700 uppercase">Étape 2</span>
                     {isPassed ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">Admis</span>
+                      <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">Admis</span>
                     ) : !codePassed ? (
                       <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 font-bold text-[10px]">Verrouillé</span>
                     ) : (
@@ -410,7 +410,7 @@ function CandidateProfileContent() {
                     {creneauAttempts.map(a => (
                       <div key={a.id} className="flex justify-between text-[11px]">
                         <span>Tentative {a.attempt_number} ({a.exam_date || 'En attente'}):</span>
-                        <strong className={a.result === 'passed' ? 'text-emerald-700' : 'text-rose-700'}>
+                        <strong className={a.result === 'passed' ? 'text-blue-700' : 'text-rose-700'}>
                           {a.result === 'passed' ? 'Admis' : a.result === 'failed' ? 'Ajourné' : 'Programmé'}
                         </strong>
                       </div>
@@ -427,15 +427,15 @@ function CandidateProfileContent() {
               const isPassed = circAttempts.some(e => e.result === 'passed');
 
               return (
-                <div className={`p-5 rounded-2xl border ${!creneauPassed ? 'opacity-50 bg-slate-50 border-slate-200' : isPassed ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-slate-200'} space-y-3`}>
+                <div className={`p-5 rounded-2xl border ${!creneauPassed ? 'opacity-50 bg-slate-50 border-slate-200' : isPassed ? 'bg-blue-50/50 border-blue-200' : 'bg-white border-slate-200'} space-y-3`}>
                   <div className="flex justify-between items-start">
-                    <span className="text-xs font-bold text-emerald-700 uppercase">Étape 3</span>
+                    <span className="text-xs font-bold text-blue-700 uppercase">Étape 3</span>
                     {isPassed ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">Permis Obtenu</span>
+                      <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">Permis Obtenu</span>
                     ) : !creneauPassed ? (
                       <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 font-bold text-[10px]">Verrouillé</span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">En cours</span>
+                      <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px]">En cours</span>
                     )}
                   </div>
                   <h4 className="font-black text-sm text-slate-900">Conduite en Circulation</h4>
@@ -446,7 +446,7 @@ function CandidateProfileContent() {
                     {circAttempts.map(a => (
                       <div key={a.id} className="flex justify-between text-[11px]">
                         <span>Tentative {a.attempt_number} ({a.exam_date || 'En attente'}):</span>
-                        <strong className={a.result === 'passed' ? 'text-emerald-700' : 'text-rose-700'}>
+                        <strong className={a.result === 'passed' ? 'text-blue-700' : 'text-rose-700'}>
                           {a.result === 'passed' ? 'Admis' : a.result === 'failed' ? 'Ajourné' : 'Programmé'}
                         </strong>
                       </div>
@@ -479,7 +479,7 @@ function CandidateProfileContent() {
               </button>
               <button
                 onClick={() => setShowAddSessionForm(!showAddSessionForm)}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                className="px-4 py-2 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>Ajouter une Séance (1h)</span>
@@ -488,8 +488,8 @@ function CandidateProfileContent() {
           </div>
 
           {showAddSessionForm && (
-            <form onSubmit={handleAddSession} className="bg-emerald-50/60 p-5 rounded-2xl border border-emerald-200 space-y-4 text-xs">
-              <h4 className="font-bold text-emerald-950 text-sm">Programmer une Nouvelle Séance d&apos;Une Heure (1h)</h4>
+            <form onSubmit={handleAddSession} className="bg-blue-50/60 dark:bg-blue-950/40 p-5 rounded-2xl border border-blue-200 dark:border-blue-900/60 space-y-4 text-xs">
+              <h4 className="font-bold text-blue-950 dark:text-blue-100 text-sm">Programmer une Nouvelle Séance d&apos;Une Heure (1h)</h4>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1">Date de la séance:</label>
@@ -532,7 +532,7 @@ function CandidateProfileContent() {
                 <div className="flex items-end">
                   <button
                     type="submit"
-                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-sm cursor-pointer"
+                    className="w-full py-2 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-lg font-bold shadow-sm cursor-pointer"
                   >
                     Confirmer la séance
                   </button>
@@ -566,7 +566,7 @@ function CandidateProfileContent() {
                       <td className="p-3.5">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                           slot.type === 'code' ? 'bg-blue-100 text-blue-800' :
-                          slot.type === 'creneau' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                          slot.type === 'creneau' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
                         }`}>
                           {slot.type}
                         </span>
@@ -574,7 +574,7 @@ function CandidateProfileContent() {
                       <td className="p-3.5 text-slate-600">{slot.instructor_name}</td>
                       <td className="p-3.5 text-slate-500">{slot.notes || '—'}</td>
                       <td className="p-3.5 text-right">
-                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold text-[10px]">
+                        <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-brand-primary dark:text-brand-soft font-bold text-[10px]">
                           Programmée
                         </span>
                       </td>
@@ -622,7 +622,7 @@ function CandidateProfileContent() {
 
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
               <div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold">Format A4</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-brand-primary dark:text-brand-soft font-bold">Format A4</span>
                 <h4 className="font-bold text-sm text-slate-900 mt-2">2. Certificat Médical Officiel</h4>
                 <p className="text-xs text-slate-500 mt-1">
                   Arrêté ministériel du 15 novembre 1984. Pré-rempli avec l&apos;identité et la catégorie sollicitée pour le médecin.
@@ -673,28 +673,28 @@ function CandidateProfileContent() {
 
       {/* TAB 5: FINANCIALS (OWNER ONLY) */}
       {activeTab === 'finance' && isOwner && (
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 flex-wrap gap-3">
+        <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-6">
+          <div className="flex items-center justify-between border-b border-card-border pb-3 flex-wrap gap-3">
             <div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Règlement & Situation Financière du Contrat</h3>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Règlement & Situation Financière du Contrat</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">Suivi des acomptes, versements et frais d&apos;examen.</p>
             </div>
             <button
               onClick={() => setIsPaymentModalOpen(true)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-4 py-2 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Plus className="w-4 h-4" /> Encaisser un Versement
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-card-border">
               <span className="text-xs text-slate-500 dark:text-slate-400 font-sans block">Montant Forfaitaire Convenu:</span>
-              <strong className="text-lg text-slate-900 dark:text-white">{(candidate.total_package_price || 0).toLocaleString()} DZD</strong>
+              <strong className="text-lg text-slate-900 dark:text-slate-200">{(candidate.total_package_price || 0).toLocaleString()} DZD</strong>
             </div>
-            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-800/40">
-              <span className="text-xs text-emerald-700 dark:text-emerald-400 font-sans block">Total Versé Encaissé:</span>
-              <strong className="text-lg text-emerald-800 dark:text-emerald-300">{(candidate.amount_paid || 0).toLocaleString()} DZD</strong>
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-900/50">
+              <span className="text-xs text-brand-primary dark:text-brand-soft font-sans block">Total Versé Encaissé:</span>
+              <strong className="text-lg text-blue-800 dark:text-blue-200">{(candidate.amount_paid || 0).toLocaleString()} DZD</strong>
             </div>
             <div className="p-4 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-100 dark:border-amber-800/40">
               <span className="text-xs text-amber-700 dark:text-amber-400 font-sans block">Solde Restant à Régler:</span>
@@ -705,12 +705,12 @@ function CandidateProfileContent() {
           </div>
 
           {/* Payments list table */}
-          <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden text-xs">
-            <div className="bg-slate-50 dark:bg-slate-850 p-3 font-bold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
+          <div className="border border-card-border rounded-xl overflow-hidden text-xs">
+            <div className="bg-slate-50 dark:bg-card-bg p-3 font-bold text-slate-700 dark:text-slate-300 border-b border-card-border">
               Historique des Versements Reçus
             </div>
             <table className="w-full text-left">
-              <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-slate-500">
+              <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-card-border text-slate-500">
                 <tr>
                   <th className="p-3">Date</th>
                   <th className="p-3">N° Reçu</th>
@@ -721,7 +721,7 @@ function CandidateProfileContent() {
                   <th className="p-3 text-right">Annuler</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-card-border">
                 {(candidate.payments || []).length > 0 ? (
                   candidate.payments.map(p => (
                     <tr key={p.id}>
@@ -730,7 +730,7 @@ function CandidateProfileContent() {
                       <td className="p-3 capitalize">{p.type}</td>
                       <td className="p-3 capitalize">{p.method}</td>
                       <td className="p-3 text-slate-500">{p.notes || '-'}</td>
-                      <td className="p-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      <td className="p-3 text-right font-mono font-bold text-brand-primary">
                         +{p.amount.toLocaleString()} DZD
                       </td>
                       <td className="p-3 text-right">

@@ -45,9 +45,9 @@ export default function SchedulePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between flex-wrap gap-4 transition-colors">
+      <div className="bg-card-bg p-5 rounded-2xl border border-card-border shadow-xs flex items-center justify-between flex-wrap gap-4 transition-colors">
         <div>
-          <h2 className="text-lg font-black text-slate-900 dark:text-white">Planning Général des Séances (Unités de 01 Heure)</h2>
+          <h2 className="text-lg font-black text-slate-900 dark:text-slate-200">Planning Général des Séances (Unités de 01 Heure)</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Jours d&apos;ouverture configurés: <strong className="text-slate-800 dark:text-slate-200">Du Samedi au Jeudi</strong> ({settings.start_hour} à {settings.end_hour}) • Unité fixe d&apos;une heure.
           </p>
@@ -55,7 +55,7 @@ export default function SchedulePage() {
 
         <Link
           href="/settings"
-          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-brand-primary dark:hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
         >
           <CalendarDays className="w-4 h-4" />
           <span>Ajuster les Jours & Horaires d&apos;Ouverture</span>
@@ -80,7 +80,7 @@ export default function SchedulePage() {
       )}
 
       {/* Filters Bar */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between flex-wrap gap-4 text-xs transition-colors">
+      <div className="bg-card-bg p-4 rounded-2xl border border-card-border shadow-xs flex items-center justify-between flex-wrap gap-4 text-xs transition-colors">
         {/* Discipline Filter */}
         <div className="flex items-center gap-2">
           <span className="font-semibold text-slate-500 dark:text-slate-400 mr-2">Discipline:</span>
@@ -90,7 +90,7 @@ export default function SchedulePage() {
               onClick={() => setFilterType(type)}
               className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer capitalize ${
                 filterType === type 
-                  ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-xs' 
+                  ? 'bg-slate-900 text-white dark:bg-brand-primary dark:text-white shadow-xs' 
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
@@ -105,7 +105,7 @@ export default function SchedulePage() {
           <select
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg font-mono text-xs bg-white dark:bg-slate-800 font-bold text-slate-900 dark:text-white"
+            className="px-3 py-1.5 border border-card-border rounded-lg font-mono text-xs bg-white dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-200"
           >
             <option value="all">Toutes les dates</option>
             {uniqueDates.map(d => (
@@ -116,9 +116,9 @@ export default function SchedulePage() {
       </div>
 
       {/* Slots Grid & Schedule Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
+      <div className="bg-card-bg rounded-2xl border border-card-border shadow-xs overflow-hidden transition-colors">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-50 dark:bg-slate-850 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+          <thead className="bg-slate-50 dark:bg-card-bg text-slate-600 dark:text-slate-400 font-semibold border-b border-card-border">
             <tr>
               <th className="p-4">Date</th>
               <th className="p-4">Créneau Horaire (Unité 1h)</th>
@@ -130,26 +130,26 @@ export default function SchedulePage() {
               <th className="p-4 text-right">Fiche Candidat</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-card-border">
             {filteredSlots.length > 0 ? (
               filteredSlots.map(slot => (
                 <tr key={slot.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
-                  <td className="p-4 font-mono font-bold text-slate-900 dark:text-white">{slot.date}</td>
+                  <td className="p-4 font-mono font-bold text-slate-900 dark:text-slate-200">{slot.date}</td>
                   <td className="p-4 font-mono font-bold text-slate-700 dark:text-slate-300">
-                    <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                    <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-card-border">
                       {slot.time_start} - {slot.time_end} (1h)
                     </span>
                   </td>
-                  <td className="p-4 font-bold text-slate-900 dark:text-white">{slot.student_name}</td>
+                  <td className="p-4 font-bold text-slate-900 dark:text-slate-200">{slot.student_name}</td>
                   <td className="p-4">
-                    <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-bold text-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-bold text-slate-800 dark:text-slate-300 border border-card-border">
                       Cat. {slot.category}
                     </span>
                   </td>
                   <td className="p-4">
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                       slot.type === 'code' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' :
-                      slot.type === 'creneau' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                      slot.type === 'creneau' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
                     }`}>
                       {slot.type}
                     </span>
@@ -159,7 +159,7 @@ export default function SchedulePage() {
                   <td className="p-4 text-right">
                     <Link
                       href={`/candidates/${slot.student_id}`}
-                      className="text-emerald-600 hover:text-emerald-500 font-bold inline-flex items-center gap-1"
+                      className="text-brand-primary hover:text-brand-primary-hover font-bold inline-flex items-center gap-1"
                     >
                       Profil <ChevronRight className="w-3.5 h-3.5" />
                     </Link>

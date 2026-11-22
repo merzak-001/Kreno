@@ -76,23 +76,23 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
   return (
     <>
       <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-slate-900 dark:text-slate-100 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
+        <div className="bg-card-bg rounded-3xl w-full max-w-3xl shadow-2xl border border-card-border overflow-hidden text-slate-900 dark:text-slate-100 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
           
           {/* Header Banner */}
-          <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/80 dark:bg-slate-850/80">
+          <div className="px-6 py-5 border-b border-border-subtle flex items-start justify-between bg-surface">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-emerald-600/20 shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center font-black text-xl shadow-xs shrink-0">
                 {student.first_name[0]}{student.last_name[0]}
               </div>
               <div>
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-200">
                     {student.first_name} {student.last_name}
                   </h2>
-                  <span className={`px-2.5 py-0.5 rounded-lg font-black text-xs border ${getCategoryBadgeClass(student.requested_category)}`}>
+                  <span className={`px-2.5 py-0.5 rounded-lg font-semibold text-xs border ${getCategoryBadgeClass(student.requested_category)}`}>
                     Permis Cat. {student.requested_category}
                   </span>
-                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-border-subtle">
                     {student.dossier_number}
                   </span>
                 </div>
@@ -106,20 +106,20 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
 
             <button 
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Navigation Sub-Tabs */}
-          <div className="flex border-b border-slate-200 dark:border-slate-800 px-6 bg-white dark:bg-slate-900 text-xs font-bold gap-6">
+          <div className="flex border-b border-border-subtle px-6 bg-surface text-xs font-semibold gap-6">
             <button
               onClick={() => setActiveTab('overview')}
               className={`py-3.5 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'overview'
-                  ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               <User className="w-4 h-4" /> Vue d&apos;ensemble & Infos
@@ -128,8 +128,8 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
               onClick={() => setActiveTab('finances')}
               className={`py-3.5 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'finances'
-                  ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               <DollarSign className="w-4 h-4" /> Situation Financière ({currentPaid.toLocaleString()} / {totalPrice.toLocaleString()} DZD)
@@ -138,8 +138,8 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
               onClick={() => setActiveTab('exams')}
               className={`py-3.5 border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'exams'
-                  ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               <Award className="w-4 h-4" /> Cycle des 3 Examens ({circPassed ? '3/3 Décroché' : creneauPassed ? '2/3 Admis' : codePassed ? '1/3 Admis' : '0/3 En cours'})
@@ -155,29 +155,29 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                 {/* 3 Key Metric Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Financial Status Card */}
-                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-card-border/60 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Finances</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${remaining === 0 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${remaining === 0 ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
                         {remaining === 0 ? 'Forfait Soldé' : 'Solde Débiteur'}
                       </span>
                     </div>
                     <div className="flex items-baseline justify-between">
-                      <strong className="text-base font-black font-mono text-slate-900 dark:text-white">
+                      <strong className="text-base font-black font-mono text-slate-900 dark:text-slate-200">
                         {currentPaid.toLocaleString()} DZD
                       </strong>
                       <span className="text-[11px] text-slate-400 font-mono">/ {totalPrice.toLocaleString()} DZD</span>
                     </div>
                     <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
                       <div 
-                        className={`h-full rounded-full transition-all duration-300 ${percentPaid === 100 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                        className={`h-full rounded-full transition-all duration-300 ${percentPaid === 100 ? 'bg-blue-600' : 'bg-amber-500'}`}
                         style={{ width: `${percentPaid}%` }}
                       />
                     </div>
                   </div>
 
                   {/* Exam Status Card */}
-                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-card-border/60 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Cycle Examens</span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
@@ -185,20 +185,20 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 pt-1">
-                      <span className={`text-xs px-2 py-0.5 rounded-md font-bold ${codePassed ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-md font-bold ${codePassed ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>
                         1. Code: {codePassed ? 'OK' : 'Attente'}
                       </span>
-                      <span className={`text-xs px-2 py-0.5 rounded-md font-bold ${creneauPassed ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-md font-bold ${creneauPassed ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>
                         2. Kreno: {creneauPassed ? 'OK' : 'Attente'}
                       </span>
-                      <span className={`text-xs px-2 py-0.5 rounded-md font-bold ${circPassed ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-md font-bold ${circPassed ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>
                         3. Circuit: {circPassed ? 'OK' : 'Attente'}
                       </span>
                     </div>
                   </div>
 
                   {/* Training Hours Card */}
-                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-card-border/60 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">Séances (Unité 1h)</span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
@@ -212,9 +212,9 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                 </div>
 
                 {/* Identity & Contact Details */}
-                <div className="bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                    <User className="w-4 h-4 text-emerald-600" />
+                <div className="bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-card-border space-y-3">
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                    <User className="w-4 h-4 text-blue-600" />
                     Informations Civiles & Coordonnées
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
@@ -232,7 +232,7 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                     </div>
                     <div>
                       <span className="text-slate-400 block">Téléphone Portable:</span>
-                      <strong className="font-mono text-slate-900 dark:text-white font-bold">
+                      <strong className="font-mono text-slate-900 dark:text-slate-200 font-bold">
                         {student.phone_number}
                       </strong>
                     </div>
@@ -263,16 +263,16 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
             {activeTab === 'finances' && (
               <div className="space-y-6">
                 {/* Financial Summary Banner */}
-                <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between flex-wrap gap-4">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-card-border/60 flex items-center justify-between flex-wrap gap-4">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Situation des Règlements & Échéances</h3>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Situation des Règlements & Échéances</h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       Gestion des acomptes, versements échelonnés et droits d&apos;examen officiels.
                     </p>
                   </div>
                   <button
                     onClick={() => setIsPaymentOpen(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 cursor-pointer"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-950/30 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     Encaisser un Versement
@@ -283,26 +283,26 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs font-bold">
                     <span className="text-slate-600 dark:text-slate-400">Progression du paiement ({percentPaid}%)</span>
-                    <span className="text-slate-900 dark:text-white font-mono">
+                    <span className="text-slate-900 dark:text-slate-200 font-mono">
                       Payé : {currentPaid.toLocaleString()} DZD • Reste : <span className="text-rose-600 dark:text-rose-400">{remaining.toLocaleString()} DZD</span>
                     </span>
                   </div>
                   <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
                     <div 
-                      className={`h-full rounded-full transition-all duration-300 ${percentPaid === 100 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                      className={`h-full rounded-full transition-all duration-300 ${percentPaid === 100 ? 'bg-blue-600' : 'bg-amber-500'}`}
                       style={{ width: `${percentPaid}%` }}
                     />
                   </div>
                 </div>
 
                 {/* Payments Table */}
-                <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-                  <div className="bg-slate-100 dark:bg-slate-800 px-4 py-3 font-bold text-xs text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <div className="border border-card-border rounded-2xl overflow-hidden">
+                  <div className="bg-slate-100 dark:bg-slate-800 px-4 py-3 font-bold text-xs text-slate-700 dark:text-slate-300 border-b border-card-border flex justify-between items-center">
                     <span>Historique de Tous les Versements</span>
                     <span className="font-mono text-[11px] text-slate-500">{(student.payments || []).length} opérations</span>
                   </div>
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-slate-850 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                    <thead className="bg-slate-50 dark:bg-card-bg text-slate-500 dark:text-slate-400 border-b border-card-border">
                       <tr>
                         <th className="p-3">Date</th>
                         <th className="p-3">N° Reçu</th>
@@ -312,7 +312,7 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                         <th className="p-3 text-right">Montant Encaissé</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tbody className="divide-y divide-card-border">
                       {(student.payments || []).length > 0 ? (
                         student.payments.map((p) => (
                           <tr key={p.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
@@ -324,14 +324,14 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                                   ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
                                   : p.type === 'exam_fee'
                                     ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
-                                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                    : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
                               }`}>
                                 {p.type === 'initial_deposit' ? 'Acompte initial' : p.type === 'exam_fee' ? 'Frais d\'examen' : 'Tranche formation'}
                               </span>
                             </td>
                             <td className="p-3 capitalize text-slate-600 dark:text-slate-400">{p.method}</td>
                             <td className="p-3 text-slate-600 dark:text-slate-300">{p.notes || '-'}</td>
-                            <td className="p-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                            <td className="p-3 text-right font-mono font-bold text-blue-600 dark:text-blue-300">
                               +{p.amount.toLocaleString()} DZD
                             </td>
                           </tr>
@@ -352,9 +352,9 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
             {/* TAB 3: EXAMS */}
             {activeTab === 'exams' && (
               <div className="space-y-6">
-                <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between flex-wrap gap-4">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-card-border/60 flex items-center justify-between flex-wrap gap-4">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Cycle des 3 Épreuves Légales & Frais d&apos;Examen</h3>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">Cycle des 3 Épreuves Légales & Frais d&apos;Examen</h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       Chaque passage d&apos;examen nécessite l&apos;encaissement des droits d&apos;examen (2 000 DZD).
                     </p>
@@ -364,7 +364,7 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                       setExamInitialType(codePassed ? (creneauPassed ? 'circulation' : 'creneau') : 'code');
                       setIsExamOpen(true);
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-600/20 cursor-pointer"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-brand-primary text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-600/20 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     Programmer ou Noter un Examen
@@ -406,17 +406,17 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                         key={step.type}
                         className={`p-5 rounded-2xl border transition ${
                           !step.isUnlocked
-                            ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-200 dark:border-slate-800 opacity-60'
+                            ? 'bg-slate-50/50 dark:bg-slate-800/20 border-card-border opacity-60'
                             : step.isPassed
-                              ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800/60'
-                              : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+                              ? 'bg-blue-50/40 dark:bg-blue-950/40 border-blue-300 dark:border-blue-900/60'
+                              : 'bg-white dark:bg-slate-800/80 border-card-border'
                         }`}
                       >
                         <div className="flex items-start justify-between flex-wrap gap-4">
                           <div className="flex items-center gap-3">
                             <span className={`w-8 h-8 rounded-xl font-black text-sm flex items-center justify-center ${
                               step.isPassed
-                                ? 'bg-emerald-600 text-white'
+                                ? 'bg-brand-primary text-white'
                                 : step.isUnlocked
                                   ? 'bg-blue-600 text-white'
                                   : 'bg-slate-300 dark:bg-slate-700 text-slate-500'
@@ -424,7 +424,7 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                               {idx + 1}
                             </span>
                             <div>
-                              <h4 className="font-bold text-sm text-slate-900 dark:text-white">{step.title}</h4>
+                              <h4 className="font-bold text-sm text-slate-900 dark:text-slate-200">{step.title}</h4>
                               <p className="text-xs text-slate-500 dark:text-slate-400">
                                 {attempts.length > 0 ? `${attempts.length} tentative(s) enregistrée(s)` : 'En attente de programmation'}
                               </p>
@@ -435,7 +435,7 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                           <div className="flex items-center gap-2 flex-wrap">
                             {/* Pass / Fail / Pending */}
                             {step.isPassed ? (
-                              <span className="px-3 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1">
+                              <span className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 rounded-lg text-xs font-bold flex items-center gap-1">
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Admis Officiellement
                               </span>
                             ) : latest?.result === 'failed' ? (
@@ -456,7 +456,7 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                             {step.isUnlocked && (
                               <div className="flex items-center gap-1.5">
                                 {isPaid ? (
-                                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 rounded-lg text-[11px] font-bold">
+                                  <span className="px-2.5 py-1 bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-300 dark:border-blue-900 rounded-lg text-[11px] font-bold">
                                     Frais ({feeAmt} DZD) Payés
                                   </span>
                                 ) : (
@@ -466,7 +466,7 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                                     </span>
                                     <button
                                       onClick={() => handlePayExamFee(step.type, feeAmt)}
-                                      className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold cursor-pointer"
+                                      className="px-2 py-1 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-lg text-[11px] font-bold cursor-pointer"
                                       title="Encaisser les frais d'examen maintenant"
                                     >
                                       Régler
@@ -522,19 +522,19 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
           </div>
 
           {/* Footer Actions */}
-          <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex items-center justify-between flex-wrap gap-3">
+          <div className="px-6 py-4 border-t border-border-subtle bg-surface flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsPrintOpen(true)}
-                className="flex items-center gap-2 px-3.5 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-border-subtle rounded-xl text-xs font-medium transition cursor-pointer"
               >
-                <Printer className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                <Printer className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 Imprimer Documents (A3/A4/A5)
               </button>
 
               <button
                 onClick={() => setIsPaymentOpen(true)}
-                className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                className="flex items-center gap-2 px-3.5 py-2 bg-primary hover:bg-primary-hover active:scale-95 text-white rounded-xl text-xs font-semibold transition shadow-xs cursor-pointer"
               >
                 <DollarSign className="w-4 h-4" />
                 Nouveau Versement
@@ -545,9 +545,9 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                   setExamInitialType('code');
                   setIsExamOpen(true);
                 }}
-                className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                className="flex items-center gap-2 px-3.5 py-2 border border-border-subtle bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-medium transition cursor-pointer"
               >
-                <Award className="w-4 h-4" />
+                <Award className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 Programmer Examen
               </button>
             </div>
@@ -555,7 +555,7 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
             <Link
               href={`/candidates/${student.id}`}
               onClick={onClose}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary-hover text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-xs"
             >
               <span>Ouvrir Fiche Complète & Planning</span>
               <ChevronRight className="w-4 h-4" />

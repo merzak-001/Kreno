@@ -143,18 +143,18 @@ export function ExamSessionPrintModal({
       }} />
 
       <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-7xl max-h-[96vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-slate-900 dark:text-slate-100">
+        <div className="bg-card-bg rounded-2xl w-full max-w-7xl max-h-[96vh] flex flex-col shadow-2xl border border-card-border overflow-hidden text-slate-900 dark:text-slate-100">
           
           {/* Topbar Actions */}
-          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-850 shrink-0">
+          <div className="px-6 py-4 border-b border-card-border flex items-center justify-between bg-slate-50 dark:bg-card-bg shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/70 text-brand-primary dark:text-brand-soft flex items-center justify-center font-bold">
                 <Printer className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-600 text-white">النموذج رقم 03</span>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-brand-primary text-white">النموذج رقم 03</span>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-200">
                     Bordereau Officiel A4 — Liste des Candidats à l&apos;Examen du Permis
                   </h2>
                 </div>
@@ -174,7 +174,7 @@ export function ExamSessionPrintModal({
                   onClick={() => setOrientation('landscape')}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                     isLandscape 
-                      ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs font-black' 
+                      ? 'bg-card-bg text-brand-primary dark:text-brand-soft shadow-xs font-black' 
                       : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
                   }`}
                   title="Format officiel recommandé : A4 Paysage / Horizontal (297 x 210 mm)"
@@ -188,7 +188,7 @@ export function ExamSessionPrintModal({
                   onClick={() => setOrientation('portrait')}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                     !isLandscape 
-                      ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs font-black' 
+                      ? 'bg-card-bg text-brand-primary dark:text-brand-soft shadow-xs font-black' 
                       : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
                   }`}
                   title="Format A4 Portrait standard (210 x 297 mm)"
@@ -201,7 +201,7 @@ export function ExamSessionPrintModal({
               {/* Print Button */}
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition cursor-pointer"
+                className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary hover:bg-brand-primary-hover active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-950/30 transition cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <span>Imprimer sur Papier A4</span>

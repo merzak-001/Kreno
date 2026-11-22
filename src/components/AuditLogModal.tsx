@@ -40,7 +40,7 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
       case 'add_payment':
       case 'create':
       case 'create_session':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Création / Ajout</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200 dark:border-blue-900">Création / Ajout</span>;
       case 'update':
       case 'record_result':
       case 'toggle_fee':
@@ -52,16 +52,16 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden text-slate-900 dark:text-slate-100">
+      <div className="bg-card-bg rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-card-border overflow-hidden text-slate-900 dark:text-slate-100">
         
         {/* Topbar */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-850 shrink-0">
+        <div className="px-6 py-4 border-b border-card-border flex items-center justify-between bg-slate-50 dark:bg-card-bg shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold">
               <History className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-200">
                 Journal d&apos;Audit & Historique des Modifications
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -79,7 +79,7 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
         </div>
 
         {/* Filters */}
-        <div className="p-4 bg-slate-100/60 dark:bg-slate-850/60 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="p-4 bg-slate-100/60 dark:bg-card-bg/60 border-b border-card-border flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -87,7 +87,7 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher par candidat, montant, détail..."
-              className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-800 dark:text-slate-100"
+              className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-card-border rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-800 dark:text-slate-100"
             />
           </div>
 
@@ -95,7 +95,7 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value as any)}
-              className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300"
+              className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-card-border rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300"
             >
               <option value="all">Tous les rôles</option>
               <option value="owner">Propriétaire (Gérant)</option>
@@ -105,7 +105,7 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
             <select
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
-              className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300"
+              className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-card-border rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300"
             >
               <option value="all">Toutes les actions</option>
               <option value="cancel_payment">Annulation paiement</option>
@@ -128,7 +128,7 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
               <p className="text-xs font-medium">Aucun événement ne correspond à vos filtres.</p>
             </div>
           ) : (
-            <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
+            <div className="border border-card-border rounded-xl overflow-hidden divide-y divide-card-border bg-card-bg">
               {filteredLogs.map(log => (
                 <div key={log.id} className="p-3.5 hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition flex items-start justify-between gap-4 text-xs">
                   
@@ -170,7 +170,7 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between shrink-0">
+        <div className="p-4 border-t border-card-border bg-slate-50 dark:bg-card-bg text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between shrink-0">
           <span>Total : {filteredLogs.length} action(s) consignée(s)</span>
           <button
             onClick={onClose}

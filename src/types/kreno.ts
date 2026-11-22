@@ -158,28 +158,28 @@ export interface AuditLogEntry {
   details: string;
 }
 
-// Distinct, eye-friendly color badge mappings for license categories in light and dark mode
+// Distinct, friendly modern color badge mappings matching our accessible UI tokens
 export function getCategoryBadgeClass(category: LicenseCategory | string): string {
   switch (category) {
     case 'A1':
     case 'A':
-      return 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800';
+      return 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/50 font-semibold';
     case 'B':
-      return 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800';
+      return 'bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/50 font-semibold';
     case 'BE':
-      return 'bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/50 dark:text-teal-300 dark:border-teal-800';
+      return 'bg-sky-50 text-sky-800 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/50 font-semibold';
     case 'C1':
     case 'C1E':
     case 'C':
     case 'CE':
-      return 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800';
+      return 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50 font-semibold';
     case 'D':
     case 'DE':
-      return 'bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800';
+      return 'bg-orange-50 text-orange-800 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800/50 font-semibold';
     case 'F':
-      return 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800';
+      return 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/50 font-semibold';
     default:
-      return 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+      return 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-surface dark:text-slate-300 dark:border-border-subtle font-semibold';
   }
 }
 
@@ -189,9 +189,9 @@ export function getCategoryDotClass(category: LicenseCategory | string): string 
     case 'A':
       return 'bg-indigo-500';
     case 'B':
-      return 'bg-emerald-500';
-    case 'BE':
       return 'bg-teal-500';
+    case 'BE':
+      return 'bg-sky-500';
     case 'C1':
     case 'C1E':
     case 'C':
@@ -199,7 +199,7 @@ export function getCategoryDotClass(category: LicenseCategory | string): string 
       return 'bg-amber-500';
     case 'D':
     case 'DE':
-      return 'bg-purple-500';
+      return 'bg-orange-500';
     case 'F':
       return 'bg-rose-500';
     default:

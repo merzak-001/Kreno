@@ -3,27 +3,151 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* Surfaces & Structure */
+  --bg-canvas: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f1f5f9;
+  --border-subtle: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --sidebar-bg: #0f172a;
+  --sidebar-border: #1e293b;
+
+  /* Typography Hierarchy */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  /* Primary Interactive Anchor (International Slate-Cobalt) */
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
+  --primary-subtle: #eff6ff;
+  --primary-subtle-border: #bfdbfe;
+  --primary-contrast: #ffffff;
+
+  /* Functional Semantics (Strictly Reserved) */
+  --success: #059669;
+  --success-subtle: #ecfdf5;
+  --warning: #d97706;
+  --warning-subtle: #fffbeb;
+  --danger: #dc2626;
+  --danger-subtle: #fef2f2;
+  --info: #0284c7;
+  --info-subtle: #f0f9ff;
+
+  /* Global Body */
+  --background: var(--bg-canvas);
+  --foreground: var(--text-primary);
+  color-scheme: light;
 }
 
+/* EYE-FRIENDLY, LOW-CONTRAST DARK MODE (Restrained & Calm) */
 .dark {
-  --background: #090d16;
-  --foreground: #f8fafc;
+  /* Surfaces & Structure */
+  --bg-canvas: #0b0f17;
+  --bg-surface: #131b26;
+  --bg-surface-hover: #192332;
+  --border-subtle: #1e293b;
+  --border-strong: #334155;
+  --sidebar-bg: #080c14;
+  --sidebar-border: #16202e;
+
+  /* Typography Hierarchy (Soft Silver-Slate, Zero Halation) */
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Primary Interactive (Calibrated Luminance for Dark Mode) */
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-subtle: rgba(59, 130, 246, 0.14);
+  --primary-subtle-border: rgba(59, 130, 246, 0.28);
+  --primary-contrast: #ffffff;
+
+  /* Functional Semantics (Desaturated for Low Fatigue) */
+  --success: #34d399;
+  --success-subtle: rgba(52, 211, 153, 0.12);
+  --warning: #fbbf24;
+  --warning-subtle: rgba(251, 191, 36, 0.12);
+  --danger: #f87171;
+  --danger-subtle: rgba(248, 113, 113, 0.12);
+  --info: #38bdf8;
+  --info-subtle: rgba(56, 189, 248, 0.12);
+
+  /* Global Body */
+  --background: var(--bg-canvas);
+  --foreground: var(--text-primary);
+  color-scheme: dark;
+}
+
+@theme {
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-surface-hover: var(--bg-surface-hover);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-subtle-border: var(--primary-subtle-border);
+  
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
+
+  /* Semantic Aliases for compatibility */
+  --color-card-bg: var(--bg-surface);
+  --color-card-border: var(--border-subtle);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-brand-primary: var(--primary);
+  --color-brand-primary-hover: var(--primary-hover);
+  --color-brand-accent: var(--primary);
+  --color-brand-accent-hover: var(--primary-hover);
+  --color-brand-soft: var(--primary-subtle);
+}
+
+::selection {
+  background-color: var(--primary);
+  color: #ffffff;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ========================================================= */
-/* STRICT A4 PRINT STYLESHEET                                 */
-/* ========================================================= */
+/* Restrained, Minimal Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 9999px;
+  opacity: 0.5;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Strict A4 Print Stylesheet */
 @media print {
-  /* Hide all app chrome, sidebars, headers, backdrops when printing */
   body {
     background: white !important;
     color: black !important;
@@ -64,4 +188,3 @@ body {
     break-after: avoid !important;
   }
 }
-

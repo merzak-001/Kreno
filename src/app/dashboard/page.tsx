@@ -81,12 +81,12 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Welcome banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 rounded-3xl p-7 text-white shadow-xl relative overflow-hidden flex items-center justify-between border border-slate-800">
+      <div className="bg-slate-900 dark:bg-slate-900/90 rounded-2xl p-6 md:p-7 text-white shadow-xs relative overflow-hidden flex items-center justify-between border border-border-subtle">
         <div>
-          <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 inline-block mb-3">
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/20 text-blue-300 border border-primary/30 inline-block mb-3">
             Plateforme Intégrée Auto-École • KRENO
           </span>
-          <h2 className="text-2xl font-black mb-1">
+          <h2 className="text-xl md:text-2xl font-bold mb-1 tracking-tight">
             Tableau de Bord Général
           </h2>
           <p className="text-xs text-slate-300">
@@ -97,7 +97,7 @@ export default function DashboardPage() {
         <div className="hidden lg:flex items-center gap-3">
           <Link
             href="/candidates"
-            className="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/40 transition cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover active:scale-95 text-white font-semibold text-xs shadow-xs transition cursor-pointer"
           >
             Consulter le Registre des Candidats
           </Link>
@@ -107,57 +107,57 @@ export default function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 1. Total Candidates */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3 transition-colors">
+        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs space-y-3 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Total Dossiers</span>
-            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 flex items-center justify-center font-bold">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Dossiers</span>
+            <div className="w-9 h-9 rounded-xl bg-primary-subtle text-primary border border-primary-subtle-border flex items-center justify-center font-bold">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">{stats.total}</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-200 font-mono">{stats.total}</span>
             <span className="text-xs text-slate-400 block mt-0.5">Candidats actifs</span>
           </div>
         </div>
 
         {/* 2. Étape 1: Code */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3 transition-colors">
+        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs space-y-3 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">1. Épreuve Code</span>
-            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 flex items-center justify-center font-bold">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">1. Épreuve Code</span>
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center font-bold">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <span className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">{stats.codeReady}</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-200 font-mono">{stats.codeReady}</span>
             <span className="text-xs text-slate-400 block mt-0.5">En cours d&apos;apprentissage</span>
           </div>
         </div>
 
         {/* 3. Étape 2: Créneau */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3 transition-colors">
+        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs space-y-3 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">2. Épreuve Créneau</span>
-            <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">2. Épreuve Créneau</span>
+            <div className="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 flex items-center justify-center font-bold">
               <Car className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <span className="text-2xl font-black text-purple-600 dark:text-purple-400 font-mono">{stats.creneauReady}</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-200 font-mono">{stats.creneauReady}</span>
             <span className="text-xs text-slate-400 block mt-0.5">Code validé, manoeuvres</span>
           </div>
         </div>
 
         {/* 4. Étape 3: Conduite & Diplômés */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3 transition-colors">
+        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs space-y-3 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">3. Conduite & Succès</span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 flex items-center justify-center font-bold">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">3. Conduite & Succès</span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold">
               <Award className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{stats.graduated}</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-slate-200 font-mono">{stats.graduated}</span>
             <span className="text-xs text-slate-400 block mt-0.5">{stats.circulationReady} en circuit routier</span>
           </div>
         </div>
@@ -167,13 +167,13 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Left: Upcoming 1-Hour Schedule Sessions */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-4 transition-colors">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+        <div className="lg:col-span-2 bg-surface rounded-2xl border border-border-subtle p-6 shadow-xs space-y-4 transition-colors">
+          <div className="flex items-center justify-between border-b border-border-subtle pb-4">
             <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-emerald-600" />
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Prochaines Séances de Formation (Unité 1h)</h3>
+              <Calendar className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-200">Prochaines Séances de Formation (Unité 1h)</h3>
             </div>
-            <Link href="/schedule" className="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1">
+            <Link href="/schedule" className="text-xs text-primary hover:text-primary-hover font-semibold flex items-center gap-1">
               <span>Voir le planning complet</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
@@ -184,21 +184,21 @@ export default function DashboardPage() {
               upcomingSlots.map(slot => (
                 <div 
                   key={slot.id} 
-                  className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                  className="p-4 rounded-xl border border-border-subtle bg-slate-50/70 dark:bg-slate-900/30 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/60 transition"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-mono font-bold text-xs">
+                    <div className="px-3 py-1.5 rounded-lg bg-primary text-white font-mono font-semibold text-xs">
                       {slot.time_start} - {slot.time_end}
                     </div>
                     <div>
-                      <h4 className="font-bold text-xs text-slate-900 dark:text-white">{slot.student_name}</h4>
+                      <h4 className="font-semibold text-xs text-slate-900 dark:text-slate-200">{slot.student_name}</h4>
                       <p className="text-[11px] text-slate-400 capitalize">
                         {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Conduite en circulation'} • Moniteur : {slot.instructor_name}
                       </p>
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-mono font-bold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-2.5 py-1 rounded-md text-slate-600 dark:text-slate-300">
+                  <span className="text-[10px] font-mono font-medium bg-surface border border-border-subtle px-2.5 py-1 rounded-md text-slate-600 dark:text-slate-300">
                     {slot.date}
                   </span>
                 </div>
@@ -210,12 +210,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Right: Financial Recap (Owner Only) */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs flex flex-col justify-between transition-colors">
+        <div className="bg-surface rounded-2xl border border-border-subtle p-6 shadow-xs flex flex-col justify-between transition-colors">
           <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div className="flex items-center justify-between border-b border-border-subtle pb-4">
               <div className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Situation Financière</h3>
+                <DollarSign className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-200">Situation Financière</h3>
               </div>
               {!isOwner && (
                 <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 px-3 py-1 rounded-full font-medium">
@@ -226,30 +226,30 @@ export default function DashboardPage() {
 
             {isOwner ? (
               <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+                <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-border-subtle">
                   <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Total des contrats signés:</span>
-                  <strong className="text-sm font-mono text-slate-900 dark:text-white">{stats.totalRevenue.toLocaleString()} DZD</strong>
+                  <strong className="text-sm font-mono text-slate-900 dark:text-slate-200">{stats.totalRevenue.toLocaleString()} DZD</strong>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl">
-                  <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Versements encaissés:</span>
-                  <strong className="text-sm font-mono text-emerald-800 dark:text-emerald-300">{stats.totalPaid.toLocaleString()} DZD</strong>
+                <div className="flex justify-between items-center p-3 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/50 dark:border-emerald-800/30">
+                  <span className="text-xs text-emerald-800 dark:text-emerald-300 font-medium">Versements encaissés:</span>
+                  <strong className="text-sm font-mono text-emerald-700 dark:text-emerald-300 font-bold">{stats.totalPaid.toLocaleString()} DZD</strong>
                 </div>
-                <div className="flex justify-between items-center p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl">
-                  <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">Créances en attente:</span>
-                  <strong className="text-sm font-mono text-amber-800 dark:text-amber-300">{stats.outstanding.toLocaleString()} DZD</strong>
+                <div className="flex justify-between items-center p-3 bg-amber-50/60 dark:bg-amber-950/20 rounded-xl border border-amber-200/50 dark:border-amber-800/30">
+                  <span className="text-xs text-amber-800 dark:text-amber-300 font-medium">Créances en attente:</span>
+                  <strong className="text-sm font-mono text-amber-700 dark:text-amber-300 font-bold">{stats.outstanding.toLocaleString()} DZD</strong>
                 </div>
               </div>
             ) : (
-              <div className="p-6 text-center bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-slate-400">
-                <p className="text-xs font-bold text-slate-600 dark:text-slate-300">Données financières masquées en mode Secrétaire</p>
+              <div className="p-6 text-center bg-slate-50 dark:bg-slate-900/30 rounded-xl border border-dashed border-border-subtle text-slate-400">
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Données financières masquées en mode Secrétaire</p>
                 <p className="text-[11px] mt-1 text-slate-400">Basculer en mode Gérant dans la barre latérale pour afficher.</p>
               </div>
             )}
           </div>
 
           {isOwner && (
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 mt-4 text-right">
-              <Link href="/finances" className="text-xs font-bold text-emerald-600 hover:text-emerald-500 flex items-center justify-end gap-1">
+            <div className="pt-4 border-t border-border-subtle mt-4 text-right">
+              <Link href="/finances" className="text-xs font-semibold text-primary hover:text-primary-hover flex items-center justify-end gap-1">
                 Consulter le registre financier <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
@@ -258,15 +258,15 @@ export default function DashboardPage() {
       </div>
 
       {/* Candidate List preview with clickable row */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-colors">
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+      <div className="bg-surface rounded-2xl border border-border-subtle shadow-xs overflow-hidden transition-colors">
+        <div className="p-5 border-b border-border-subtle flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Candidats Récents & Progression</h3>
+            <h3 className="font-semibold text-sm text-slate-900 dark:text-slate-200">Candidats Récents & Progression</h3>
             <p className="text-[11px] text-slate-400">Cliquez sur une ligne pour ouvrir la Fiche Synthèse du candidat.</p>
           </div>
           <Link 
             href="/candidates"
-            className="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1"
+            className="text-xs text-primary hover:text-primary-hover font-semibold flex items-center gap-1"
           >
             <span>Voir tous les candidats</span>
             <ChevronRight className="w-4 h-4" />
@@ -275,7 +275,7 @@ export default function DashboardPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-slate-850 text-slate-600 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-slate-50 dark:bg-slate-900/40 text-slate-600 dark:text-slate-400 font-semibold border-b border-border-subtle">
               <tr>
                 <th className="p-3.5">N° Dossier</th>
                 <th className="p-3.5">Candidat</th>
@@ -287,7 +287,7 @@ export default function DashboardPage() {
                 <th className="p-3.5 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-border-subtle">
               {students.slice(0, 5).map(st => {
                 const codePassed = st.exams.some(e => e.exam_type === 'code' && e.result === 'passed');
                 const creneauPassed = st.exams.some(e => e.exam_type === 'creneau' && e.result === 'passed');
@@ -297,36 +297,36 @@ export default function DashboardPage() {
                   <tr 
                     key={st.id} 
                     onClick={() => handleRowClick(st)}
-                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition cursor-pointer group"
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-900/40 transition cursor-pointer group"
                   >
-                    <td className="p-3.5 font-mono text-slate-500 font-bold group-hover:text-emerald-600">{st.dossier_number}</td>
+                    <td className="p-3.5 font-mono text-slate-500 font-semibold group-hover:text-primary">{st.dossier_number}</td>
                     <td className="p-3.5">
-                      <span className="font-bold text-slate-900 dark:text-white block group-hover:text-emerald-600">{st.first_name} {st.last_name}</span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-200 block group-hover:text-primary">{st.first_name} {st.last_name}</span>
                       <span className="text-[10px] text-slate-400">Né le {st.birth_date}</span>
                     </td>
                     <td className="p-3.5">
-                      <span className={`px-2.5 py-1 rounded-md font-bold text-xs border ${getCategoryBadgeClass(st.requested_category)}`}>
+                      <span className={`px-2.5 py-1 rounded-md text-xs border ${getCategoryBadgeClass(st.requested_category)}`}>
                         Cat. {st.requested_category}
                       </span>
                     </td>
                     <td className="p-3.5 font-mono text-slate-600 dark:text-slate-400">{st.phone_number}</td>
                     <td className="p-3.5 text-center">
                       {codePassed ? (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-[10px]">Validé</span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-medium text-[10px] border border-emerald-200/50 dark:border-emerald-800/30">Validé</span>
                       ) : (
                         <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px]">En cours</span>
                       )}
                     </td>
                     <td className="p-3.5 text-center">
                       {creneauPassed ? (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-[10px]">Validé</span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-medium text-[10px] border border-emerald-200/50 dark:border-emerald-800/30">Validé</span>
                       ) : (
                         <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px]">En cours</span>
                       )}
                     </td>
                     <td className="p-3.5 text-center">
                       {circPassed ? (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-[10px]">Validé</span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-medium text-[10px] border border-emerald-200/50 dark:border-emerald-800/30">Validé</span>
                       ) : (
                         <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px]">En cours</span>
                       )}
@@ -337,9 +337,9 @@ export default function DashboardPage() {
                           e.stopPropagation();
                           handleRowClick(st);
                         }}
-                        className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 rounded-lg text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition inline-flex items-center gap-1 cursor-pointer border border-border-subtle"
                       >
-                        <Eye className="w-3.5 h-3.5" /> Fiche Synthèse
+                        <Eye className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /> Fiche Synthèse
                       </button>
                     </td>
                   </tr>

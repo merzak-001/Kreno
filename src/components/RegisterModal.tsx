@@ -105,15 +105,15 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
     <div 
       className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
     >
-      <div className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800">
+      <div className="bg-surface text-slate-900 dark:text-slate-100 rounded-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto shadow-2xl border border-border-subtle">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-slate-900 z-10">
+        <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between sticky top-0 bg-surface z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-primary-subtle text-primary border border-primary-subtle-border flex items-center justify-center font-bold">
               <UserPlus className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-200">
                 Inscription Nouveau Candidat
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -133,23 +133,23 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Age Alert */}
           {ageWarning && (
-            <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-center gap-3 font-medium">
-              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 rounded-xl text-xs flex items-center gap-3 font-medium">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>{ageWarning}</span>
             </div>
           )}
 
           {/* Section 1: Identification */}
           <div>
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 pb-1 border-b border-slate-100 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-3 pb-1 border-b border-border-subtle flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-primary"></span>
               Identité et État Civil
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* NIN */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   NIN - N° Identité Nationale (18 chiffres) *
                 </label>
                 <input
@@ -158,7 +158,7 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
                   value={nin}
                   onChange={(e) => handleNinChange(e.target.value)}
                   placeholder="ex: 102198901234567890"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs font-mono text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   required
                 />
                 <span className="text-[10px] text-slate-400">1 = Homme, 2 = Femme (détection auto)</span>
@@ -166,37 +166,37 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
 
               {/* Nom */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nom de famille *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nom de famille *</label>
                 <input
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="ex: Boussaha"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 uppercase"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all uppercase"
                   required
                 />
               </div>
 
               {/* Prénom */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Prénom *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Prénom *</label>
                 <input
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="ex: Yassine"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   required
                 />
               </div>
 
               {/* Sexe */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Genre</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Genre</label>
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value as 'Homme' | 'Femme')}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 bg-white"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 >
                   <option value="Homme">Masculin (Homme)</option>
                   <option value="Femme">Féminin (Femme)</option>
@@ -205,12 +205,12 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
 
               {/* Date de naissance */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Date de Naissance *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Date de Naissance *</label>
                 <input
                   type="date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
                   required
                 />
                 <span className="text-[10px] text-slate-500">Âge calculé: {candidateAge} ans</span>
@@ -218,22 +218,22 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
 
               {/* Commune de naissance */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Commune de Naissance</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Commune de Naissance</label>
                 <input
                   type="text"
                   value={birthCommune}
                   onChange={(e) => setBirthCommune(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
               </div>
 
               {/* Groupe Sanguin */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Groupe Sanguin</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Groupe Sanguin</label>
                 <select
                   value={bloodType}
                   onChange={(e) => setBloodType(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold focus:ring-2 focus:ring-emerald-500 bg-white font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs font-bold text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
                 >
                   <option value="O+">O+</option>
                   <option value="A+">A+</option>
@@ -248,37 +248,37 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
 
               {/* Nom du Père */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nom du Père</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nom du Père</label>
                 <input
                   type="text"
                   value={fatherName}
                   onChange={(e) => setFatherName(e.target.value)}
                   placeholder="Nom du père"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
               </div>
 
               {/* Nom & Prénom Mère */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nom et Prénom de la Mère</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nom et Prénom de la Mère</label>
                 <input
                   type="text"
                   value={motherFullName}
                   onChange={(e) => setMotherFullName(e.target.value)}
                   placeholder="Nom complet de la mère"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
               </div>
 
               {/* Téléphone */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Numéro de Téléphone *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Numéro de Téléphone *</label>
                 <input
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="0661 00 00 00"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
                   required
                 />
               </div>
@@ -287,18 +287,18 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
 
           {/* Section 2: Catégorie & Tarification */}
           <div>
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 pb-1 border-b border-slate-100 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-3 pb-1 border-b border-border-subtle flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-primary"></span>
               Permis Sollicité et Modalités Financières
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Catégorie de Permis *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Catégorie de Permis *</label>
                 <select
                   value={requestedCategory}
                   onChange={(e) => setRequestedCategory(e.target.value as LicenseCategory)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold focus:ring-2 focus:ring-emerald-500 bg-white"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs font-semibold text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 >
                   <option value="B">Catégorie B - Véhicule Léger / Tourisme</option>
                   <option value="A">Catégorie A - Moto Lourde</option>
@@ -313,22 +313,22 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Montant Forfait Global (DZD)</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Montant Forfait Global (DZD)</label>
                 <input
                   type="number"
                   value={totalPackagePrice}
                   onChange={(e) => setTotalPackagePrice(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold focus:ring-2 focus:ring-emerald-500 font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs font-bold text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Premier Acompte Encaissé (DZD)</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Premier Acompte Encaissé (DZD)</label>
                 <input
                   type="number"
                   value={amountPaid}
                   onChange={(e) => setAmountPaid(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-emerald-300 bg-emerald-50/30 rounded-lg text-xs font-bold text-emerald-800 focus:ring-2 focus:ring-emerald-500 font-mono"
+                  className="w-full px-3 py-2 bg-primary-subtle border border-primary-subtle-border rounded-lg text-xs font-bold text-primary dark:text-blue-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
                 />
                 <span className="text-[10px] text-slate-500">
                   Reste à payer: {(totalPackagePrice - amountPaid).toLocaleString()} DZD
@@ -338,17 +338,17 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
           </div>
 
           {/* Footer Submit */}
-          <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-border-subtle flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 text-xs font-medium transition cursor-pointer"
+              className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition cursor-pointer"
             >
               Annuler
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover active:scale-95 text-white text-xs font-semibold shadow-xs transition flex items-center gap-2 cursor-pointer"
             >
               <CheckCircle className="w-4 h-4" />
               <span>Valider l&apos;Inscription & Générer le Planning</span>
