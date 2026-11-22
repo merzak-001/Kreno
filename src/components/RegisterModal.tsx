@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, CheckCircle, AlertTriangle, UserPlus } from 'lucide-react';
 import { Student, LicenseCategory } from '@/types/kreno';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
   const [requestedCategory, setRequestedCategory] = useState<LicenseCategory>('B');
   const [totalPackagePrice, setTotalPackagePrice] = useState(40000);
   const [amountPaid, setAmountPaid] = useState(15000);
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 

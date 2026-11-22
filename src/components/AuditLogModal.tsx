@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { History, X, Search, Filter, ShieldCheck, UserCheck, Calendar, Clock, ArrowRight } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
 import { AuditLogEntry } from '@/types/kreno';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface AuditLogModalProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState<'all' | 'owner' | 'secretary'>('all');
   const [filterAction, setFilterAction] = useState<string>('all');
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 

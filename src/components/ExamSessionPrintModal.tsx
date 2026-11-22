@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, Printer, FileText, Check, Layout } from 'lucide-react';
 import { Student, ExamRecord, School } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface ExamSessionPrintModalProps {
   isOpen: boolean;
@@ -25,6 +26,8 @@ export function ExamSessionPrintModal({
   const { school } = useKreno();
   // Vertical Portrait by default as requested: "the A4 should be vertical if theres alot of candidate it automatically jumps for the second page"
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Student, ExamType, getCategoryBadgeClass } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { PaymentModal } from '@/components/PaymentModal';
 import { ExamModal } from '@/components/ExamModal';
 import { PrintModal } from '@/components/PrintModal';
@@ -44,6 +45,8 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
   const [isPrintOpen, setIsPrintOpen] = useState(false);
   const [examInitialType, setExamInitialType] = useState<ExamType>('code');
   const [activeTab, setActiveTab] = useState<'overview' | 'finances' | 'exams'>('overview');
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen || !student) return null;
 

@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { X, Calendar, Plus, CheckCircle2, User, Award, DollarSign, Filter, Search, MapPin, UserCheck, Check, ChevronDown } from 'lucide-react';
 import { Student, ExamType, ExamSessionCandidateSelection, LicenseCategory } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface NewExamSessionModalProps {
   isOpen: boolean;
@@ -126,6 +127,8 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
     if (!q) return examCenters;
     return examCenters.filter(c => c.name.toLowerCase().includes(q) || (c.commune && c.commune.toLowerCase().includes(q)));
   }, [examCenters, centerSearch]);
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -563,10 +566,8 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                         const { readyFor, reason } = getCandidateEligibility(st);
                         const currentSelection = selectedMap[st.id];
                         
-                        // Remaining dues including unpaid exam fees
-                        const unpaidFeesSum = (st.exams || []).filter(e => !e.fee_paid).reduce((sum, e) => sum + (e.fee_amount || 2000), 0);
-                        const baseRemaining = Math.max(0, (st.total_package_price || 0) - (st.amount_paid || 0));
-                        const totalDue = baseRemaining + unpaidFeesSum;
+                        // Remaining dues owed by the candidate
+                        const remainingOwed = Math.max(0, (st.total_package_price || 0) - (st.amount_paid || 0));
 
                         return (
                           <tr 
@@ -618,19 +619,12 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                               )}
                             </td>
                             <td className="p-3 text-right font-mono whitespace-nowrap">
-                              {totalDue === 0 ? (
-                                <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">Soldé</span>
+                              {remainingOwed === 0 ? (
+                                <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">0 DZD (Soldé)</span>
                               ) : (
-                                <div>
-                                  <span className="text-amber-600 dark:text-amber-400 font-bold text-xs block">
-                                    Reste {totalDue.toLocaleString()} DZD
-                                  </span>
-                                  {unpaidFeesSum > 0 && (
-                                    <span className="text-[10px] text-rose-500 dark:text-rose-400 block font-normal">
-                                      dont {unpaidFeesSum.toLocaleString()} DZD examen
-                                    </span>
-                                  )}
-                                </div>
+                                <span className="text-amber-600 dark:text-amber-400 font-bold text-xs">
+                                  {remainingOwed.toLocaleString()} DZD dû
+                                </span>
                               )}
                             </td>
                           </tr>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, Printer, FileText, CheckCircle2 } from 'lucide-react';
 import { Student } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface PrintModalProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ interface PrintModalProps {
 export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
   const { school, lang } = useKreno();
   const [selectedDoc, setSelectedDoc] = useState<'dossier' | 'medical' | 'contract' | 'livret'>('dossier');
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen || !student) return null;
 

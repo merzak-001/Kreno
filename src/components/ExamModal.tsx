@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Award, CheckCircle, XCircle, AlertCircle, Calendar, MapPin, User, DollarSign } from 'lucide-react';
 import { Student, ExamType, ExamResult } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface ExamModalProps {
   isOpen: boolean;
@@ -36,6 +37,8 @@ export function ExamModal({
     if (initialType) setExamType(initialType);
     if (initialMode) setMode(initialMode);
   }, [initialType, initialMode, isOpen]);
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen || !student) return null;
 

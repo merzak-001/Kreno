@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, DollarSign, Calendar, CreditCard, Receipt, FileText, CheckCircle2 } from 'lucide-react';
 import { Student } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export function PaymentModal({ isOpen, onClose, student, onSuccess }: PaymentMod
   const [method, setMethod] = useState<'especes' | 'virement' | 'cheque'>('especes');
   const [receiptNumber, setReceiptNumber] = useState<string>(`REC-${Math.floor(100 + Math.random() * 900)}`);
   const [notes, setNotes] = useState<string>('');
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen || !student) return null;
 

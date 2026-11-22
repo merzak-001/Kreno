@@ -267,15 +267,15 @@ export default function PipelinePage() {
             return (
               <div 
                 key={session.date}
-                className="bg-slate-100/90 dark:bg-slate-850 rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-sm overflow-hidden transition-all duration-150 hover:border-slate-400 dark:hover:border-slate-600"
+                className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-all duration-150 hover:border-blue-400 dark:hover:border-blue-600"
               >
-                {/* Accordion Summary Row - Distinct darker row */}
+                {/* Accordion Summary Row */}
                 <div 
                   onClick={() => toggleAccordion(session.date)}
                   className={`p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer transition select-none ${
                     isExpanded 
-                      ? 'bg-blue-100/70 dark:bg-slate-800 border-b-2 border-blue-200 dark:border-slate-700' 
-                      : 'hover:bg-slate-200/60 dark:hover:bg-slate-800/80'
+                      ? 'bg-slate-50 dark:bg-slate-850/90 border-b border-slate-200 dark:border-slate-800' 
+                      : 'hover:bg-slate-50/70 dark:hover:bg-slate-850/50'
                   }`}
                 >
                   {/* Left: Date & Center */}
@@ -391,12 +391,12 @@ export default function PipelinePage() {
                   </div>
                 </div>
 
-                {/* Drop-down Expandable Panel - Distinct Amber/Slate tint for instant visual contrast */}
+                {/* Drop-down Expandable Panel - Harmonious subtle background matching the rows */}
                 {isExpanded && (
-                  <div className="p-4 md:p-5 bg-amber-50/40 dark:bg-slate-950 border-t border-amber-200/60 dark:border-slate-800 transition-all">
-                    <div className="border-2 border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-md">
+                  <div className="p-4 md:p-5 bg-slate-50/60 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800 transition-all">
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
                       <table className="w-full text-left text-xs border-collapse">
-                        <thead className="bg-slate-200/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-black border-b-2 border-slate-300 dark:border-slate-700 uppercase tracking-wider text-[11px]">
+                        <thead className="bg-slate-100/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-[11px]">
                           <tr>
                             <th className="p-3 w-10 text-center">N°</th>
                             <th className="p-3">Candidat & Dossier</th>

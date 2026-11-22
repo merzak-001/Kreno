@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, User, Phone, MapPin, DollarSign, Save } from 'lucide-react';
 import { Student, LicenseCategory } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
+import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface EditStudentModalProps {
   isOpen: boolean;
@@ -49,6 +50,8 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
       });
     }
   }, [student]);
+
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen || !student) return null;
 
