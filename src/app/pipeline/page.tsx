@@ -269,25 +269,34 @@ export default function PipelinePage() {
                 key={session.date}
                 className="bg-surface rounded-2xl border border-border-subtle shadow-xs overflow-hidden transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-700"
               >
-                {/* Accordion Summary Row - Spacious & Simple */}
+                {/* Accordion Summary Row - Clean, High Contrast, Standard Colors */}
                 <div 
                   onClick={() => toggleAccordion(session.date)}
-                  className="p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/70 dark:hover:bg-surface-elevated/40 transition select-none"
+                  className={`p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer transition select-none ${
+                    isExpanded 
+                      ? 'bg-blue-50/40 dark:bg-slate-800/60 border-b border-border-subtle' 
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-850/60'
+                  }`}
                 >
                   {/* Left: Date & Center */}
-                  <div className="flex items-center gap-3.5 min-w-[260px]">
-                    <div className="w-11 h-11 rounded-xl bg-primary-subtle text-primary border border-primary-subtle-border flex flex-col items-center justify-center shrink-0">
-                      <Calendar className="w-5 h-5" />
+                  <div className="flex items-center gap-3.5 min-w-[280px]">
+                    <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex flex-col items-center justify-center shrink-0 shadow-sm font-bold">
+                      <span className="text-[10px] uppercase tracking-wider font-semibold">
+                        {new Date(session.date).toLocaleDateString('fr-FR', { month: 'short' })}
+                      </span>
+                      <span className="text-base font-black font-mono leading-none">
+                        {new Date(session.date).getDate()}
+                      </span>
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="text-sm font-black text-slate-900 dark:text-white font-mono">
                           {session.date}
                         </h4>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                           !session.isPast 
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300' 
-                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200' 
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
                         }`}>
                           {!session.isPast ? 'À venir' : 'Clôturée'}
                         </span>
@@ -300,23 +309,23 @@ export default function PipelinePage() {
 
                   {/* Middle: Total candidates & exam types */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-surface-elevated font-black text-xs text-slate-800 dark:text-slate-200 border border-border-subtle">
-                      {session.totalCandidates} Candidat{session.totalCandidates > 1 ? 's' : ''}
+                    <span className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold text-xs text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                      {session.totalCandidates} Candidats
                     </span>
 
                     <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
                       {session.examTypesCount.code > 0 && (
-                        <span className="px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-800/60 text-[11px]">
+                        <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-800 text-[11px]">
                           {session.examTypesCount.code} Code
                         </span>
                       )}
                       {session.examTypesCount.creneau > 0 && (
-                        <span className="px-2 py-0.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold border border-purple-200 dark:border-purple-800/60 text-[11px]">
+                        <span className="px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold border border-purple-200 dark:border-purple-800 text-[11px]">
                           {session.examTypesCount.creneau} Créneau
                         </span>
                       )}
                       {session.examTypesCount.circulation > 0 && (
-                        <span className="px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold border border-amber-200 dark:border-amber-800/60 text-[11px]">
+                        <span className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold border border-amber-200 dark:border-amber-800 text-[11px]">
                           {session.examTypesCount.circulation} Conduite
                         </span>
                       )}
@@ -331,15 +340,15 @@ export default function PipelinePage() {
                         {session.passedCount} / {session.totalCandidates} Admis
                       </span>
                       <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                        {session.pendingCount > 0 ? `${session.pendingCount} en attente` : `${passRate}% succès`}
+                        {session.pendingCount > 0 ? `${session.pendingCount} en attente` : `${passRate}% réussite`}
                       </span>
                     </div>
 
                     {/* Fees situation */}
                     <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
                       session.unpaidFeesCount === 0
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
-                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                     }`}>
                       {session.unpaidFeesCount === 0 ? 'Frais Réglés' : `${session.unpaidFeesCount} Impayé(s)`}
                     </span>
@@ -347,7 +356,7 @@ export default function PipelinePage() {
                     {/* Print Bordereau Button */}
                     <button
                       onClick={(e) => handleOpenPrint(session, e)}
-                      className="px-3 py-1.5 bg-primary-subtle hover:bg-primary hover:text-white text-primary rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-primary-subtle-border cursor-pointer"
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                       title="Imprimer le Bordereau Officiel A4"
                     >
                       <Printer className="w-3.5 h-3.5" />
@@ -376,7 +385,7 @@ export default function PipelinePage() {
                       <Trash2 className="w-4 h-4" />
                     </button>
 
-                    <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-surface-elevated flex items-center justify-center text-slate-500 shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </div>
@@ -384,85 +393,78 @@ export default function PipelinePage() {
 
                 {/* Drop-down Expandable Panel */}
                 {isExpanded && (
-                  <div className="border-t border-card-border bg-slate-50/50 dark:bg-slate-950/40 p-4 transition-all animate-in fade-in duration-150">
-                    <div className="border border-card-border rounded-xl overflow-hidden bg-card-bg shadow-2xs">
-                      <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50 dark:bg-card-bg text-slate-500 dark:text-slate-400 font-semibold border-b border-card-border">
+                  <div className="p-4 bg-slate-50/70 dark:bg-slate-900/60 transition-all">
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                           <tr>
                             <th className="p-3 w-10 text-center">N°</th>
                             <th className="p-3">Candidat & Dossier</th>
                             <th className="p-3">Permis</th>
-                            <th className="p-3">Épreuve Présentée</th>
-                            <th className="p-3 text-center">Frais d&apos;Examen (2 000 DZD)</th>
+                            <th className="p-3">Épreuve</th>
+                            <th className="p-3 text-center">Frais (2 000 DZD)</th>
                             <th className="p-3 text-center">Solde Forfait</th>
-                            <th className="p-3 text-center">Verdict Officiel (1-Clic)</th>
-                            <th className="p-3 text-right">Fiche</th>
+                            <th className="p-3 text-center">Verdict Officiel</th>
+                            <th className="p-3 text-right">Actions</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-card-border">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                           {session.entries.map(({ student, exam }, idx) => {
                             const isPaid = exam.fee_paid;
-                            const fee = exam.fee_amount || 2000;
                             const remaining = Math.max(0, (student.total_package_price || 0) - (student.amount_paid || 0));
 
                             return (
                               <tr 
                                 key={exam.id} 
-                                className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition"
+                                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
                               >
                                 <td className="p-3 text-center font-mono font-bold text-slate-400">
                                   {idx + 1}
                                 </td>
 
                                 <td className="p-3">
-                                  <span className="font-bold text-slate-900 dark:text-slate-200 block">
+                                  <span className="font-bold text-slate-900 dark:text-white text-sm block">
                                     {student.first_name} {student.last_name}
                                   </span>
-                                  <span className="text-[10px] text-slate-400 font-mono">
-                                    {student.dossier_number} • NIN: {student.nin}
+                                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                                    {student.dossier_number} • Tél: {student.phone_number}
                                   </span>
                                 </td>
 
                                 <td className="p-3">
-                                  <span className={`px-2.5 py-1 rounded-md font-bold border text-xs ${getCategoryBadgeClass(student.requested_category)}`}>
+                                  <span className="px-2 py-0.5 rounded font-bold text-xs bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                                     Cat. {student.requested_category}
                                   </span>
                                 </td>
 
                                 <td className="p-3">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] uppercase ${
-                                      exam.exam_type === 'code'
-                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                                        : exam.exam_type === 'creneau'
-                                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
-                                          : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                                    }`}>
-                                      {exam.exam_type === 'code' ? '1. Code' : exam.exam_type === 'creneau' ? '2. Créneau' : '3. Conduite'}
-                                    </span>
-                                    <span className="text-[10px] text-slate-400 font-mono">
-                                      #{exam.attempt_number || 1}
-                                    </span>
-                                  </div>
+                                  <span className={`px-2.5 py-1 rounded text-xs font-bold ${
+                                    exam.exam_type === 'code'
+                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200'
+                                      : exam.exam_type === 'creneau'
+                                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200'
+                                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200'
+                                  }`}>
+                                    {exam.exam_type === 'code' ? '1. Code' : exam.exam_type === 'creneau' ? '2. Créneau' : '3. Conduite'}
+                                  </span>
                                 </td>
 
                                 <td className="p-3 text-center">
-                                  <div className="flex items-center justify-center gap-1.5">
-                                    <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                                  <div className="flex items-center justify-center gap-2">
+                                    <span className={`px-2.5 py-0.5 rounded font-bold text-[11px] ${
                                       isPaid
-                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                                        : 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                        : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
                                     }`}>
-                                      {isPaid ? 'Payé (2 000 DZD)' : 'Impayé (2 000 DZD)'}
+                                      {isPaid ? 'Réglé' : 'Non Réglé'}
                                     </span>
                                     <button
                                       onClick={() => handleToggleFee(student.id, exam.id, isPaid)}
-                                      className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition cursor-pointer ${
+                                      className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer border ${
                                         isPaid 
-                                          ? 'text-slate-400 hover:text-rose-600' 
-                                          : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs'
+                                          ? 'border-slate-300 dark:border-slate-700 text-slate-500 hover:text-rose-600' 
+                                          : 'border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700'
                                       }`}
-                                      title={isPaid ? 'Marquer comme non réglé' : 'Encaisser les frais maintenant'}
                                     >
                                       {isPaid ? 'Annuler' : 'Encaisser'}
                                     </button>
@@ -471,49 +473,49 @@ export default function PipelinePage() {
 
                                 <td className="p-3 text-center font-mono">
                                   {remaining === 0 ? (
-                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Soldé</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">Soldé</span>
                                   ) : (
-                                    <span className="text-amber-600 dark:text-amber-400 font-bold text-[11px]">
-                                      Reste {remaining.toLocaleString()} DZD
+                                    <span className="text-amber-600 dark:text-amber-400 font-bold text-xs">
+                                      {remaining.toLocaleString()} DZD
                                     </span>
                                   )}
                                 </td>
 
-                                {/* Interactive 1-click Result Buttons */}
+                                {/* Standard clear result buttons */}
                                 <td className="p-3 text-center">
-                                  <div className="flex items-center justify-center gap-1">
+                                  <div className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
                                     <button
                                       onClick={() => handleResultChange(student.id, exam.id, 'passed')}
-                                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${
+                                      className={`px-3 py-1 rounded text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                                         exam.result === 'passed'
-                                          ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-600/30 font-black'
-                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40'
+                                          ? 'bg-emerald-600 text-white shadow-xs'
+                                          : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600'
                                       }`}
-                                      title="Déclarer Admis (Succès)"
+                                      title="Déclarer Admis"
                                     >
-                                      <Check className="w-3 h-3" /> Admis
+                                      <Check className="w-3.5 h-3.5" /> Admis
                                     </button>
 
                                     <button
                                       onClick={() => handleResultChange(student.id, exam.id, 'failed')}
-                                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${
+                                      className={`px-3 py-1 rounded text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                                         exam.result === 'failed'
-                                          ? 'bg-rose-600 text-white shadow-xs ring-2 ring-rose-600/30 font-black'
-                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40'
+                                          ? 'bg-rose-600 text-white shadow-xs'
+                                          : 'text-slate-600 dark:text-slate-400 hover:text-rose-600'
                                       }`}
-                                      title="Déclarer Ajourné (Échec)"
+                                      title="Déclarer Ajourné"
                                     >
-                                      <XCircle className="w-3 h-3" /> Ajourné
+                                      <XCircle className="w-3.5 h-3.5" /> Ajourné
                                     </button>
 
                                     <button
                                       onClick={() => handleResultChange(student.id, exam.id, 'absent_unexcused')}
-                                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                                      className={`px-2 py-1 rounded text-xs font-semibold transition cursor-pointer ${
                                         exam.result === 'absent_unexcused'
-                                          ? 'bg-amber-600 text-white shadow-xs'
-                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-amber-700 dark:hover:bg-amber-950/40'
+                                          ? 'bg-slate-600 text-white'
+                                          : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                                       }`}
-                                      title="Déclarer Absent"
+                                      title="Absent"
                                     >
                                       Absent
                                     </button>
@@ -528,7 +530,7 @@ export default function PipelinePage() {
                                         setIsSummaryOpen(true);
                                       }}
                                       className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 transition cursor-pointer"
-                                      title="Consulter Fiche Synthèse"
+                                      title="Fiche Candidat"
                                     >
                                       <Eye className="w-4 h-4" />
                                     </button>
@@ -547,10 +549,10 @@ export default function PipelinePage() {
                                           },
                                         });
                                       }}
-                                      className="p-1.5 hover:bg-rose-100 dark:hover:bg-rose-950/60 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
-                                      title="Retirer ce candidat de la session"
+                                      className="p-1.5 hover:bg-rose-100 dark:hover:bg-rose-950/60 rounded-lg text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                                      title="Retirer de la session"
                                     >
-                                      <Trash2 className="w-3.5 h-3.5" />
+                                      <Trash2 className="w-4 h-4" />
                                     </button>
                                   </div>
                                 </td>
