@@ -267,15 +267,15 @@ export default function PipelinePage() {
             return (
               <div 
                 key={session.date}
-                className="bg-surface rounded-2xl border border-border-subtle shadow-xs overflow-hidden transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-700"
+                className="bg-slate-100/90 dark:bg-slate-850 rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-sm overflow-hidden transition-all duration-150 hover:border-slate-400 dark:hover:border-slate-600"
               >
-                {/* Accordion Summary Row - Clean, High Contrast, Standard Colors */}
+                {/* Accordion Summary Row - Distinct darker row */}
                 <div 
                   onClick={() => toggleAccordion(session.date)}
                   className={`p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer transition select-none ${
                     isExpanded 
-                      ? 'bg-blue-50/40 dark:bg-slate-800/60 border-b border-border-subtle' 
-                      : 'hover:bg-slate-50 dark:hover:bg-slate-850/60'
+                      ? 'bg-blue-100/70 dark:bg-slate-800 border-b-2 border-blue-200 dark:border-slate-700' 
+                      : 'hover:bg-slate-200/60 dark:hover:bg-slate-800/80'
                   }`}
                 >
                   {/* Left: Date & Center */}
@@ -295,13 +295,13 @@ export default function PipelinePage() {
                         </h4>
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                           !session.isPast 
-                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200' 
-                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
                         }`}>
                           {!session.isPast ? 'À venir' : 'Clôturée'}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
                         {session.center} • {session.examiner}
                       </p>
                     </div>
@@ -309,23 +309,23 @@ export default function PipelinePage() {
 
                   {/* Middle: Total candidates & exam types */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold text-xs text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                    <span className="px-3 py-1 rounded-lg bg-white dark:bg-slate-800 font-bold text-xs text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-600 shadow-2xs">
                       {session.totalCandidates} Candidats
                     </span>
 
-                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold">
                       {session.examTypesCount.code > 0 && (
-                        <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-800 text-[11px]">
+                        <span className="px-2.5 py-0.5 rounded bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200 border border-blue-300 dark:border-blue-800 text-[11px]">
                           {session.examTypesCount.code} Code
                         </span>
                       )}
                       {session.examTypesCount.creneau > 0 && (
-                        <span className="px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold border border-purple-200 dark:border-purple-800 text-[11px]">
+                        <span className="px-2.5 py-0.5 rounded bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200 border border-purple-300 dark:border-purple-800 text-[11px]">
                           {session.examTypesCount.creneau} Créneau
                         </span>
                       )}
                       {session.examTypesCount.circulation > 0 && (
-                        <span className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold border border-amber-200 dark:border-amber-800 text-[11px]">
+                        <span className="px-2.5 py-0.5 rounded bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-800 text-[11px]">
                           {session.examTypesCount.circulation} Conduite
                         </span>
                       )}
@@ -339,7 +339,7 @@ export default function PipelinePage() {
                       <span className="text-xs font-black font-mono text-slate-900 dark:text-white block">
                         {session.passedCount} / {session.totalCandidates} Admis
                       </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                      <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">
                         {session.pendingCount > 0 ? `${session.pendingCount} en attente` : `${passRate}% réussite`}
                       </span>
                     </div>
@@ -347,8 +347,8 @@ export default function PipelinePage() {
                     {/* Fees situation */}
                     <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
                       session.unpaidFeesCount === 0
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                        ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
+                        : 'bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-200 border-amber-300 dark:border-amber-800'
                     }`}>
                       {session.unpaidFeesCount === 0 ? 'Frais Réglés' : `${session.unpaidFeesCount} Impayé(s)`}
                     </span>
@@ -356,7 +356,7 @@ export default function PipelinePage() {
                     {/* Print Bordereau Button */}
                     <button
                       onClick={(e) => handleOpenPrint(session, e)}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                      className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                       title="Imprimer le Bordereau Officiel A4"
                     >
                       <Printer className="w-3.5 h-3.5" />
@@ -379,36 +379,36 @@ export default function PipelinePage() {
                           },
                         });
                       }}
-                      className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                      className="p-2 hover:bg-rose-100 dark:hover:bg-rose-950/60 rounded-lg text-slate-400 hover:text-rose-600 transition cursor-pointer"
                       title="Supprimer cette session"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
 
-                    <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </div>
                 </div>
 
-                {/* Drop-down Expandable Panel */}
+                {/* Drop-down Expandable Panel - Distinct Amber/Slate tint for instant visual contrast */}
                 {isExpanded && (
-                  <div className="p-4 bg-slate-50/70 dark:bg-slate-900/60 transition-all">
-                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
+                  <div className="p-4 md:p-5 bg-amber-50/40 dark:bg-slate-950 border-t border-amber-200/60 dark:border-slate-800 transition-all">
+                    <div className="border-2 border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-md">
                       <table className="w-full text-left text-xs border-collapse">
-                        <thead className="bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
+                        <thead className="bg-slate-200/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-black border-b-2 border-slate-300 dark:border-slate-700 uppercase tracking-wider text-[11px]">
                           <tr>
                             <th className="p-3 w-10 text-center">N°</th>
                             <th className="p-3">Candidat & Dossier</th>
                             <th className="p-3">Permis</th>
                             <th className="p-3">Épreuve</th>
-                            <th className="p-3 text-center">Frais (2 000 DZD)</th>
+                            <th className="p-3 text-center">Frais d&apos;Examen (2 000 DZD)</th>
                             <th className="p-3 text-center">Solde Forfait</th>
                             <th className="p-3 text-center">Verdict Officiel</th>
                             <th className="p-3 text-right">Actions</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                           {session.entries.map(({ student, exam }, idx) => {
                             const isPaid = exam.fee_paid;
                             const remaining = Math.max(0, (student.total_package_price || 0) - (student.amount_paid || 0));
