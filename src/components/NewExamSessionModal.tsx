@@ -2,21 +2,28 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { X, Calendar, Plus, CheckCircle2, User, Award, DollarSign, Filter, Search, MapPin, UserCheck, Check, ChevronDown } from 'lucide-react';
-import { Student, ExamType, ExamSessionCandidateSelection, LicenseCategory } from '@/types/kreno';
+import { Student, ExamType, ExamSessionCandidateSelection, LicenseCategory, ExamRecord } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 interface NewExamSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  // Optional edit session props
+  editSession?: {
+    date: string;
+    center: string;
+    examiner: string;
+    entries: { student: Student; exam: ExamRecord }[];
+  } | null;
 }
 
-export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProps) {
-  const { students, createExamDaySession, settings, engineers, addEngineer, examCenters, addExamCenter } = useKreno();
+export function NewExamSessionModal({ isOpen, onClose, editSession }: NewExamSessionModalProps) {
+  const { students, createExamDaySession, updateExamSession, settings, engineers, addEngineer, examCenters, addExamCenter } = useKreno();
 
   const [date, setDate] = useState('2026-12-05');
   const [center, setCenter] = useState('');
-  const [examiner, setExaminer] = useState(''); // mandatory and initially empty
+  const [examiner, setExaminer] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'code' | 'creneau' | 'circulation'>('all');
   const [search, setSearch] = useState('');
 
@@ -39,22 +46,64 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
   const [isAddingCenter, setIsAddingCenter] = useState(false);
   const [newCenterName, setNewCenterName] = useState('');
 
-  // Remember last selected center in localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const lastCenter = localStorage.getItem('kreno_last_center');
-      if (lastCenter) {
-        setCenter(lastCenter);
-        setCenterSearch(lastCenter);
-      } else if (examCenters.length > 0) {
-        setCenter(examCenters[0].name);
-        setCenterSearch(examCenters[0].name);
-      } else {
-        setCenter('Centre d\'Examen Aïn Oulmene');
-        setCenterSearch('Centre d\'Examen Aïn Oulmene');
-      }
+  // Selected candidates map: student_id -> { exam_type, fee_paid, fee_amount }
+  const [selectedMap, setSelectedMap] = useState<Record<string, { exam_type: ExamType; fee_paid: boolean; fee_amount: number }>>({});
+
+  // Helper for category fee
+  const getFeeForCategory = (cat: LicenseCategory): number => {
+    return settings.category_exam_fees?.[cat] ?? settings.standard_exam_fee ?? 2000;
+  };
+
+  // Helper to determine candidate readiness
+  // In Algerian driving regulations, exams MUST proceed sequentially: Code -> Créneau -> Conduite
+  const getCandidateEligibility = (st: Student): { readyFor: ExamType; reason: string } => {
+    const passedCode = st.exams.some(e => e.exam_type === 'code' && e.result === 'passed');
+    const passedCreneau = st.exams.some(e => e.exam_type === 'creneau' && e.result === 'passed');
+    const passedCirc = st.exams.some(e => e.exam_type === 'circulation' && e.result === 'passed');
+
+    if (passedCirc) {
+      return { readyFor: 'circulation', reason: 'Permis déjà obtenu' };
     }
-  }, [examCenters]);
+    if (passedCreneau) {
+      return { readyFor: 'circulation', reason: '3. Conduite (Circulation)' };
+    }
+    if (passedCode) {
+      return { readyFor: 'creneau', reason: '2. Créneau (Manoeuvres)' };
+    }
+    return { readyFor: 'code', reason: '1. Code Théorique' };
+  };
+
+  // Initialize form when modal opens or editSession changes
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (editSession) {
+      setDate(editSession.date);
+      setCenter(editSession.center);
+      setCenterSearch(editSession.center);
+      setExaminer(editSession.examiner);
+      setEngineerSearch(editSession.examiner);
+
+      const map: Record<string, { exam_type: ExamType; fee_paid: boolean; fee_amount: number }> = {};
+      editSession.entries.forEach(({ student, exam }) => {
+        map[student.id] = {
+          exam_type: exam.exam_type,
+          fee_paid: exam.fee_paid,
+          fee_amount: exam.fee_amount || getFeeForCategory(student.requested_category),
+        };
+      });
+      setSelectedMap(map);
+    } else {
+      // Creation mode: date defaults to upcoming, examiner empty, center remembered
+      const lastCenter = typeof window !== 'undefined' ? localStorage.getItem('kreno_last_center') : null;
+      const initialCenter = lastCenter || (examCenters.length > 0 ? examCenters[0].name : 'Centre d\'Examen Aïn Oulmene');
+      setCenter(initialCenter);
+      setCenterSearch(initialCenter);
+      setExaminer('');
+      setEngineerSearch('');
+      setSelectedMap({});
+    }
+  }, [isOpen, editSession, examCenters]);
 
   // Click outside listener for comboboxes
   useEffect(() => {
@@ -70,37 +119,13 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Selected candidates map: student_id -> { exam_type, fee_paid, fee_amount }
-  const [selectedMap, setSelectedMap] = useState<Record<string, { exam_type: ExamType; fee_paid: boolean; fee_amount: number }>>({});
-
-  // Helper to determine candidate readiness
-  const getCandidateEligibility = (st: Student): { readyFor: ExamType; reason: string } => {
-    const passedCode = st.exams.some(e => e.exam_type === 'code' && e.result === 'passed');
-    const passedCreneau = st.exams.some(e => e.exam_type === 'creneau' && e.result === 'passed');
-    const passedCirc = st.exams.some(e => e.exam_type === 'circulation' && e.result === 'passed');
-
-    if (passedCirc) {
-      return { readyFor: 'circulation', reason: 'Permis déjà décroché' };
-    }
-    if (passedCreneau) {
-      return { readyFor: 'circulation', reason: 'Créneau validé -> Prêt pour Conduite' };
-    }
-    if (passedCode) {
-      return { readyFor: 'creneau', reason: 'Code validé -> Prêt pour Créneau' };
-    }
-    return { readyFor: 'code', reason: 'En attente épreuve Code' };
-  };
-
-  // Helper for category fee
-  const getFeeForCategory = (cat: LicenseCategory): number => {
-    return settings.category_exam_fees?.[cat] ?? settings.standard_exam_fee ?? 2000;
-  };
+  useEscapeKey(isOpen, onClose);
 
   // Filter candidates list
   const eligibleCandidates = useMemo(() => {
     return students.filter(st => {
       const { readyFor, reason } = getCandidateEligibility(st);
-      if (reason === 'Permis déjà décroché') return false;
+      if (reason === 'Permis déjà obtenu') return false;
 
       const matchesFilter = activeFilter === 'all' || readyFor === activeFilter;
       const q = search.toLowerCase();
@@ -128,10 +153,9 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
     return examCenters.filter(c => c.name.toLowerCase().includes(q) || (c.commune && c.commune.toLowerCase().includes(q)));
   }, [examCenters, centerSearch]);
 
-  useEscapeKey(isOpen, onClose);
-
   if (!isOpen) return null;
 
+  // Toggle candidate on row click
   const toggleSelect = (student: Student) => {
     const isSelected = !!selectedMap[student.id];
     if (isSelected) {
@@ -145,22 +169,11 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
         ...prev,
         [student.id]: {
           exam_type: readyFor,
-          fee_paid: false, // Default is NOT paid: candidate will pay on the day of the exam
+          fee_paid: false, // Default is NOT paid: student pays on exam day
           fee_amount: catFee,
         }
       }));
     }
-  };
-
-  const updateSelectedExamType = (studentId: string, examType: ExamType) => {
-    if (!selectedMap[studentId]) return;
-    setSelectedMap(prev => ({
-      ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        exam_type: examType,
-      }
-    }));
   };
 
   const handleQuickAddEngineer = (e: React.FormEvent) => {
@@ -189,19 +202,24 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
   };
 
   const selectedCount = Object.keys(selectedMap).length;
+  // Effective values ensuring validate button works even if user typed in combobox
+  const effectiveCenter = center.trim() || centerSearch.trim();
+  const effectiveExaminer = examiner.trim() || engineerSearch.trim();
+  const canValidate = selectedCount > 0 && !!effectiveExaminer;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!examiner.trim()) {
-      alert('Veuillez obligatoirement sélectionner ou ajouter l\'Ingénieur de l\'examen.');
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
+    if (!effectiveExaminer) {
+      alert('Veuillez obligatoirement sélectionner ou saisir le nom de l\'Ingénieur d\'État.');
       return;
     }
-    if (!center.trim()) {
-      alert('Veuillez sélectionner le Centre / Piste d\'examen.');
+    if (!effectiveCenter) {
+      alert('Veuillez sélectionner ou saisir le Centre / Piste d\'examen.');
       return;
     }
     if (selectedCount === 0) {
-      alert('Veuillez sélectionner au moins un candidat à présenter à cette session d\'examen.');
+      alert('Veuillez sélectionner au moins un candidat en cliquant sur sa ligne.');
       return;
     }
 
@@ -213,16 +231,20 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
     }));
 
     if (typeof window !== 'undefined') {
-      localStorage.setItem('kreno_last_center', center);
+      localStorage.setItem('kreno_last_center', effectiveCenter);
     }
 
-    createExamDaySession(date, center, examiner, payload);
+    if (editSession) {
+      updateExamSession(editSession.date, date, effectiveCenter, effectiveExaminer, payload);
+    } else {
+      createExamDaySession(date, effectiveCenter, effectiveExaminer, payload);
+    }
+
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      {/* Maximum modal width (7xl) with plenty of breathing room */}
       <div className="bg-surface rounded-2xl w-full max-w-7xl shadow-2xl border-2 border-slate-300 dark:border-slate-700 overflow-hidden text-slate-900 dark:text-slate-100 max-h-[96vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
@@ -233,15 +255,16 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
             </div>
             <div>
               <h2 className="text-base font-black text-slate-900 dark:text-white">
-                Programmer une Journée d&apos;Examen Hebdomadaire
+                {editSession ? `Modifier la Session d'Examen du ${editSession.date}` : "Programmer une Journée d'Examen Hebdomadaire"}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Recherchez l&apos;Ingénieur et le Centre dans les listes déroulantes, puis cliquez sur une ligne pour inscrire un candidat.
+                Cliquez n&apos;importe où sur la ligne pour sélectionner un candidat. L&apos;épreuve séquentielle (Code, Créneau, Conduite) est automatiquement attribuée.
               </p>
             </div>
           </div>
 
           <button 
+            type="button"
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
           >
@@ -253,7 +276,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="p-6 overflow-y-auto space-y-6 flex-1">
             
-            {/* Top Parameters Grid: Date, Centre (Searchable), Ingénieur (Searchable & Empty by default) */}
+            {/* Top Parameters Grid: Date, Centre (Searchable), Ingénieur (Searchable & Mandatory) */}
             <div className="p-4 bg-slate-100/90 dark:bg-slate-850 rounded-xl border border-slate-300 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
               
               {/* 1. Date */}
@@ -317,7 +340,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                             }
                           }}
                           className={`px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer flex items-center justify-between ${
-                            center === c.name ? 'bg-blue-100/60 dark:bg-slate-800 font-bold text-blue-600 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200'
+                            effectiveCenter === c.name ? 'bg-blue-100/60 dark:bg-slate-800 font-bold text-blue-600 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200'
                           }`}
                         >
                           <span>{c.name}</span>
@@ -331,7 +354,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                 )}
               </div>
 
-              {/* 3. Ingénieur (Searchable Combobox + Quick Add + Empty by default) */}
+              {/* 3. Ingénieur (Searchable Combobox + Quick Add + Mandatory) */}
               <div className="relative" ref={engineerRef}>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-slate-800 dark:text-slate-200 font-bold">
@@ -358,7 +381,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                     onFocus={() => setIsEngineerOpen(true)}
                     placeholder="Tapez le nom de l'Ingénieur..."
                     className={`w-full px-3 py-2 pr-8 bg-white dark:bg-slate-900 border rounded-lg font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-600 focus:outline-none ${
-                      !examiner ? 'border-amber-400 ring-1 ring-amber-400/40' : 'border-slate-300 dark:border-slate-600'
+                      !effectiveExaminer ? 'border-amber-400 ring-1 ring-amber-400/40' : 'border-slate-300 dark:border-slate-600'
                     }`}
                     required
                   />
@@ -377,7 +400,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                             setIsEngineerOpen(false);
                           }}
                           className={`px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer flex items-center justify-between ${
-                            examiner === eng.name ? 'bg-blue-100/60 dark:bg-slate-800 font-bold text-blue-600 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200'
+                            effectiveExaminer === eng.name ? 'bg-blue-100/60 dark:bg-slate-800 font-bold text-blue-600 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200'
                           }`}
                         >
                           <span className="font-bold">{eng.name}</span>
@@ -390,7 +413,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                   </div>
                 )}
 
-                {!examiner && (
+                {!effectiveExaminer && (
                   <span className="text-[10px] text-amber-600 dark:text-amber-400 block mt-1 font-semibold">
                     Champ obligatoire : choisissez ou ajoutez l&apos;Ingénieur d&apos;État.
                   </span>
@@ -519,7 +542,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                     Candidats Prêts à Convoquer ({selectedCount} sélectionné{selectedCount > 1 ? 's' : ''})
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    💡 <strong>Cliquez n&apos;importe où sur la ligne</strong> pour sélectionner ou désélectionner un candidat.
+                    💡 <strong>Cliquez n&apos;importe où sur une ligne</strong> pour inscrire ou retirer le candidat.
                   </p>
                 </div>
 
@@ -547,7 +570,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                 </div>
               </div>
 
-              {/* Candidates Table - Wide, Clean & Discreet (without intrusive fee input boxes) */}
+              {/* Candidates Table - Full row clickable, automatic exam stage, clean dues display */}
               <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-xs">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs min-w-[700px] border-collapse">
@@ -556,17 +579,14 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                         <th className="p-3 w-12 text-center">Choix</th>
                         <th className="p-3 min-w-[220px]">Candidat & Dossier</th>
                         <th className="p-3 w-24">Permis</th>
-                        <th className="p-3 min-w-[220px]">Épreuve à Présenter</th>
-                        <th className="p-3 text-right min-w-[140px]">Solde Dossier</th>
+                        <th className="p-3 min-w-[200px]">Épreuve Attribuée</th>
+                        <th className="p-3 text-right min-w-[140px]">Solde Restant Dû</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {eligibleCandidates.map(st => {
                         const isSelected = !!selectedMap[st.id];
                         const { readyFor, reason } = getCandidateEligibility(st);
-                        const currentSelection = selectedMap[st.id];
-                        
-                        // Remaining dues owed by the candidate
                         const remainingOwed = Math.max(0, (st.total_package_price || 0) - (st.amount_paid || 0));
 
                         return (
@@ -601,22 +621,16 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                                 Cat. {st.requested_category}
                               </span>
                             </td>
-                            <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                              {isSelected ? (
-                                <select
-                                  value={currentSelection?.exam_type || readyFor}
-                                  onChange={(e) => updateSelectedExamType(st.id, e.target.value as ExamType)}
-                                  className="w-full max-w-[220px] px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-blue-600 dark:border-blue-500 rounded-lg font-bold text-xs text-blue-900 dark:text-blue-200 focus:outline-none"
-                                >
-                                  <option value="code">1. Code Théorique</option>
-                                  <option value="creneau">2. Créneau (Piste)</option>
-                                  <option value="circulation">3. Conduite (Circulation)</option>
-                                </select>
-                              ) : (
-                                <span className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                                  {reason}
-                                </span>
-                              )}
+                            <td className="p-3">
+                              <span className={`px-2.5 py-1 rounded text-xs font-bold inline-block whitespace-nowrap ${
+                                readyFor === 'code'
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200'
+                                  : readyFor === 'creneau'
+                                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200'
+                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200'
+                              }`}>
+                                {reason}
+                              </span>
                             </td>
                             <td className="p-3 text-right font-mono whitespace-nowrap">
                               {remainingOwed === 0 ? (
@@ -643,9 +657,9 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
             <div className="text-xs">
               <span className="text-slate-600 dark:text-slate-400">Candidats sélectionnés pour le {date} :</span>{' '}
               <strong className="text-blue-600 dark:text-blue-400 font-mono text-sm">{selectedCount}</strong>
-              {examiner && (
+              {effectiveExaminer && (
                 <span className="ml-3 text-slate-500 font-medium hidden sm:inline">
-                  • Ingénieur : <strong className="text-slate-800 dark:text-slate-200">{examiner}</strong>
+                  • Ingénieur : <strong className="text-slate-800 dark:text-slate-200">{effectiveExaminer}</strong>
                 </span>
               )}
             </div>
@@ -659,16 +673,17 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                 Annuler
               </button>
               <button
-                type="submit"
-                disabled={selectedCount === 0 || !examiner.trim()}
+                type="button"
+                onClick={() => handleSubmit()}
+                disabled={!canValidate}
                 className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
-                  selectedCount > 0 && examiner.trim()
+                  canValidate
                     ? 'bg-blue-600 hover:bg-blue-700 active:scale-95 text-white'
-                    : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                    : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-60'
                 }`}
               >
                 <CheckCircle2 className="w-4 h-4" />
-                Valider la Session & Inscrire {selectedCount} Candidat{selectedCount > 1 ? 's' : ''}
+                {editSession ? `Enregistrer les Modifications (${selectedCount})` : `Valider la Session & Inscrire ${selectedCount} Candidat${selectedCount > 1 ? 's' : ''}`}
               </button>
             </div>
           </div>

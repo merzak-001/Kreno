@@ -22,7 +22,8 @@ import {
   AlertTriangle, 
   Columns3, 
   ListFilter,
-  Trash2
+  Trash2,
+  Edit
 } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
 import { Student, ExamType, ExamResult, ExamRecord, getCategoryBadgeClass } from '@/types/kreno';
@@ -53,6 +54,7 @@ export default function PipelinePage() {
 
   // Modals state
   const [isNewSessionOpen, setIsNewSessionOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState<ExamSessionGroup | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -361,6 +363,19 @@ export default function PipelinePage() {
                     >
                       <Printer className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">Bordereau A4</span>
+                    </button>
+
+                    {/* Edit Session Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingSession(session);
+                        setIsNewSessionOpen(true);
+                      }}
+                      className="p-2 hover:bg-blue-100 dark:hover:bg-slate-750 rounded-lg text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition cursor-pointer"
+                      title="Modifier cette session (date, centre, ingénieur, candidats)"
+                    >
+                      <Edit className="w-4 h-4" />
                     </button>
 
                     {/* Delete button */}
@@ -724,7 +739,11 @@ export default function PipelinePage() {
       {/* Modals */}
       <NewExamSessionModal
         isOpen={isNewSessionOpen}
-        onClose={() => setIsNewSessionOpen(false)}
+        onClose={() => {
+          setIsNewSessionOpen(false);
+          setEditingSession(null);
+        }}
+        editSession={editingSession}
       />
 
       {activePrintSession && (

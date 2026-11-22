@@ -70,6 +70,13 @@ interface KrenoContextType {
     examiner: string,
     candidates: ExamSessionCandidateSelection[]
   ) => void;
+  updateExamSession: (
+    originalDate: string,
+    newDate: string,
+    newCenter: string,
+    newExaminer: string,
+    candidates: ExamSessionCandidateSelection[]
+  ) => void;
   updateExamResultById: (
     studentId: string,
     examId: string,
@@ -1835,6 +1842,78 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // Edit/Update an existing weekly exam session
+  const updateExamSession = (
+    originalDate: string,
+    newDate: string,
+    newCenter: string,
+    newExaminer: string,
+    candidateSelections: ExamSessionCandidateSelection[]
+  ) => {
+    setStudents(prev => {
+      const updatedList = prev.map(st => {
+        const isSelected = candidateSelections.find(c => c.student_id === st.id);
+        const hadExamOnDate = st.exams.find(e => e.exam_date === originalDate);
+
+        // Case 1: Was in session and is still selected -> update session info
+        if (hadExamOnDate && isSelected) {
+          const updatedExams = st.exams.map(e => {
+            if (e.id === hadExamOnDate.id) {
+              return {
+                ...e,
+                exam_date: newDate,
+                exam_center: newCenter,
+                examiner_name: newExaminer,
+                exam_type: isSelected.exam_type,
+                fee_amount: isSelected.fee_amount,
+              };
+            }
+            return e;
+          });
+          return { ...st, exams: updatedExams };
+        }
+
+        // Case 2: Was in session but removed -> delete exam record
+        if (hadExamOnDate && !isSelected) {
+          const updatedExams = st.exams.filter(e => e.id !== hadExamOnDate.id);
+          return { ...st, exams: updatedExams };
+        }
+
+        // Case 3: Wasn't in session but was added now
+        if (!hadExamOnDate && isSelected) {
+          const previousAttempts = st.exams.filter(e => e.exam_type === isSelected.exam_type);
+          const attemptNum = previousAttempts.length + 1;
+          const newExam: ExamRecord = {
+            id: `ex-${Date.now()}-${st.id}`,
+            student_id: st.id,
+            exam_type: isSelected.exam_type,
+            attempt_number: attemptNum,
+            exam_date: newDate,
+            exam_center: newCenter,
+            examiner_name: newExaminer,
+            result: 'pending',
+            fee_amount: isSelected.fee_amount,
+            fee_paid: false,
+          };
+          return { ...st, exams: [...st.exams, newExam] };
+        }
+
+        return st;
+      });
+
+      localStorage.setItem('kreno_students', JSON.stringify(updatedList));
+      return updatedList;
+    });
+
+    logAction(
+      'update',
+      'session',
+      newDate,
+      `Session du ${newDate}`,
+      `Modification de la session d'examen du ${originalDate} (${candidateSelections.length} candidat(s))`
+    );
+  };
+
   return (
     <KrenoContext.Provider
       value={{
@@ -1865,6 +1944,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         programExam,
         recordExamResult,
         createExamDaySession,
+        updateExamSession,
         updateExamResultById,
         toggleExamFeePayment,
         generateScheduleForStudent,
