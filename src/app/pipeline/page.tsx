@@ -202,119 +202,64 @@ export default function PipelinePage() {
     <div className="space-y-6">
       
       {/* Top Header & Actions */}
-      <div className="bg-card-bg p-6 rounded-3xl border border-card-border shadow-xs flex items-center justify-between flex-wrap gap-4 transition-colors">
+      <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-4 transition-colors">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 font-bold text-[11px]">
-              Commission d&apos;Examen Hebdomadaire
-            </span>
-            <span className="text-xs text-slate-400">• Sécurité Routière / Daïra d&apos;Aïn Oulmene</span>
-          </div>
-          <h2 className="text-xl font-black text-slate-900 dark:text-slate-200">
-            Sessions d&apos;Examens & Convocations Hebdomadaires
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">
+            Sessions d&apos;Examens
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Les examens se déroulent le même jour chaque semaine. Sélectionnez votre liste de candidats pour chaque session et suivez les règlements et les résultats en direct.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Sélectionnez vos candidats pour chaque date d&apos;examen, suivez les résultats et imprimez le bordereau officiel A4.
           </p>
         </div>
 
         {/* View Toggle & New Session Button */}
         <div className="flex items-center gap-3">
-          <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-bold">
+          <div className="flex p-1 bg-slate-100 dark:bg-surface-elevated rounded-xl text-xs font-semibold">
             <button
               onClick={() => setViewMode('sessions')}
               className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                 viewMode === 'sessions'
-                  ? 'bg-card-bg text-slate-900 dark:text-slate-200 shadow-xs'
+                  ? 'bg-surface text-slate-900 dark:text-white shadow-xs font-bold'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
               }`}
             >
-              <Calendar className="w-3.5 h-3.5" /> Sessions par Journée
+              <Calendar className="w-3.5 h-3.5" /> Par Date d&apos;Examen
             </button>
             <button
               onClick={() => setViewMode('kanban')}
               className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                 viewMode === 'kanban'
-                  ? 'bg-card-bg text-slate-900 dark:text-slate-200 shadow-xs'
+                  ? 'bg-surface text-slate-900 dark:text-white shadow-xs font-bold'
                   : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
               }`}
             >
-              <Columns3 className="w-3.5 h-3.5" /> Cycle des 3 Épreuves
+              <Columns3 className="w-3.5 h-3.5" /> Par Épreuve (3 Étapes)
             </button>
           </div>
 
           <button
             onClick={() => setIsNewSessionOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-600/20 cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-hover active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-md shadow-primary/20 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Programmer une Journée d&apos;Examen</span>
+            <span>Programmer un Examen</span>
           </button>
         </div>
       </div>
 
-      {/* Analytics Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
-        <div className="p-4 bg-card-bg rounded-2xl border border-card-border shadow-2xs">
-          <span className="text-slate-500 dark:text-slate-400 font-sans block font-semibold mb-1">Sessions Programmées</span>
-          <div className="flex items-baseline justify-between">
-            <strong className="text-2xl font-bold text-slate-900 dark:text-slate-200">{examSessions.length}</strong>
-            <span className="text-[10px] text-slate-400 font-sans">journées</span>
-          </div>
-        </div>
-
-        <div className="p-4 bg-card-bg rounded-2xl border border-card-border shadow-2xs">
-          <span className="text-slate-500 dark:text-slate-400 font-sans block font-semibold mb-1">Total Candidats Présentés</span>
-          <div className="flex items-baseline justify-between">
-            <strong className="text-2xl font-bold text-primary">{totalExamsConducted}</strong>
-            <span className="text-[10px] text-slate-400 font-sans">passages enregistrés</span>
-          </div>
-        </div>
-
-        <div className="p-4 bg-card-bg rounded-2xl border border-card-border shadow-2xs">
-          <span className="text-slate-500 dark:text-slate-400 font-sans block font-semibold mb-1">Taux Global de Réussite</span>
-          <div className="flex items-baseline justify-between">
-            <strong className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{totalPassedAll}</strong>
-            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold font-sans">
-              {totalExamsConducted > 0 ? `${Math.round((totalPassedAll / totalExamsConducted) * 100)}% de succès` : '-'}
-            </span>
-          </div>
-        </div>
-
-        <div className="p-4 bg-card-bg rounded-2xl border border-card-border shadow-2xs">
-          <span className="text-slate-500 dark:text-slate-400 font-sans block font-semibold mb-1">Frais d&apos;Examen Encaissés</span>
-          <div className="flex items-baseline justify-between">
-            <strong className="text-xl font-black text-purple-600 dark:text-purple-400">{totalFeesAll.toLocaleString()}</strong>
-            <span className="text-[10px] text-slate-400 font-sans">DZD (2 000 DZD / passage)</span>
-          </div>
-        </div>
+      {/* Discreet Summary Pill */}
+      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
+        <span>
+          <strong>{examSessions.length}</strong> journée{examSessions.length > 1 ? 's' : ''} d&apos;examen • <strong>{totalExamsConducted}</strong> passages enregistrés • <strong>{totalPassedAll}</strong> admis
+        </span>
+        <span className="text-[11px] text-slate-400 hidden sm:inline">
+          Cliquez sur une session pour afficher la liste déroulante des candidats
+        </span>
       </div>
 
       {/* VIEW 1: WEEKLY EXAM DAYS LIST (ACCORDION TABLE) */}
       {viewMode === 'sessions' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Historique des Journées d&apos;Examen Hebdomadaires ({examSessions.length} sessions trouvées)
-            </h3>
-            <span className="text-[11px] text-slate-400">
-              Cliquez sur une session pour afficher la liste déroulante des candidats
-            </span>
-          </div>
-
-          {/* Aligned Column Header for 13"+ screens */}
-          <div className="hidden lg:grid grid-cols-12 gap-3 px-6 py-3 text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-100 dark:bg-card-bg rounded-xl border border-card-border select-none shadow-2xs">
-            <div className="col-span-3 flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5 text-blue-600" />
-              <span>Session &amp; Centre d&apos;Examen</span>
-            </div>
-            <div className="col-span-2">Catégories &amp; Effectif</div>
-            <div className="col-span-3 text-center">Épreuves Réparties (Code • Créneau • Conduite)</div>
-            <div className="col-span-2 text-center">Taux de Réussite</div>
-            <div className="col-span-1 text-center">Frais Réglés</div>
-            <div className="col-span-1 text-right">Actions</div>
-          </div>
-
+        <div className="space-y-3">
           {examSessions.map(session => {
             const isExpanded = !!expandedDates[session.date];
             const passRate = session.totalCandidates > 0 ? Math.round((session.passedCount / session.totalCandidates) * 100) : 0;
@@ -322,152 +267,94 @@ export default function PipelinePage() {
             return (
               <div 
                 key={session.date}
-                className="bg-card-bg rounded-2xl border border-card-border shadow-xs overflow-hidden transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-700"
+                className="bg-surface rounded-2xl border border-border-subtle shadow-xs overflow-hidden transition-all duration-150 hover:border-slate-300 dark:hover:border-slate-700"
               >
-                {/* Accordion Summary Row - Perfectly Aligned Grid */}
+                {/* Accordion Summary Row - Spacious & Simple */}
                 <div 
                   onClick={() => toggleAccordion(session.date)}
-                  className="p-4 lg:grid lg:grid-cols-12 flex flex-col gap-4 items-center cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-850/60 transition select-none"
+                  className="p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/70 dark:hover:bg-surface-elevated/40 transition select-none"
                 >
-                  {/* Col 1: Date & Center (col-span-3) */}
-                  <div className="lg:col-span-3 flex items-center gap-3.5 w-full">
-                    <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center font-bold text-slate-700 dark:text-slate-300 shrink-0 border border-card-border shadow-2xs">
-                      <Calendar className="w-5 h-5 text-blue-600" />
+                  {/* Left: Date & Center */}
+                  <div className="flex items-center gap-3.5 min-w-[260px]">
+                    <div className="w-11 h-11 rounded-xl bg-primary-subtle text-primary border border-primary-subtle-border flex flex-col items-center justify-center shrink-0">
+                      <Calendar className="w-5 h-5" />
                     </div>
-                    <div className="min-w-0">
+                    <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-black text-slate-900 dark:text-slate-200 font-mono truncate">
+                        <h4 className="text-sm font-black text-slate-900 dark:text-white font-mono">
                           {session.date}
                         </h4>
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           !session.isPast 
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
-                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-card-border'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300' 
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                         }`}>
                           {!session.isPast ? 'À venir' : 'Clôturée'}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                        {session.center}
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {session.center} • {session.examiner}
                       </p>
                     </div>
                   </div>
 
-                  {/* Col 2: Categories & Total Candidates (col-span-2) */}
-                  <div className="lg:col-span-2 flex flex-col justify-center w-full gap-1">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block lg:hidden">
-                      Catégories ({session.totalCandidates} candidats)
+                  {/* Middle: Total candidates & exam types */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-surface-elevated font-black text-xs text-slate-800 dark:text-slate-200 border border-border-subtle">
+                      {session.totalCandidates} Candidat{session.totalCandidates > 1 ? 's' : ''}
                     </span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {Object.entries(session.categoriesCount).map(([cat, count]) => (
-                        <span 
-                          key={cat} 
-                          className={`px-2 py-0.5 rounded-md font-bold font-mono text-[11px] border shadow-2xs ${getCategoryBadgeClass(cat)}`}
-                        >
-                          {cat}: <strong className="font-black">{count}</strong>
-                        </span>
-                      ))}
-                    </div>
-                    <span className="text-[10.5px] text-slate-400 dark:text-slate-500 font-mono font-semibold hidden lg:block">
-                      {session.totalCandidates} candidat{session.totalCandidates > 1 ? 's' : ''} au total
-                    </span>
-                  </div>
 
-                  {/* Col 3: Structured 3-Slot Exam Grid (col-span-3) - Perfectly aligned across all rows */}
-                  <div className="lg:col-span-3 flex flex-col justify-center w-full">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block lg:hidden mb-1">
-                      Épreuves Programmées
-                    </span>
-                    <div className="grid grid-cols-3 gap-1.5 w-full bg-slate-50 dark:bg-card-bg p-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-                      {/* Code slot */}
-                      <div className={`px-2 py-1 rounded-lg text-center flex flex-col items-center justify-center border transition ${
-                        session.examTypesCount.code > 0
-                          ? 'bg-blue-50 dark:bg-blue-950/70 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300'
-                          : 'bg-transparent border-transparent text-slate-400 dark:text-slate-600'
-                      }`}>
-                        <span className="text-[9px] uppercase font-bold tracking-wider">Code</span>
-                        <span className="font-mono font-black text-xs">
-                          {session.examTypesCount.code > 0 ? session.examTypesCount.code : '—'}
+                    <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                      {session.examTypesCount.code > 0 && (
+                        <span className="px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold border border-blue-200 dark:border-blue-800/60 text-[11px]">
+                          {session.examTypesCount.code} Code
                         </span>
-                      </div>
-
-                      {/* Créneau slot */}
-                      <div className={`px-2 py-1 rounded-lg text-center flex flex-col items-center justify-center border transition ${
-                        session.examTypesCount.creneau > 0
-                          ? 'bg-purple-50 dark:bg-purple-950/70 border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-300'
-                          : 'bg-transparent border-transparent text-slate-400 dark:text-slate-600'
-                      }`}>
-                        <span className="text-[9px] uppercase font-bold tracking-wider">Créneau</span>
-                        <span className="font-mono font-black text-xs">
-                          {session.examTypesCount.creneau > 0 ? session.examTypesCount.creneau : '—'}
+                      )}
+                      {session.examTypesCount.creneau > 0 && (
+                        <span className="px-2 py-0.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-semibold border border-purple-200 dark:border-purple-800/60 text-[11px]">
+                          {session.examTypesCount.creneau} Créneau
                         </span>
-                      </div>
-
-                      {/* Conduite slot */}
-                      <div className={`px-2 py-1 rounded-lg text-center flex flex-col items-center justify-center border transition ${
-                        session.examTypesCount.circulation > 0
-                          ? 'bg-amber-50 dark:bg-amber-950/70 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300'
-                          : 'bg-transparent border-transparent text-slate-400 dark:text-slate-600'
-                      }`}>
-                        <span className="text-[9px] uppercase font-bold tracking-wider">Conduite</span>
-                        <span className="font-mono font-black text-xs">
-                          {session.examTypesCount.circulation > 0 ? session.examTypesCount.circulation : '—'}
+                      )}
+                      {session.examTypesCount.circulation > 0 && (
+                        <span className="px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold border border-amber-200 dark:border-amber-800/60 text-[11px]">
+                          {session.examTypesCount.circulation} Conduite
                         </span>
-                      </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Col 4: Results (col-span-2) */}
-                  <div className="lg:col-span-2 flex justify-start lg:justify-center w-full">
-                    <div className="w-full max-w-[170px] px-3 py-2 rounded-xl bg-slate-50 dark:bg-card-bg border border-card-border flex items-center gap-2.5 shadow-2xs">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                        session.passedCount > 0 
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300' 
-                          : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-                      }`}>
-                        <Award className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="font-mono font-black text-slate-900 dark:text-slate-200 text-xs block leading-tight">
-                          {session.passedCount}/{session.totalCandidates} Admis
-                        </span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
-                          {session.pendingCount > 0 ? `${session.pendingCount} en attente` : `${passRate}% réussite`}
-                        </span>
-                      </div>
+                  {/* Right: Results, Fees & Print button */}
+                  <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+                    {/* Results */}
+                    <div className="text-right">
+                      <span className="text-xs font-black font-mono text-slate-900 dark:text-white block">
+                        {session.passedCount} / {session.totalCandidates} Admis
+                      </span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                        {session.pendingCount > 0 ? `${session.pendingCount} en attente` : `${passRate}% succès`}
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Col 5: Financial Situation (col-span-1) */}
-                  <div className="lg:col-span-1 flex justify-start lg:justify-center w-full">
-                    <div className={`w-full px-2.5 py-1.5 rounded-xl border flex flex-col items-center justify-center text-center shadow-2xs ${
-                      session.unpaidFeesCount === 0 
-                        ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60' 
-                        : 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60'
+                    {/* Fees situation */}
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
+                      session.unpaidFeesCount === 0
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
+                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
                     }`}>
-                      <span className="font-mono font-black text-slate-900 dark:text-slate-200 text-xs block leading-tight">
-                        {session.feesPaidTotal.toLocaleString()} DZD
-                      </span>
-                      <span className={`text-[9px] font-black uppercase tracking-wider block truncate ${
-                        session.unpaidFeesCount === 0 
-                          ? 'text-emerald-600 dark:text-emerald-400' 
-                          : 'text-amber-600 dark:text-amber-400'
-                      }`}>
-                        {session.unpaidFeesCount === 0 ? '100% Réglé' : `${session.unpaidFeesCount} Impayé(s)`}
-                      </span>
-                    </div>
-                  </div>
+                      {session.unpaidFeesCount === 0 ? 'Frais Réglés' : `${session.unpaidFeesCount} Impayé(s)`}
+                    </span>
 
-                  {/* Col 6: Actions (col-span-1) */}
-                  <div className="lg:col-span-1 flex items-center justify-end gap-1.5 w-full">
+                    {/* Print Bordereau Button */}
                     <button
                       onClick={(e) => handleOpenPrint(session, e)}
-                      className="p-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/70 dark:hover:bg-blue-900 text-brand-primary dark:text-brand-soft rounded-xl transition cursor-pointer shadow-2xs border border-blue-200 dark:border-blue-800"
-                      title="Imprimer le Bordereau Officiel A4 (Modèle 03)"
+                      className="px-3 py-1.5 bg-primary-subtle hover:bg-primary hover:text-white text-primary rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-primary-subtle-border cursor-pointer"
+                      title="Imprimer le Bordereau Officiel A4"
                     >
-                      <Printer className="w-4 h-4" />
+                      <Printer className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Bordereau A4</span>
                     </button>
 
+                    {/* Delete button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -483,13 +370,13 @@ export default function PipelinePage() {
                           },
                         });
                       }}
-                      className="p-2 hover:bg-rose-100 dark:hover:bg-rose-950/60 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
-                      title="Supprimer cette session d'examen"
+                      className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                      title="Supprimer cette session"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
 
-                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-surface-elevated flex items-center justify-center text-slate-500 shrink-0">
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </div>

@@ -32,37 +32,37 @@ export function Sidebar() {
     },
     { 
       path: '/candidates', 
-      label: 'Candidats & Dossiers', 
+      label: 'Candidats', 
       icon: Users, 
       ownerOnly: false 
     },
     { 
       path: '/pipeline', 
-      label: 'Sessions d\'Examens & Résultats', 
+      label: 'Examens', 
       icon: Award, 
       ownerOnly: false 
     },
     { 
       path: '/schedule', 
-      label: 'Planning des Séances (1h)', 
+      label: 'Planning', 
       icon: Calendar, 
       ownerOnly: false 
     },
     { 
       path: '/vehicles', 
-      label: 'Parc Véhicules', 
+      label: 'Véhicules', 
       icon: Car, 
       ownerOnly: false 
     },
     { 
       path: '/finances', 
-      label: 'Finances & Recettes', 
+      label: 'Finances', 
       icon: DollarSign, 
       ownerOnly: true 
     },
     { 
       path: '/settings', 
-      label: 'Paramètres & Horaires', 
+      label: 'Paramètres', 
       icon: Settings, 
       ownerOnly: true 
     },

@@ -21,7 +21,7 @@ import { ExamType, Student, getCategoryBadgeClass } from '@/types/kreno';
 import { CandidateSummaryModal } from '@/components/CandidateSummaryModal';
 
 export default function DashboardPage() {
-  const { students, userRole } = useKreno();
+  const { students, userRole, school } = useKreno();
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const isOwner = userRole === 'owner';
@@ -82,35 +82,33 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner: Rich Midnight Navy & Sapphire Glow */}
-      <div className="bg-gradient-to-r from-[#0B132B] via-[#111C38] to-[#0B132B] rounded-3xl p-7 text-white shadow-xl relative overflow-hidden flex items-center justify-between border border-blue-900/50">
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2.5">
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 font-mono tracking-wide">
-              Plateforme SaaS Auto-École • KRENO PRO
-            </span>
-            <span className="text-xs text-slate-400">• Session active</span>
-          </div>
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white mb-1.5">
-            Tableau de Bord Général
+      {/* Welcome Banner */}
+      <div className="bg-surface rounded-2xl p-6 border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-4 transition-colors">
+        <div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">
+            Tableau de Bord
           </h2>
-          <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
-            Gestion intégrée des candidats, planification par unités de 1h, suivi des 3 examens officiels et édition des bordereaux A4.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Auto-École {school.name} • Suivi simplifié des candidats, des séances de conduite et des examens.
           </p>
         </div>
 
-        <div className="hidden lg:flex items-center gap-3 relative z-10">
+        <div className="flex items-center gap-3">
           <Link
             href="/candidates"
-            className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition cursor-pointer flex items-center gap-2"
+            className="px-4 py-2 bg-primary hover:bg-primary-hover active:scale-95 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer"
           >
             <Users className="w-4 h-4" />
-            <span>Consulter le Registre des Candidats</span>
+            <span>Voir les Candidats</span>
+          </Link>
+          <Link
+            href="/pipeline"
+            className="px-4 py-2 bg-slate-100 dark:bg-surface-elevated hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-border-subtle cursor-pointer"
+          >
+            <Award className="w-4 h-4" />
+            <span>Examens Hebdo</span>
           </Link>
         </div>
-
-        {/* Subtle decorative glow */}
-        <div className="absolute right-0 top-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
       </div>
 
       {/* KPI Cards: Structured 4-column layout */}
@@ -299,13 +297,10 @@ export default function DashboardPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-surface-elevated text-slate-600 dark:text-slate-400 font-bold border-b border-border-subtle uppercase tracking-wider text-[10px]">
               <tr>
-                <th className="p-3.5">N° Dossier</th>
-                <th className="p-3.5">Candidat</th>
+                <th className="p-3.5">Candidat & Dossier</th>
                 <th className="p-3.5">Catégorie</th>
                 <th className="p-3.5">Téléphone</th>
-                <th className="p-3.5 text-center">Code</th>
-                <th className="p-3.5 text-center">Créneau</th>
-                <th className="p-3.5 text-center">Conduite</th>
+                <th className="p-3.5 text-center">Épreuve Actuelle</th>
                 <th className="p-3.5 text-right">Action</th>
               </tr>
             </thead>
@@ -321,48 +316,51 @@ export default function DashboardPage() {
                     onClick={() => handleRowClick(st)}
                     className="hover:bg-slate-50 dark:hover:bg-surface-elevated/70 transition cursor-pointer group"
                   >
-                    <td className="p-3.5 font-mono text-slate-600 dark:text-slate-400 font-bold group-hover:text-blue-600 dark:group-hover:text-blue-400">{st.dossier_number}</td>
                     <td className="p-3.5">
-                      <span className="font-bold text-slate-900 dark:text-white block group-hover:text-blue-600 dark:group-hover:text-blue-400">{st.first_name} {st.last_name}</span>
-                      <span className="text-[10px] text-slate-400">Né le {st.birth_date}</span>
+                      <span className="font-bold text-slate-900 dark:text-white block group-hover:text-primary transition">
+                        {st.first_name} {st.last_name}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        {st.dossier_number} • Inscrit le {st.deposit_date}
+                      </span>
                     </td>
                     <td className="p-3.5">
-                      <span className={`px-2.5 py-1 rounded-md text-xs border shadow-2xs ${getCategoryBadgeClass(st.requested_category)}`}>
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-bold border shadow-2xs ${getCategoryBadgeClass(st.requested_category)}`}>
                         Cat. {st.requested_category}
                       </span>
                     </td>
                     <td className="p-3.5 font-mono text-slate-600 dark:text-slate-400 font-semibold">{st.phone_number}</td>
-                    <td className="p-3.5 text-center">
-                      {codePassed ? (
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">Validé</span>
-                      ) : (
-                        <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-medium">En cours</span>
-                      )}
-                    </td>
-                    <td className="p-3.5 text-center">
-                      {creneauPassed ? (
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">Validé</span>
-                      ) : (
-                        <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-medium">En cours</span>
-                      )}
-                    </td>
+                    
                     <td className="p-3.5 text-center">
                       {circPassed ? (
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">Validé</span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 font-bold text-xs border border-emerald-200 dark:border-emerald-800 shadow-2xs">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Permis Obtenu
+                        </span>
+                      ) : creneauPassed ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 font-bold text-xs border border-amber-200 dark:border-amber-800 shadow-2xs">
+                          3. Prêt pour Conduite
+                        </span>
+                      ) : codePassed ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 font-bold text-xs border border-purple-200 dark:border-purple-800 shadow-2xs">
+                          2. Prêt pour Créneau
+                        </span>
                       ) : (
-                        <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-medium">En cours</span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 font-bold text-xs border border-blue-200 dark:border-blue-800 shadow-2xs">
+                          1. En cours de Code
+                        </span>
                       )}
                     </td>
+
                     <td className="p-3.5 text-right">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRowClick(st);
                         }}
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-surface-elevated dark:hover:bg-surface-hover text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer border border-border-subtle shadow-2xs"
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-primary hover:text-white dark:bg-surface-elevated dark:hover:bg-primary text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 cursor-pointer border border-border-subtle shadow-2xs"
                       >
                         <Eye className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                        <span>Fiche Synthèse</span>
+                        <span>Fiche</span>
                       </button>
                     </td>
                   </tr>
