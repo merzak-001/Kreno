@@ -65,12 +65,12 @@ export default function CandidatesPage() {
         <div>
           <h2 className="text-lg font-black text-slate-900 dark:text-white">Registre des Candidats & Dossiers</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {filteredStudents.length} candidats trouvÃ©s â€¢ <strong>Cliquez sur une ligne</strong> pour ouvrir la fiche synthÃ¨se (historique, paiements, examens).
+            {filteredStudents.length} candidats trouvés • <strong>Cliquez sur une ligne</strong> pour ouvrir la fiche synthèse (historique, paiements, examens).
           </p>
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto text-xs">
-          <span className="font-bold text-slate-500 dark:text-slate-400 mr-2">Filtrer par CatÃ©gorie :</span>
+          <span className="font-bold text-slate-500 dark:text-slate-400 mr-2">Filtrer par Catégorie :</span>
           {['all', 'B', 'A', 'C', 'D', 'BE'].map(cat => (
             <button
               key={cat}
@@ -95,9 +95,9 @@ export default function CandidatesPage() {
               <tr>
                 <th className="p-4">Candidat & Dossier</th>
                 <th className="p-4">Permis</th>
-                <th className="p-4">TÃ©lÃ©phone</th>
+                <th className="p-4">Téléphone</th>
                 <th className="p-4 text-center">Progression Examen</th>
-                <th className="p-4 text-center">RÃ¨glement Forfait</th>
+                <th className="p-4 text-center">Règlement Forfait</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -119,7 +119,7 @@ export default function CandidatesPage() {
                         {st.first_name} {st.last_name}
                       </span>
                       <span className="text-[11px] text-slate-400 font-mono">
-                        {st.dossier_number} â€¢ NIN: {st.nin}
+                        {st.dossier_number} • NIN: {st.nin}
                       </span>
                     </td>
                     
@@ -143,11 +143,11 @@ export default function CandidatesPage() {
                         </span>
                       ) : creneauPassed ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 font-bold text-xs border border-amber-200 dark:border-amber-800 shadow-2xs">
-                          3. PrÃªt pour Conduite
+                          3. Prêt pour Conduite
                         </span>
                       ) : codePassed ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 font-bold text-xs border border-purple-200 dark:border-purple-800 shadow-2xs">
-                          2. PrÃªt pour CrÃ©neau
+                          2. Prêt pour Créneau
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 font-bold text-xs border border-blue-200 dark:border-blue-800 shadow-2xs">
@@ -160,7 +160,7 @@ export default function CandidatesPage() {
                     <td className="p-4 text-center font-mono">
                       {remaining === 0 ? (
                         <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">
-                          SoldÃ©
+                          Soldé
                         </span>
                       ) : (
                         <span className="inline-block px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold text-xs border border-amber-200 dark:border-amber-800/60 shadow-2xs">
@@ -175,7 +175,7 @@ export default function CandidatesPage() {
                         <button
                           onClick={() => handleRowClick(st)}
                           className="px-2.5 py-1.5 bg-slate-100 dark:bg-surface-elevated hover:bg-primary hover:text-white rounded-lg text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
-                          title="Consulter la fiche complÃ¨te"
+                          title="Consulter la fiche complète"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           <span>Dossier</span>
@@ -208,7 +208,6 @@ export default function CandidatesPage() {
         </div>
       </div>
 
-
       {/* Candidate Summary Modal */}
       <CandidateSummaryModal
         isOpen={isModalOpen}
@@ -227,9 +226,9 @@ export default function CandidatesPage() {
       <ConfirmModal
         isOpen={confirmDelete.isOpen}
         title="Supprimer le dossier candidat"
-        message={`ÃŠtes-vous sÃ»r de vouloir supprimer dÃ©finitivement le candidat ${confirmDelete.student?.first_name} ${confirmDelete.student?.last_name} (${confirmDelete.student?.dossier_number}) ?`}
-        warningNote="Tous les examens, versements et sÃ©ances associÃ©s seront Ã©galement supprimÃ©s. Cette action sera enregistrÃ©e dans le journal d'audit."
-        confirmText="Supprimer dÃ©finitivement"
+        message={`Êtes-vous sûr de vouloir supprimer définitivement le candidat ${confirmDelete.student?.first_name} ${confirmDelete.student?.last_name} (${confirmDelete.student?.dossier_number}) ?`}
+        warningNote="Tous les examens, versements et séances associés seront également supprimés. Cette action sera enregistrée dans le journal d'audit."
+        confirmText="Supprimer définitivement"
         onConfirm={() => {
           if (confirmDelete.student) {
             deleteStudent(confirmDelete.student.id);

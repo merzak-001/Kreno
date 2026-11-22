@@ -134,7 +134,20 @@ const DEFAULT_SETTINGS: SchoolSettings = {
   slot_duration_hours: 1, // 1 heure fixe par unité
   lunch_break_start: '12:00',
   lunch_break_end: '13:00',
-  standard_exam_fee: 2000, // 2000 DZD par examen
+  standard_exam_fee: 2000, // 2000 DZD par défaut
+  category_exam_fees: {
+    'A1': 1500,
+    'A': 1500,
+    'B': 2000,
+    'BE': 2500,
+    'C1': 2500,
+    'C1E': 3000,
+    'C': 3000,
+    'CE': 3500,
+    'D': 3500,
+    'DE': 4000,
+    'F': 2000,
+  },
   unavailable_periods: [
     {
       id: 'un-1',

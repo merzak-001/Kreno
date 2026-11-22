@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Printer, FileText, Check, Layout, RotateCcw } from 'lucide-react';
+import { X, Printer, FileText, Check, Layout } from 'lucide-react';
 import { Student, ExamRecord, School } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
 
@@ -23,8 +23,8 @@ export function ExamSessionPrintModal({
   entries,
 }: ExamSessionPrintModalProps) {
   const { school } = useKreno();
-  // Default to landscape as in official Algerian Bordereau Modèle N° 03
-  const [orientation, setOrientation] = useState<'landscape' | 'portrait'>('landscape');
+  // Vertical Portrait by default as requested: "the A4 should be vertical if theres alot of candidate it automatically jumps for the second page"
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
 
   if (!isOpen) return null;
 
@@ -32,11 +32,16 @@ export function ExamSessionPrintModal({
     window.print();
   };
 
-  // Official Pagination:
-  // In Landscape (official Algerian standard): 15 candidates fit perfectly on Page 1
-  // Page 2 contains remaining candidates + moniteurs + statistical summary table + inspector cachet
-  const isLandscape = orientation === 'landscape';
-  const page1Max = isLandscape ? 15 : 16;
+  const isPortrait = orientation === 'portrait';
+
+  // Capacity per page in Vertical Portrait:
+  // Page 1 header takes ~65mm, table can fit up to 16 candidates cleanly without spilling over.
+  // If entries <= 16, it fits on 1 page! (unless summary is also required, in which case 12 on P1 and rest + summary on P2).
+  // When there are more than 14 candidates, it splits cleanly across pages.
+  const page1Max = isPortrait ? 15 : 15;
+  const needsSecondPage = entries.length > page1Max || entries.length > 10;
+  
+  // Page distribution
   const page1Entries = entries.slice(0, page1Max);
   const page2Entries = entries.slice(page1Max);
 
@@ -56,9 +61,9 @@ export function ExamSessionPrintModal({
       case 'code':
         return 'ق.م (قانون المرور)';
       case 'creneau':
-        return 'مناورات';
+        return 'مناورات (المرآب)';
       case 'circulation':
-        return 'سياقة';
+        return 'سياقة (السير)';
       default:
         return type;
     }
@@ -90,6 +95,8 @@ export function ExamSessionPrintModal({
     }
   })();
 
+  const totalPages = page2Entries.length > 0 || needsSecondPage ? 2 : 1;
+
   return (
     <>
       {/* Dynamic Print CSS for strict A4 dimensions */}
@@ -98,7 +105,7 @@ export function ExamSessionPrintModal({
           @media print {
             @page {
               size: A4 ${orientation};
-              margin: ${isLandscape ? '8mm 10mm' : '10mm 12mm'};
+              margin: ${isPortrait ? '8mm 10mm' : '8mm 10mm'};
             }
             html, body {
               margin: 0 !important;
@@ -123,9 +130,9 @@ export function ExamSessionPrintModal({
               background: white !important;
             }
             .a4-page-sheet {
-              width: ${isLandscape ? '277mm' : '190mm'} !important;
-              min-height: ${isLandscape ? '194mm' : '277mm'} !important;
-              max-height: ${isLandscape ? '194mm' : '277mm'} !important;
+              width: ${isPortrait ? '190mm' : '277mm'} !important;
+              min-height: ${isPortrait ? '277mm' : '194mm'} !important;
+              max-height: ${isPortrait ? '277mm' : '194mm'} !important;
               margin: 0 auto !important;
               padding: 0 !important;
               box-shadow: none !important;
@@ -143,65 +150,63 @@ export function ExamSessionPrintModal({
       }} />
 
       <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-        <div className="bg-card-bg rounded-2xl w-full max-w-7xl max-h-[96vh] flex flex-col shadow-2xl border border-card-border overflow-hidden text-slate-900 dark:text-slate-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-7xl max-h-[96vh] flex flex-col shadow-2xl border border-slate-300 dark:border-slate-700 overflow-hidden text-slate-900 dark:text-slate-100">
           
           {/* Topbar Actions */}
-          <div className="px-6 py-4 border-b border-card-border flex items-center justify-between bg-slate-50 dark:bg-card-bg shrink-0">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary-subtle text-primary border border-primary-subtle-border flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center font-bold">
                 <Printer className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-primary text-white">النموذج رقم 03</span>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-200">
-                    Bordereau Officiel A4 — Liste des Candidats à l&apos;Examen du Permis
+                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-blue-600 text-white">النموذج رقم 03</span>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    Bordereau Officiel A4 Vertical — Liste des Candidats à l&apos;Examen du Permis
                   </h2>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Format standard papier A4 ({isLandscape ? '297 × 210 mm Paysage' : '210 × 297 mm Portrait'}) • Session du <strong className="font-mono text-slate-700 dark:text-slate-300">{sessionDate}</strong> ({entries.length} candidats)
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Format A4 Vertical ({totalPages} page{totalPages > 1 ? 's' : ''}) • Session du {sessionDate} • {sessionCenter} • {examinerName}
                 </p>
               </div>
             </div>
 
-            {/* Controls: Orientation Switcher & Print Button */}
             <div className="flex items-center gap-3">
-              
               {/* Orientation Switcher */}
-              <div className="flex items-center p-1 bg-slate-200/80 dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300">
-                <button
-                  type="button"
-                  onClick={() => setOrientation('landscape')}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                    isLandscape 
-                      ? 'bg-card-bg text-primary shadow-xs font-black' 
-                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
-                  }`}
-                  title="Format officiel recommandé : A4 Paysage / Horizontal (297 x 210 mm)"
-                >
-                  <Layout className="w-3.5 h-3.5 rotate-90" />
-                  <span>A4 Paysage (Officiel)</span>
-                </button>
-
+              <div className="flex items-center p-1 bg-slate-200 dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300">
                 <button
                   type="button"
                   onClick={() => setOrientation('portrait')}
                   className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                    !isLandscape 
-                      ? 'bg-card-bg text-primary shadow-xs font-black' 
+                    isPortrait 
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black' 
                       : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
                   }`}
-                  title="Format A4 Portrait standard (210 x 297 mm)"
+                  title="Format A4 Vertical Portrait standard (210 x 297 mm)"
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  <span>A4 Portrait</span>
+                  <span>A4 Vertical (Recommandé)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOrientation('landscape')}
+                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+                    !isPortrait 
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black' 
+                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                  }`}
+                  title="Format A4 Horizontal Paysage"
+                >
+                  <Layout className="w-3.5 h-3.5 rotate-90" />
+                  <span>A4 Paysage</span>
                 </button>
               </div>
 
               {/* Print Button */}
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-hover active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-primary/20 transition cursor-pointer"
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <span>Imprimer sur Papier A4</span>
@@ -222,15 +227,15 @@ export function ExamSessionPrintModal({
             <div id="printable-a4-document" className="flex flex-col items-center gap-10 w-full">
               
               {/* ========================================================= */}
-              {/* PAGE 1 / 2 (Feuille A4 stricte)                           */}
+              {/* PAGE 1 (Feuille A4 stricte)                               */}
               {/* ========================================================= */}
               <div 
                 className="a4-page-sheet bg-white border border-slate-300 shadow-2xl text-slate-900 font-sans text-right relative flex flex-col justify-between"
                 dir="rtl"
                 style={{
-                  width: isLandscape ? '297mm' : '210mm',
-                  minHeight: isLandscape ? '210mm' : '297mm',
-                  padding: isLandscape ? '8mm 12mm' : '10mm 12mm',
+                  width: isPortrait ? '210mm' : '297mm',
+                  minHeight: isPortrait ? '297mm' : '210mm',
+                  padding: isPortrait ? '8mm 10mm' : '8mm 12mm',
                   boxSizing: 'border-box',
                 }}
               >
@@ -239,165 +244,84 @@ export function ExamSessionPrintModal({
                   <div className="flex justify-between items-start border-b-2 border-black pb-2 mb-2 text-xs">
                     
                     {/* Right side in RTL: Ministry & Wilaya */}
-                    <div className="space-y-0.5 text-right w-[32%]">
-                      <p className="font-extrabold text-[12px] leading-tight text-black">الجمهورية الجزائرية الديمقراطية الشعبية</p>
-                      <p className="font-bold text-[10.5px] text-black leading-tight">وزارة الداخلية، الجماعات المحلية والتهيئة العمرانية</p>
-                      <p className="text-[10px] text-black font-semibold leading-tight">المندوبية الوطنية للأمن في الطرق</p>
-                      <p className="text-[10.5px] font-bold text-black pt-0.5">ولاية : {school.wilaya || 'سطيف'}</p>
+                    <div className="space-y-0.5 text-right w-[33%]">
+                      <p className="font-extrabold text-[11.5px] leading-tight text-black">الجمهورية الجزائرية الديمقراطية الشعبية</p>
+                      <p className="font-bold text-[10px] text-black leading-tight">وزارة الداخلية والجماعات المحلية والتهيئة العمرانية</p>
+                      <p className="text-[9.5px] text-black font-semibold leading-tight">المندوبية الوطنية للأمن في الطرق</p>
+                      <p className="text-[10px] font-bold text-black pt-0.5">ولاية : {school.wilaya || 'سطيف'}</p>
                     </div>
 
                     {/* Center: Model 03 Title */}
-                    <div className="text-center w-[30%]">
-                      <div className="border-2 border-black px-3 py-0.5 inline-block bg-white">
-                        <span className="font-black text-xs text-black tracking-wider">
-                          النموذج رقم 03 :
-                        </span>
+                    <div className="text-center w-[34%]">
+                      <div className="inline-block border-2 border-black px-2.5 py-0.5 mb-1 bg-slate-100">
+                        <span className="font-black text-xs text-black tracking-wide">النموذج رقم 03</span>
                       </div>
-                      <h2 className="font-black text-[13.5px] text-black mt-1 leading-snug">
-                        قائمة المترشحين لامتحان رخصة السياقة
-                      </h2>
+                      <h1 className="font-black text-sm text-black underline underline-offset-3">
+                        جدول إرسال المترشحين للامتحان
+                      </h1>
+                      <p className="text-[9.5px] text-black font-bold pt-0.5">
+                        للحصول على رخصة السياقة
+                      </p>
                     </div>
 
-                    {/* Left in RTL (Center, Filing date, Exam date, Inspector, School stamp) */}
-                    <div className="flex items-start gap-2 w-[38%] justify-end" dir="rtl">
-                      {/* Examination meta info */}
-                      <div className="border border-black p-1.5 text-[9.5px] space-y-0.5 leading-tight bg-white flex-1">
-                        <p><span className="font-bold">مركز الامتحان :</span> {sessionCenter}</p>
-                        <p><span className="font-bold">تاريخ الإيداع :</span> <span className="font-mono">{depositDate}</span></p>
-                        <p><span className="font-bold">تاريخ الامتحان :</span> <span className="font-mono font-bold">{sessionDate}</span></p>
-                        <p><span className="font-bold">اسم و لقب المفتش :</span> {examinerName}</p>
-                      </div>
-
-                      {/* Cachet Auto-École Box */}
-                      <div className="border-2 border-black p-1.5 text-center text-[9px] text-black bg-white w-28 shrink-0 flex flex-col justify-between h-20">
-                        <span className="font-bold text-[9px] leading-tight">ختم مدرسة تعليم السياقة</span>
-                        <div className="font-mono font-black text-sm text-black border-t border-black/50 pt-1">
-                          {school.agrement_number || '438'}
-                        </div>
-                      </div>
+                    {/* Left side in RTL: Auto-École Info */}
+                    <div className="space-y-0.5 text-left w-[33%]" dir="ltr">
+                      <p className="font-extrabold text-[11.5px] text-black leading-tight">{school.name}</p>
+                      <p className="text-[9.5px] font-semibold text-black leading-tight">N° d&apos;Agrément : <strong>{school.agrement_number}</strong></p>
+                      <p className="text-[9.5px] text-slate-800 leading-tight">Commune : {school.commune || 'Aïn Oulmene'}</p>
+                      <p className="text-[9.5px] text-slate-800 leading-tight">Tél : {school.phone || '0555 12 34 56'}</p>
                     </div>
-
                   </div>
 
-                  {/* Candidates Table Page 1: Strict 8 Columns as shown in physical document */}
+                  {/* Metadata session bar */}
+                  <div className="border border-black p-1.5 mb-2 bg-slate-50 text-[10px] flex justify-between items-center text-black font-bold">
+                    <span>مركز الامتحان : <strong>{sessionCenter}</strong></span>
+                    <span>تاريخ الامتحان : <strong className="font-mono">{sessionDate}</strong></span>
+                    <span>المهندس الممتحن : <strong>{examinerName}</strong></span>
+                    <span>تاريخ الإيداع : <strong className="font-mono">{depositDate}</strong></span>
+                  </div>
+
+                  {/* Candidates Table Page 1 */}
                   <div className="border-2 border-black overflow-hidden text-[10px]">
                     <table className="w-full text-center border-collapse">
                       <thead>
                         <tr className="bg-slate-100 border-b-2 border-black font-black text-black text-[10px]">
-                          <th className="p-1 border-l border-black w-8">الرقم</th>
-                          <th className="p-1 border-l border-black w-24">رقم التسجيل</th>
-                          <th className="p-1 border-l border-black min-w-[140px]">اللقب و الاسم</th>
-                          <th className="p-1 border-l border-black w-20">تاريخ الميلاد</th>
-                          <th className="p-1 border-l border-black w-12">الصنف</th>
-                          <th className="p-1 border-l border-black w-28">طبيعة الامتحان</th>
-                          <th className="p-1 border-l border-black w-22">تاريخ آخر امتحان</th>
-                          <th className="p-1 w-20">النتيجة</th>
+                          <th className="p-1 border-l border-black w-7">الرقم</th>
+                          <th className="p-1 border-l border-black w-20">رقم التسجيل</th>
+                          <th className="p-1 border-l border-black min-w-[130px]">اللقب و الاسم</th>
+                          <th className="p-1 border-l border-black w-18">تاريخ الميلاد</th>
+                          <th className="p-1 border-l border-black w-10">الصنف</th>
+                          <th className="p-1 border-l border-black w-24">طبيعة الامتحان</th>
+                          <th className="p-1 border-l border-black w-18">تاريخ الرسوب</th>
+                          <th className="p-1 w-16">النتيجة</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-black">
                         {page1Entries.map((item, idx) => (
-                          <tr key={item.exam.id} className="h-7 text-black">
-                            <td className="p-1 border-l border-black font-bold font-mono text-[10px]">{idx + 1}</td>
-                            <td className="p-1 border-l border-black font-mono text-[9.5px]">
+                          <tr key={item.exam.id} className="h-6">
+                            <td className="p-1 border-l border-black font-bold font-mono text-[9.5px]">{idx + 1}</td>
+                            <td className="p-1 border-l border-black font-mono text-[9px]">
                               {item.student.registration_number || item.student.dossier_number}
                             </td>
-                            <td className="p-1 border-l border-black font-bold text-black text-right pr-2 text-[10.5px]">
+                            <td className="p-1 border-l border-black font-bold text-black text-right pr-2 text-[10px]">
                               {item.student.last_name_ar || item.student.last_name} {item.student.first_name_ar || item.student.first_name}
                             </td>
-                            <td className="p-1 border-l border-black font-mono text-[9.5px]">{item.student.birth_date}</td>
-                            <td className="p-1 border-l border-black font-black text-[10.5px]">{item.student.requested_category}</td>
-                            <td className="p-1 border-l border-black font-bold text-[10px]">{formatNatureExam(item.exam.exam_type)}</td>
-                            <td className="p-1 border-l border-black font-mono text-[9.5px]">
+                            <td className="p-1 border-l border-black font-mono text-[9px]">{item.student.birth_date}</td>
+                            <td className="p-1 border-l border-black font-black text-[10px]">{item.student.requested_category}</td>
+                            <td className="p-1 border-l border-black font-bold text-[9.5px]">{formatNatureExam(item.exam.exam_type)}</td>
+                            <td className="p-1 border-l border-black font-mono text-[9px]">
                               {item.exam.attempt_number > 1 ? item.student.deposit_date : '—'}
                             </td>
-                            <td className="p-1 font-black text-[10.5px]">
+                            <td className="p-1 font-black text-[10px]">
                               {formatResultAr(item.exam.result)}
                             </td>
                           </tr>
                         ))}
 
-                        {/* Fill remaining empty rows to maintain strict official A4 table height */}
-                        {Array.from({ length: Math.max(0, page1Max - page1Entries.length) }).map((_, i) => (
-                          <tr key={`empty-p1-${i}`} className="h-7">
-                            <td className="border-l border-black text-slate-300 font-mono text-[9.5px]">{page1Entries.length + i + 1}</td>
-                            <td className="border-l border-black"></td>
-                            <td className="border-l border-black"></td>
-                            <td className="border-l border-black"></td>
-                            <td className="border-l border-black"></td>
-                            <td className="border-l border-black"></td>
-                            <td className="border-l border-black"></td>
-                            <td></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Pagination Page 1 Footer */}
-                <div className="flex justify-between items-center text-[10px] text-slate-800 pt-2 border-t border-black font-mono">
-                  <span>{school.name} • {school.phone} • {school.address}</span>
-                  <span className="font-black border-2 border-black px-2.5 py-0.5 rounded-xs text-black">1/2</span>
-                </div>
-
-              </div>
-
-
-              {/* ========================================================= */}
-              {/* PAGE 2 / 2 (Feuille A4 stricte)                           */}
-              {/* ========================================================= */}
-              <div 
-                className="a4-page-sheet bg-white border border-slate-300 shadow-2xl text-slate-900 font-sans text-right relative flex flex-col justify-between"
-                dir="rtl"
-                style={{
-                  width: isLandscape ? '297mm' : '210mm',
-                  minHeight: isLandscape ? '210mm' : '297mm',
-                  padding: isLandscape ? '8mm 12mm' : '10mm 12mm',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <div>
-                  {/* Candidates Table Page 2 Continuation */}
-                  <div className="border-2 border-black overflow-hidden text-[10px]">
-                    <table className="w-full text-center border-collapse">
-                      <thead>
-                        <tr className="bg-slate-100 border-b-2 border-black font-black text-black text-[10px]">
-                          <th className="p-1 border-l border-black w-8">الرقم</th>
-                          <th className="p-1 border-l border-black w-24">رقم التسجيل</th>
-                          <th className="p-1 border-l border-black min-w-[140px]">اللقب و الاسم</th>
-                          <th className="p-1 border-l border-black w-20">تاريخ الميلاد</th>
-                          <th className="p-1 border-l border-black w-12">الصنف</th>
-                          <th className="p-1 border-l border-black w-28">طبيعة الامتحان</th>
-                          <th className="p-1 border-l border-black w-22">تاريخ آخر امتحان</th>
-                          <th className="p-1 w-20">النتيجة</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-black">
-                        {page2Entries.map((item, idx) => (
-                          <tr key={item.exam.id} className="h-7 text-black">
-                            <td className="p-1 border-l border-black font-bold font-mono text-[10px]">{idx + page1Max + 1}</td>
-                            <td className="p-1 border-l border-black font-mono text-[9.5px]">
-                              {item.student.registration_number || item.student.dossier_number}
-                            </td>
-                            <td className="p-1 border-l border-black font-bold text-black text-right pr-2 text-[10.5px]">
-                              {item.student.last_name_ar || item.student.last_name} {item.student.first_name_ar || item.student.first_name}
-                            </td>
-                            <td className="p-1 border-l border-black font-mono text-[9.5px]">{item.student.birth_date}</td>
-                            <td className="p-1 border-l border-black font-black text-[10.5px]">{item.student.requested_category}</td>
-                            <td className="p-1 border-l border-black font-bold text-[10px]">{formatNatureExam(item.exam.exam_type)}</td>
-                            <td className="p-1 border-l border-black font-mono text-[9.5px]">
-                              {item.exam.attempt_number > 1 ? item.student.deposit_date : '—'}
-                            </td>
-                            <td className="p-1 font-black text-[10.5px]">
-                              {formatResultAr(item.exam.result)}
-                            </td>
-                          </tr>
-                        ))}
-
-                        {/* Empty lines on Page 2 (5 lines minimum to keep table proportion as seen in photo) */}
-                        {Array.from({ length: Math.max(5, 5 - page2Entries.length) }).map((_, i) => (
-                          <tr key={`empty-p2-${i}`} className="h-7">
-                            <td className="border-l border-black text-slate-300 font-mono text-[9.5px]">{page2Entries.length + page1Max + 1 + i}</td>
+                        {/* Fill remaining empty rows if 1 page only */}
+                        {totalPages === 1 && Array.from({ length: Math.max(0, page1Max - page1Entries.length) }).map((_, i) => (
+                          <tr key={`empty-p1-${i}`} className="h-6">
+                            <td className="border-l border-black text-slate-300 font-mono text-[9px]">{page1Entries.length + i + 1}</td>
                             <td className="border-l border-black"></td>
                             <td className="border-l border-black"></td>
                             <td className="border-l border-black"></td>
@@ -411,92 +335,230 @@ export function ExamSessionPrintModal({
                     </table>
                   </div>
 
-                  {/* Bottom Official Section (Image 2): Moniteurs + Recap Summary Table + Inspector Stamp Box */}
-                  <div className="mt-4 grid grid-cols-2 gap-6 items-start text-xs pt-2">
-                    
-                    {/* Right side in RTL: Moniteurs & Statistical Recap Table */}
-                    <div className="space-y-3">
-                      
-                      {/* Moniteurs accompagnateurs */}
-                      <div className="space-y-1.5 text-[11px] border border-black p-2 bg-white">
-                        <p className="flex justify-between items-center">
-                          <span>اسم و لقب الممرن الأول : ................................................................</span>
-                          <span>الصنف : <strong>B</strong></span>
-                        </p>
-                        <p className="flex justify-between items-center">
-                          <span>اسم و لقب الممرن الثاني : ................................................................</span>
-                          <span>الصنف : <strong>C/D</strong></span>
-                        </p>
-                      </div>
-
-                      {/* Official Summary Table from Image 2 */}
-                      <div className="border-2 border-black overflow-hidden">
-                        <table className="w-full text-center text-[10.5px]">
-                          <thead>
-                            <tr className="bg-slate-100 border-b-2 border-black font-black text-black">
-                              <th className="p-1 border-l border-black">طبيعة الامتحان</th>
-                              <th className="p-1 border-l border-black">عدد المترشحين المدعوين</th>
-                              <th className="p-1 border-l border-black">عدد المترشحين الحاضرين</th>
-                              <th className="p-1">عدد الناجحين</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-black">
-                            <tr className="h-6">
-                              <td className="p-1 border-l border-black font-bold">قانون المرور</td>
-                              <td className="p-1 border-l border-black font-mono font-bold">{codeEntries.length}</td>
-                              <td className="p-1 border-l border-black font-mono font-bold">{codeEntries.length}</td>
-                              <td className="p-1 font-mono font-bold text-black">{codePassed || '...'}</td>
-                            </tr>
-                            <tr className="h-6">
-                              <td className="p-1 border-l border-black font-bold">المناورات</td>
-                              <td className="p-1 border-l border-black font-mono font-bold">{creneauEntries.length}</td>
-                              <td className="p-1 border-l border-black font-mono font-bold">{creneauEntries.length}</td>
-                              <td className="p-1 font-mono font-bold text-black">{creneauPassed || '...'}</td>
-                            </tr>
-                            <tr className="h-6">
-                              <td className="p-1 border-l border-black font-bold">السياقة</td>
-                              <td className="p-1 border-l border-black font-mono font-bold">{circEntries.length}</td>
-                              <td className="p-1 border-l border-black font-mono font-bold">{circEntries.length}</td>
-                              <td className="p-1 font-mono font-bold text-black">{circPassed || '...'}</td>
-                            </tr>
-                            <tr className="bg-slate-100 font-black border-t-2 border-black h-7">
-                              <td className="p-1 border-l border-black">المجموع</td>
-                              <td className="p-1 border-l border-black font-mono">{entries.length}</td>
-                              <td className="p-1 border-l border-black font-mono">{entries.length}</td>
-                              <td className="p-1 font-mono font-black text-black">{totalPassed || '...'}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-
-                    </div>
-
-                    {/* Left side in RTL: Inspector Stamp and Signature Box from Image 2 */}
-                    <div className="flex flex-col items-center justify-between h-full pt-1">
-                      <div className="w-full border-2 border-black rounded-xl p-6 text-center space-y-14 bg-white shadow-2xs">
-                        <h4 className="font-black text-xs text-black border-b border-black pb-1.5 inline-block px-4">
-                          ختم و إمضاء المفتش
-                        </h4>
-                        <div className="text-[10px] text-slate-500 font-medium">
-                          (إمضاء وختم مفتش أمن الطرقات المشرف على الدورة)
+                  {/* If only 1 page, render summary and signature directly on Page 1 */}
+                  {totalPages === 1 && (
+                    <div className="mt-3 grid grid-cols-2 gap-4 items-start text-xs pt-1">
+                      {/* Moniteurs & Statistical Table */}
+                      <div className="space-y-2">
+                        <div className="border border-black p-1.5 text-[9.5px] bg-white">
+                          <p>الممرن الأول : .............................................. الصنف: <strong>B</strong></p>
+                          <p>الممرن الثاني : .............................................. الصنف: <strong>C/D</strong></p>
+                        </div>
+                        <div className="border border-black overflow-hidden">
+                          <table className="w-full text-center text-[9.5px]">
+                            <thead>
+                              <tr className="bg-slate-100 border-b border-black font-bold text-black">
+                                <th className="p-0.5 border-l border-black">الامتحان</th>
+                                <th className="p-0.5 border-l border-black">المدعوون</th>
+                                <th className="p-0.5 border-l border-black">الحاضرون</th>
+                                <th className="p-0.5">الناجحون</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-black">
+                              <tr>
+                                <td className="p-0.5 border-l border-black">قانون المرور</td>
+                                <td className="p-0.5 border-l border-black font-mono">{codeEntries.length}</td>
+                                <td className="p-0.5 border-l border-black font-mono">{codeEntries.length}</td>
+                                <td className="p-0.5 font-mono font-bold">{codePassed || '...'}</td>
+                              </tr>
+                              <tr>
+                                <td className="p-0.5 border-l border-black">المناورات</td>
+                                <td className="p-0.5 border-l border-black font-mono">{creneauEntries.length}</td>
+                                <td className="p-0.5 border-l border-black font-mono">{creneauEntries.length}</td>
+                                <td className="p-0.5 font-mono font-bold">{creneauPassed || '...'}</td>
+                              </tr>
+                              <tr>
+                                <td className="p-0.5 border-l border-black">السياقة</td>
+                                <td className="p-0.5 border-l border-black font-mono">{circEntries.length}</td>
+                                <td className="p-0.5 border-l border-black font-mono">{circEntries.length}</td>
+                                <td className="p-0.5 font-mono font-bold">{circPassed || '...'}</td>
+                              </tr>
+                            </tbody>
+                          </table>
                         </div>
                       </div>
 
-                      <div className="w-full text-left text-[10px] text-slate-700 pt-3 font-mono" dir="ltr">
-                        <span>Fait à {sessionCenter}, le {sessionDate}</span>
+                      {/* Signature Box */}
+                      <div className="flex flex-col items-center">
+                        <div className="w-full border-2 border-black rounded-lg p-3 text-center space-y-6 bg-white">
+                          <h4 className="font-black text-[11px] text-black border-b border-black pb-1 inline-block px-3">
+                            ختم و إمضاء المهندس الممتحن
+                          </h4>
+                          <div className="text-[9px] text-slate-500">
+                            (المهندس المشرف على الدورة)
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                  </div>
+                  )}
                 </div>
 
-                {/* Pagination Page 2 Footer */}
-                <div className="flex justify-between items-center text-[10px] text-slate-800 pt-2 border-t border-black font-mono">
-                  <span>{school.name} • Agrément N° {school.agrement_number}</span>
-                  <span className="font-black border-2 border-black px-2.5 py-0.5 rounded-xs text-black">2/2</span>
+                {/* Pagination Page 1 Footer */}
+                <div className="flex justify-between items-center text-[9.5px] text-slate-800 pt-1.5 border-t border-black font-mono">
+                  <span>{school.name} • {school.phone} • {school.address}</span>
+                  <span className="font-black border border-black px-2 py-0.5 text-black">1/{totalPages}</span>
                 </div>
 
               </div>
+
+
+              {/* ========================================================= */}
+              {/* PAGE 2 (If candidates jump to the second page)            */}
+              {/* ========================================================= */}
+              {totalPages > 1 && (
+                <div 
+                  className="a4-page-sheet bg-white border border-slate-300 shadow-2xl text-slate-900 font-sans text-right relative flex flex-col justify-between"
+                  dir="rtl"
+                  style={{
+                    width: isPortrait ? '210mm' : '297mm',
+                    minHeight: isPortrait ? '297mm' : '210mm',
+                    padding: isPortrait ? '8mm 10mm' : '8mm 12mm',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <div>
+                    {/* Header continuation banner */}
+                    <div className="flex justify-between items-center border-b border-black pb-1 mb-2 text-xs">
+                      <span className="font-bold text-black text-[10px]">تابع لجدول إرسال المترشحين — النموذج رقم 03</span>
+                      <span className="font-mono text-[10px] text-black">Session du {sessionDate}</span>
+                    </div>
+
+                    {/* Candidates Table Page 2 Continuation */}
+                    <div className="border-2 border-black overflow-hidden text-[10px]">
+                      <table className="w-full text-center border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 border-b-2 border-black font-black text-black text-[10px]">
+                            <th className="p-1 border-l border-black w-7">الرقم</th>
+                            <th className="p-1 border-l border-black w-20">رقم التسجيل</th>
+                            <th className="p-1 border-l border-black min-w-[130px]">اللقب و الاسم</th>
+                            <th className="p-1 border-l border-black w-18">تاريخ الميلاد</th>
+                            <th className="p-1 border-l border-black w-10">الصنف</th>
+                            <th className="p-1 border-l border-black w-24">طبيعة الامتحان</th>
+                            <th className="p-1 border-l border-black w-18">تاريخ الرسوب</th>
+                            <th className="p-1 w-16">النتيجة</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-black">
+                          {page2Entries.map((item, idx) => (
+                            <tr key={item.exam.id} className="h-6">
+                              <td className="p-1 border-l border-black font-bold font-mono text-[9.5px]">
+                                {page1Max + idx + 1}
+                              </td>
+                              <td className="p-1 border-l border-black font-mono text-[9px]">
+                                {item.student.registration_number || item.student.dossier_number}
+                              </td>
+                              <td className="p-1 border-l border-black font-bold text-black text-right pr-2 text-[10px]">
+                                {item.student.last_name_ar || item.student.last_name} {item.student.first_name_ar || item.student.first_name}
+                              </td>
+                              <td className="p-1 border-l border-black font-mono text-[9px]">{item.student.birth_date}</td>
+                              <td className="p-1 border-l border-black font-black text-[10px]">{item.student.requested_category}</td>
+                              <td className="p-1 border-l border-black font-bold text-[9.5px]">{formatNatureExam(item.exam.exam_type)}</td>
+                              <td className="p-1 border-l border-black font-mono text-[9px]">
+                                {item.exam.attempt_number > 1 ? item.student.deposit_date : '—'}
+                              </td>
+                              <td className="p-1 font-black text-[10px]">
+                                {formatResultAr(item.exam.result)}
+                              </td>
+                            </tr>
+                          ))}
+
+                          {/* Empty lines on Page 2 (4 lines minimum) */}
+                          {Array.from({ length: Math.max(4, 4 - page2Entries.length) }).map((_, i) => (
+                            <tr key={`empty-p2-${i}`} className="h-6">
+                              <td className="border-l border-black text-slate-300 font-mono text-[9px]">{page2Entries.length + page1Max + 1 + i}</td>
+                              <td className="border-l border-black"></td>
+                              <td className="border-l border-black"></td>
+                              <td className="border-l border-black"></td>
+                              <td className="border-l border-black"></td>
+                              <td className="border-l border-black"></td>
+                              <td className="border-l border-black"></td>
+                              <td></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Bottom Section: Moniteurs + Statistical Table + Engineer Stamp */}
+                    <div className="mt-4 grid grid-cols-2 gap-4 items-start text-xs pt-2">
+                      {/* Moniteurs accompagnateurs & Summary */}
+                      <div className="space-y-2.5">
+                        <div className="space-y-1 text-[10px] border border-black p-2 bg-white">
+                          <p className="flex justify-between items-center">
+                            <span>اسم و لقب الممرن الأول : ..............................................</span>
+                            <span>الصنف : <strong>B</strong></span>
+                          </p>
+                          <p className="flex justify-between items-center">
+                            <span>اسم و لقب الممرن الثاني : ..............................................</span>
+                            <span>الصنف : <strong>C/D</strong></span>
+                          </p>
+                        </div>
+
+                        <div className="border-2 border-black overflow-hidden">
+                          <table className="w-full text-center text-[10px]">
+                            <thead>
+                              <tr className="bg-slate-100 border-b-2 border-black font-black text-black">
+                                <th className="p-1 border-l border-black">طبيعة الامتحان</th>
+                                <th className="p-1 border-l border-black">المدعوون</th>
+                                <th className="p-1 border-l border-black">الحاضرون</th>
+                                <th className="p-1">الناجحون</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-black">
+                              <tr className="h-6">
+                                <td className="p-1 border-l border-black font-bold">قانون المرور</td>
+                                <td className="p-1 border-l border-black font-mono font-bold">{codeEntries.length}</td>
+                                <td className="p-1 border-l border-black font-mono font-bold">{codeEntries.length}</td>
+                                <td className="p-1 font-mono font-bold text-black">{codePassed || '...'}</td>
+                              </tr>
+                              <tr className="h-6">
+                                <td className="p-1 border-l border-black font-bold">المناورات</td>
+                                <td className="p-1 border-l border-black font-mono font-bold">{creneauEntries.length}</td>
+                                <td className="p-1 border-l border-black font-mono font-bold">{creneauEntries.length}</td>
+                                <td className="p-1 font-mono font-bold text-black">{creneauPassed || '...'}</td>
+                              </tr>
+                              <tr className="h-6">
+                                <td className="p-1 border-l border-black font-bold">السياقة</td>
+                                <td className="p-1 border-l border-black font-mono font-bold">{circEntries.length}</td>
+                                <td className="p-1 border-l border-black font-mono font-bold">{circEntries.length}</td>
+                                <td className="p-1 font-mono font-bold text-black">{circPassed || '...'}</td>
+                              </tr>
+                              <tr className="bg-slate-100 font-black border-t-2 border-black h-6">
+                                <td className="p-1 border-l border-black">المجموع</td>
+                                <td className="p-1 border-l border-black font-mono">{entries.length}</td>
+                                <td className="p-1 border-l border-black font-mono">{entries.length}</td>
+                                <td className="p-1 font-mono font-black text-black">{totalPassed || '...'}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Engineer Signature Box */}
+                      <div className="flex flex-col items-center justify-between h-full pt-1">
+                        <div className="w-full border-2 border-black rounded-xl p-5 text-center space-y-10 bg-white">
+                          <h4 className="font-black text-xs text-black border-b border-black pb-1.5 inline-block px-4">
+                            ختم و إمضاء المهندس الممتحن
+                          </h4>
+                          <div className="text-[10px] text-slate-500 font-medium">
+                            (إمضاء وختم مهندس الإدارة المشرف على الدورة)
+                          </div>
+                        </div>
+
+                        <div className="w-full text-left text-[9.5px] text-slate-700 pt-2 font-mono" dir="ltr">
+                          <span>Fait à {sessionCenter}, le {sessionDate}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pagination Page 2 Footer */}
+                  <div className="flex justify-between items-center text-[9.5px] text-slate-800 pt-1.5 border-t border-black font-mono">
+                    <span>{school.name} • Agrément N° {school.agrement_number}</span>
+                    <span className="font-black border border-black px-2 py-0.5 text-black">2/2</span>
+                  </div>
+                </div>
+              )}
 
             </div>
 

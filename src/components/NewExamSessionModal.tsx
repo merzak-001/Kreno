@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { X, Calendar, Plus, CheckCircle2, User, Award, DollarSign, Filter, Search, MapPin, UserCheck, Check } from 'lucide-react';
-import { Student, ExamType, ExamSessionCandidateSelection } from '@/types/kreno';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { X, Calendar, Plus, CheckCircle2, User, Award, DollarSign, Filter, Search, MapPin, UserCheck, Check, ChevronDown } from 'lucide-react';
+import { Student, ExamType, ExamSessionCandidateSelection, LicenseCategory } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
 
 interface NewExamSessionModalProps {
@@ -19,6 +19,16 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
   const [activeFilter, setActiveFilter] = useState<'all' | 'code' | 'creneau' | 'circulation'>('all');
   const [search, setSearch] = useState('');
 
+  // Search/Filter states for Engineer Combobox
+  const [engineerSearch, setEngineerSearch] = useState('');
+  const [isEngineerOpen, setIsEngineerOpen] = useState(false);
+  const engineerRef = useRef<HTMLDivElement>(null);
+
+  // Search/Filter states for Center Combobox
+  const [centerSearch, setCenterSearch] = useState('');
+  const [isCenterOpen, setIsCenterOpen] = useState(false);
+  const centerRef = useRef<HTMLDivElement>(null);
+
   // Quick add engineer inline modal state
   const [isAddingEngineer, setIsAddingEngineer] = useState(false);
   const [newEngineerName, setNewEngineerName] = useState('');
@@ -34,13 +44,30 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
       const lastCenter = localStorage.getItem('kreno_last_center');
       if (lastCenter) {
         setCenter(lastCenter);
+        setCenterSearch(lastCenter);
       } else if (examCenters.length > 0) {
         setCenter(examCenters[0].name);
+        setCenterSearch(examCenters[0].name);
       } else {
         setCenter('Centre d\'Examen Aïn Oulmene');
+        setCenterSearch('Centre d\'Examen Aïn Oulmene');
       }
     }
   }, [examCenters]);
+
+  // Click outside listener for comboboxes
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (engineerRef.current && !engineerRef.current.contains(event.target as Node)) {
+        setIsEngineerOpen(false);
+      }
+      if (centerRef.current && !centerRef.current.contains(event.target as Node)) {
+        setIsCenterOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Selected candidates map: student_id -> { exam_type, fee_paid, fee_amount }
   const [selectedMap, setSelectedMap] = useState<Record<string, { exam_type: ExamType; fee_paid: boolean; fee_amount: number }>>({});
@@ -55,12 +82,17 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
       return { readyFor: 'circulation', reason: 'Permis déjà décroché' };
     }
     if (passedCreneau) {
-      return { readyFor: 'circulation', reason: 'Créneau validé -> Prêt pour Conduite (Circulation)' };
+      return { readyFor: 'circulation', reason: 'Créneau validé -> Prêt pour Conduite' };
     }
     if (passedCode) {
-      return { readyFor: 'creneau', reason: 'Code validé -> Prêt pour Créneau (Manoeuvres)' };
+      return { readyFor: 'creneau', reason: 'Code validé -> Prêt pour Créneau' };
     }
-    return { readyFor: 'code', reason: 'En attente de l\'épreuve théorique du Code' };
+    return { readyFor: 'code', reason: 'En attente épreuve Code' };
+  };
+
+  // Helper for category fee
+  const getFeeForCategory = (cat: LicenseCategory): number => {
+    return settings.category_exam_fees?.[cat] ?? settings.standard_exam_fee ?? 2000;
   };
 
   // Filter candidates list
@@ -81,6 +113,20 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
     });
   }, [students, activeFilter, search]);
 
+  // Filter engineers for search
+  const filteredEngineers = useMemo(() => {
+    const q = engineerSearch.toLowerCase().trim();
+    if (!q) return engineers;
+    return engineers.filter(e => e.name.toLowerCase().includes(q) || (e.title && e.title.toLowerCase().includes(q)));
+  }, [engineers, engineerSearch]);
+
+  // Filter centers for search
+  const filteredCenters = useMemo(() => {
+    const q = centerSearch.toLowerCase().trim();
+    if (!q) return examCenters;
+    return examCenters.filter(c => c.name.toLowerCase().includes(q) || (c.commune && c.commune.toLowerCase().includes(q)));
+  }, [examCenters, centerSearch]);
+
   if (!isOpen) return null;
 
   const toggleSelect = (student: Student) => {
@@ -91,12 +137,13 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
       setSelectedMap(copy);
     } else {
       const { readyFor } = getCandidateEligibility(student);
+      const catFee = getFeeForCategory(student.requested_category);
       setSelectedMap(prev => ({
         ...prev,
         [student.id]: {
           exam_type: readyFor,
           fee_paid: false, // Default is NOT paid: candidate will pay on the day of the exam
-          fee_amount: settings.standard_exam_fee || 2000,
+          fee_amount: catFee,
         }
       }));
     }
@@ -113,24 +160,15 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
     }));
   };
 
-  const updateSelectedFeePaid = (studentId: string, feePaid: boolean) => {
-    if (!selectedMap[studentId]) return;
-    setSelectedMap(prev => ({
-      ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        fee_paid: feePaid,
-      }
-    }));
-  };
-
   const handleQuickAddEngineer = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEngineerName.trim()) return;
     const added = addEngineer(newEngineerName, newEngineerTitle);
     setExaminer(added.name);
+    setEngineerSearch(added.name);
     setNewEngineerName('');
     setIsAddingEngineer(false);
+    setIsEngineerOpen(false);
   };
 
   const handleQuickAddCenter = (e: React.FormEvent) => {
@@ -138,18 +176,13 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
     if (!newCenterName.trim()) return;
     const added = addExamCenter(newCenterName);
     setCenter(added.name);
+    setCenterSearch(added.name);
     if (typeof window !== 'undefined') {
       localStorage.setItem('kreno_last_center', added.name);
     }
     setNewCenterName('');
     setIsAddingCenter(false);
-  };
-
-  const handleCenterChange = (newCenter: string) => {
-    setCenter(newCenter);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('kreno_last_center', newCenter);
-    }
+    setIsCenterOpen(false);
   };
 
   const selectedCount = Object.keys(selectedMap).length;
@@ -176,7 +209,6 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
       fee_paid: data.fee_paid,
     }));
 
-    // Remember last center on save
     if (typeof window !== 'undefined') {
       localStorage.setItem('kreno_last_center', center);
     }
@@ -186,8 +218,9 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
-      <div className="bg-surface rounded-2xl w-full max-w-6xl shadow-2xl border-2 border-slate-300 dark:border-slate-700 overflow-hidden text-slate-900 dark:text-slate-100 max-h-[94vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      {/* Maximum modal width (7xl) with plenty of breathing room */}
+      <div className="bg-surface rounded-2xl w-full max-w-7xl shadow-2xl border-2 border-slate-300 dark:border-slate-700 overflow-hidden text-slate-900 dark:text-slate-100 max-h-[96vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">
@@ -200,7 +233,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                 Programmer une Journée d&apos;Examen Hebdomadaire
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Sélectionnez l&apos;Ingénieur, le centre, et cliquez sur les lignes pour inscrire les candidats (paiement le jour de l&apos;examen).
+                Recherchez l&apos;Ingénieur et le Centre dans les listes déroulantes, puis cliquez sur une ligne pour inscrire un candidat.
               </p>
             </div>
           </div>
@@ -217,13 +250,13 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="p-6 overflow-y-auto space-y-6 flex-1">
             
-            {/* Session Info Bar - Responsive Grid */}
-            <div className="p-4 bg-slate-100/90 dark:bg-slate-850 rounded-xl border border-slate-300 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            {/* Top Parameters Grid: Date, Centre (Searchable), Ingénieur (Searchable & Empty by default) */}
+            <div className="p-4 bg-slate-100/90 dark:bg-slate-850 rounded-xl border border-slate-300 dark:border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-5 text-xs">
               
-              {/* Date */}
+              {/* 1. Date */}
               <div>
                 <label className="block text-slate-800 dark:text-slate-200 font-bold mb-1.5">
-                  Date de l&apos;examen (Session) <span className="text-rose-500">*</span> :
+                  Date de la Session <span className="text-rose-500">*</span> :
                 </label>
                 <input
                   type="date"
@@ -234,8 +267,8 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                 />
               </div>
 
-              {/* Centre d'examen (Remembers last selected) */}
-              <div>
+              {/* 2. Centre d'examen (Searchable Combobox + Quick Add) */}
+              <div className="relative" ref={centerRef}>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-slate-800 dark:text-slate-200 font-bold">
                     Centre / Piste d&apos;Examen <span className="text-rose-500">*</span> :
@@ -245,29 +278,58 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                     onClick={() => setIsAddingCenter(true)}
                     className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <Plus className="w-3 h-3" /> Nouveau Centre
+                    <Plus className="w-3.5 h-3.5" /> Nouveau
                   </button>
                 </div>
                 
                 <div className="relative">
-                  <select
-                    value={center}
-                    onChange={(e) => handleCenterChange(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-600 focus:outline-none cursor-pointer"
+                  <input
+                    type="text"
+                    value={centerSearch}
+                    onChange={(e) => {
+                      setCenterSearch(e.target.value);
+                      setCenter(e.target.value);
+                      setIsCenterOpen(true);
+                    }}
+                    onFocus={() => setIsCenterOpen(true)}
+                    placeholder="Tapez pour chercher le centre..."
+                    className="w-full px-3 py-2 pr-8 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     required
-                  >
-                    <option value="" disabled>-- Sélectionner le centre d&apos;examen --</option>
-                    {examCenters.map(c => (
-                      <option key={c.id} value={c.name}>
-                        {c.name} {c.commune ? `(${c.commune})` : ''}
-                      </option>
-                    ))}
-                  </select>
+                  />
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
                 </div>
+
+                {isCenterOpen && (
+                  <div className="absolute z-20 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xl py-1 text-xs">
+                    {filteredCenters.length > 0 ? (
+                      filteredCenters.map(c => (
+                        <div
+                          key={c.id}
+                          onClick={() => {
+                            setCenter(c.name);
+                            setCenterSearch(c.name);
+                            setIsCenterOpen(false);
+                            if (typeof window !== 'undefined') {
+                              localStorage.setItem('kreno_last_center', c.name);
+                            }
+                          }}
+                          className={`px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer flex items-center justify-between ${
+                            center === c.name ? 'bg-blue-100/60 dark:bg-slate-800 font-bold text-blue-600 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200'
+                          }`}
+                        >
+                          <span>{c.name}</span>
+                          {c.commune && <span className="text-[10px] text-slate-400">{c.commune}</span>}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-slate-400 italic">Aucun centre trouvé</div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Ingénieur (Must be empty initially & mandatory) */}
-              <div>
+              {/* 3. Ingénieur (Searchable Combobox + Quick Add + Empty by default) */}
+              <div className="relative" ref={engineerRef}>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-slate-800 dark:text-slate-200 font-bold">
                     Ingénieur d&apos;État <span className="text-rose-500 font-black">* (Obligatoire)</span> :
@@ -277,31 +339,58 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                     onClick={() => setIsAddingEngineer(true)}
                     className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <Plus className="w-3 h-3" /> Nouvel Ingénieur
+                    <Plus className="w-3.5 h-3.5" /> Nouveau
                   </button>
                 </div>
 
                 <div className="relative">
-                  <select
-                    value={examiner}
-                    onChange={(e) => setExaminer(e.target.value)}
-                    className={`w-full px-3 py-2 bg-white dark:bg-slate-900 border rounded-lg font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-600 focus:outline-none cursor-pointer ${
-                      !examiner ? 'border-amber-400 dark:border-amber-600 ring-1 ring-amber-400/40' : 'border-slate-300 dark:border-slate-600'
+                  <input
+                    type="text"
+                    value={engineerSearch}
+                    onChange={(e) => {
+                      setEngineerSearch(e.target.value);
+                      setExaminer(e.target.value);
+                      setIsEngineerOpen(true);
+                    }}
+                    onFocus={() => setIsEngineerOpen(true)}
+                    placeholder="Tapez le nom de l'Ingénieur..."
+                    className={`w-full px-3 py-2 pr-8 bg-white dark:bg-slate-900 border rounded-lg font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-600 focus:outline-none ${
+                      !examiner ? 'border-amber-400 ring-1 ring-amber-400/40' : 'border-slate-300 dark:border-slate-600'
                     }`}
                     required
-                  >
-                    <option value="">-- Choisir l&apos;Ingénieur (Requis) --</option>
-                    {engineers.map(eng => (
-                      <option key={eng.id} value={eng.name}>
-                        {eng.name} ({eng.title || 'Ingénieur'})
-                      </option>
-                    ))}
-                  </select>
+                  />
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
                 </div>
+
+                {isEngineerOpen && (
+                  <div className="absolute z-20 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xl py-1 text-xs">
+                    {filteredEngineers.length > 0 ? (
+                      filteredEngineers.map(eng => (
+                        <div
+                          key={eng.id}
+                          onClick={() => {
+                            setExaminer(eng.name);
+                            setEngineerSearch(eng.name);
+                            setIsEngineerOpen(false);
+                          }}
+                          className={`px-3 py-2 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer flex items-center justify-between ${
+                            examiner === eng.name ? 'bg-blue-100/60 dark:bg-slate-800 font-bold text-blue-600 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200'
+                          }`}
+                        >
+                          <span className="font-bold">{eng.name}</span>
+                          <span className="text-[10px] text-slate-400">{eng.title || 'Ingénieur'}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-slate-400 italic">Aucun ingénieur trouvé</div>
+                    )}
+                  </div>
+                )}
+
                 {!examiner && (
-                  <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 font-semibold">
-                    Veuillez désigner l&apos;Ingénieur avant de valider.
-                  </p>
+                  <span className="text-[10px] text-amber-600 dark:text-amber-400 block mt-1 font-semibold">
+                    Champ obligatoire : choisissez ou ajoutez l&apos;Ingénieur d&apos;État.
+                  </span>
                 )}
               </div>
             </div>
@@ -427,7 +516,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                     Candidats Prêts à Convoquer ({selectedCount} sélectionné{selectedCount > 1 ? 's' : ''})
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    💡 <strong>Cliquez n&apos;importe où sur la ligne</strong> pour sélectionner ou retirer un candidat. Par défaut, les frais (2 000 DZD) sont non réglés (paiement le jour de l&apos;examen).
+                    💡 <strong>Cliquez n&apos;importe où sur la ligne</strong> pour sélectionner ou désélectionner un candidat.
                   </p>
                 </div>
 
@@ -455,18 +544,17 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                 </div>
               </div>
 
-              {/* Candidates Table - Wide, Non-wrapping & Full-row Clickable */}
+              {/* Candidates Table - Wide, Clean & Discreet (without intrusive fee input boxes) */}
               <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-xs">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs min-w-[750px] border-collapse">
+                  <table className="w-full text-left text-xs min-w-[700px] border-collapse">
                     <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase tracking-wider text-[11px]">
                       <tr>
                         <th className="p-3 w-12 text-center">Choix</th>
-                        <th className="p-3 min-w-[200px]">Candidat & Dossier</th>
-                        <th className="p-3 w-20">Permis</th>
-                        <th className="p-3 min-w-[200px]">Épreuve à Présenter</th>
-                        <th className="p-3 text-center min-w-[160px]">Frais d&apos;Examen (2 000 DZD)</th>
-                        <th className="p-3 text-right w-36">Solde Dossier</th>
+                        <th className="p-3 min-w-[220px]">Candidat & Dossier</th>
+                        <th className="p-3 w-24">Permis</th>
+                        <th className="p-3 min-w-[220px]">Épreuve à Présenter</th>
+                        <th className="p-3 text-right min-w-[140px]">Solde Dossier</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -504,7 +592,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                                 {st.first_name} {st.last_name}
                               </span>
                               <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono whitespace-nowrap">
-                                {st.dossier_number} • {st.phone_number}
+                                {st.dossier_number} • Tél: {st.phone_number}
                               </span>
                             </td>
                             <td className="p-3">
@@ -517,7 +605,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                                 <select
                                   value={currentSelection?.exam_type || readyFor}
                                   onChange={(e) => updateSelectedExamType(st.id, e.target.value as ExamType)}
-                                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-blue-600 dark:border-blue-500 rounded-lg font-bold text-xs text-blue-900 dark:text-blue-200 focus:outline-none"
+                                  className="w-full max-w-[220px] px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-blue-600 dark:border-blue-500 rounded-lg font-bold text-xs text-blue-900 dark:text-blue-200 focus:outline-none"
                                 >
                                   <option value="code">1. Code Théorique</option>
                                   <option value="creneau">2. Créneau (Piste)</option>
@@ -527,25 +615,6 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                                 <span className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                   {reason}
                                 </span>
-                              )}
-                            </td>
-                            <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
-                              {isSelected ? (
-                                <label className="inline-flex items-center gap-2 cursor-pointer bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
-                                  <input
-                                    type="checkbox"
-                                    checked={currentSelection?.fee_paid || false}
-                                    onChange={(e) => updateSelectedFeePaid(st.id, e.target.checked)}
-                                    className="w-3.5 h-3.5 text-blue-600 rounded"
-                                  />
-                                  <span className={`text-[11px] font-bold whitespace-nowrap ${
-                                    currentSelection?.fee_paid ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
-                                  }`}>
-                                    {currentSelection?.fee_paid ? 'Réglé (2 000 DZD)' : 'Non réglé (le jour J)'}
-                                  </span>
-                                </label>
-                              ) : (
-                                <span className="text-slate-400 text-[11px] whitespace-nowrap">2 000 DZD</span>
                               )}
                             </td>
                             <td className="p-3 text-right font-mono whitespace-nowrap">
@@ -597,9 +666,9 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
               </button>
               <button
                 type="submit"
-                disabled={selectedCount === 0 || !examiner}
+                disabled={selectedCount === 0 || !examiner.trim()}
                 className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
-                  selectedCount > 0 && examiner
+                  selectedCount > 0 && examiner.trim()
                     ? 'bg-blue-600 hover:bg-blue-700 active:scale-95 text-white'
                     : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
                 }`}

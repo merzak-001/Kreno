@@ -144,15 +144,15 @@ export default function SettingsPage() {
         <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4 transition-colors">
           <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
             <DollarSign className="w-5 h-5 text-emerald-600" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Frais Réglementaires de Session d&apos;Examen</h3>
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Frais Réglementaires d&apos;Examen par Catégorie</h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Fixez le montant des frais de passage d&apos;examen par candidat (droits d&apos;inscription aux commissions hebdomadaires).
+            Fixez le tarif officiel de l&apos;examen pour chaque catégorie de permis (Code, Créneau, Conduite). Ces montants s&apos;appliquent automatiquement.
           </p>
 
-          <div className="p-4 rounded-xl border border-border-subtle bg-slate-50/70 dark:bg-surface-elevated space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Frais par épreuve (Code, Créneau ou Conduite) :</span>
+          <div className="p-4 rounded-xl border border-border-subtle bg-slate-50/70 dark:bg-surface-elevated space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Tarif Standard Général :</span>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -163,9 +163,40 @@ export default function SettingsPage() {
                 <span className="font-mono text-xs font-bold text-slate-600 dark:text-slate-300">DZD</span>
               </div>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Chaque épreuve programmée pour un candidat applique ce montant par défaut (ex: 2 000 DZD).
-            </p>
+
+            {/* Grid for each category fee */}
+            <div>
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-2 uppercase tracking-wider">
+                Frais Fixes par Catégorie de Permis :
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {(['A1', 'A', 'B', 'BE', 'C1', 'C', 'CE', 'D'] as const).map(cat => {
+                  const currentFee = settings.category_exam_fees?.[cat] ?? settings.standard_exam_fee ?? 2000;
+                  return (
+                    <div key={cat} className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <span className="text-xs font-black text-slate-800 dark:text-slate-200">Cat. {cat}</span>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          value={currentFee}
+                          onChange={(e) => {
+                            const val = Number(e.target.value) || 0;
+                            updateSettings({
+                              category_exam_fees: {
+                                ...(settings.category_exam_fees || {}),
+                                [cat]: val,
+                              }
+                            });
+                          }}
+                          className="w-16 px-1.5 py-0.5 text-right font-mono font-bold text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded"
+                        />
+                        <span className="text-[10px] text-slate-400 font-mono">DZD</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 

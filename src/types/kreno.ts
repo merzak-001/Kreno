@@ -87,6 +87,7 @@ export interface SchoolSettings {
   lunch_break_start: string;          // Par défaut: "12:00"
   lunch_break_end: string;            // Par défaut: "13:00"
   standard_exam_fee: number;          // Par défaut: 2000 DZD
+  category_exam_fees?: Partial<Record<LicenseCategory, number>>; // Frais d'examen par catégorie
   unavailable_periods: UnavailablePeriod[];
 }
 
