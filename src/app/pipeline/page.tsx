@@ -96,7 +96,7 @@ export default function PipelinePage() {
     return sortedDates.map(date => {
       const entries = map[date];
       const center = entries.find(e => e.exam.exam_center)?.exam.exam_center || 'Centre d\'Examen Aïn Oulmene';
-      const examiner = entries.find(e => e.exam.examiner_name)?.exam.examiner_name || 'M. Makhloufi (Inspecteur)';
+      const examiner = entries.find(e => e.exam.examiner_name)?.exam.examiner_name || 'Ing. Makhloufi';
 
       const categoriesCount: Record<string, number> = {};
       const examTypesCount = { code: 0, creneau: 0, circulation: 0 };
@@ -411,7 +411,9 @@ export default function PipelinePage() {
                         <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                           {session.entries.map(({ student, exam }, idx) => {
                             const isPaid = exam.fee_paid;
-                            const remaining = Math.max(0, (student.total_package_price || 0) - (student.amount_paid || 0));
+                            const unpaidFeesSum = (student.exams || []).filter(e => !e.fee_paid).reduce((sum, e) => sum + (e.fee_amount || 2000), 0);
+                            const baseRemaining = Math.max(0, (student.total_package_price || 0) - (student.amount_paid || 0));
+                            const totalDue = baseRemaining + unpaidFeesSum;
 
                             return (
                               <tr 
@@ -472,12 +474,19 @@ export default function PipelinePage() {
                                 </td>
 
                                 <td className="p-3 text-center font-mono">
-                                  {remaining === 0 ? (
+                                  {totalDue === 0 ? (
                                     <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">Soldé</span>
                                   ) : (
-                                    <span className="text-amber-600 dark:text-amber-400 font-bold text-xs">
-                                      {remaining.toLocaleString()} DZD
-                                    </span>
+                                    <div>
+                                      <span className="text-amber-600 dark:text-amber-400 font-bold text-xs block">
+                                        {totalDue.toLocaleString()} DZD
+                                      </span>
+                                      {unpaidFeesSum > 0 && (
+                                        <span className="text-[10px] text-rose-500 dark:text-rose-400 block font-normal">
+                                          dont {unpaidFeesSum.toLocaleString()} examen
+                                        </span>
+                                      )}
+                                    </div>
                                   )}
                                 </td>
 

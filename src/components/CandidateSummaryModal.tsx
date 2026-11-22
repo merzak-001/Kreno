@@ -505,7 +505,7 @@ export function CandidateSummaryModal({ isOpen, onClose, student }: CandidateSum
                               <strong className="text-slate-800 dark:text-slate-200">{latest.exam_center || 'Centre officiel'}</strong>
                             </div>
                             <div>
-                              <span className="text-slate-400 block">Inspecteur d&apos;État:</span>
+                              <span className="text-slate-400 block">Ingénieur d&apos;État:</span>
                               <strong className="text-slate-800 dark:text-slate-200">{latest.examiner_name || 'Commission Daira'}</strong>
                             </div>
                             <div>

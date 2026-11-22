@@ -9,6 +9,21 @@ export type LicenseCategory =
 export type ExamType = 'code' | 'creneau' | 'circulation';
 export type ExamResult = 'pending' | 'passed' | 'failed' | 'absent_excused' | 'absent_unexcused';
 
+export interface Ingenieur {
+  id: string;
+  name: string;
+  title?: string;
+  phone?: string;
+  is_active: boolean;
+}
+
+export interface ExamCenter {
+  id: string;
+  name: string;
+  commune?: string;
+  is_active: boolean;
+}
+
 export interface ExamRecord {
   id: string;
   student_id: string;

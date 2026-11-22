@@ -15,7 +15,9 @@ import {
   PaymentRecord,
   UnavailablePeriod,
   ExamSessionCandidateSelection,
-  AuditLogEntry
+  AuditLogEntry,
+  Ingenieur,
+  ExamCenter
 } from '@/types/kreno';
 
 export type ColorPalette = 'ocean' | 'warm';
@@ -82,6 +84,10 @@ interface KrenoContextType {
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   auditLogs: AuditLogEntry[];
+  engineers: Ingenieur[];
+  addEngineer: (name: string, title?: string, phone?: string) => Ingenieur;
+  examCenters: ExamCenter[];
+  addExamCenter: (name: string, commune?: string) => ExamCenter;
   logAction: (
     action: AuditLogEntry['action'],
     target_type: AuditLogEntry['target_type'],
@@ -106,6 +112,20 @@ const DEFAULT_SCHOOL: School = {
   email: 'contact@kreno-autoecole.dz',
   insurance_policy_number: 'POL-784521-SAA',
 };
+
+const DEFAULT_ENGINEERS: Ingenieur[] = [
+  { id: 'eng-1', name: 'Ing. Makhloufi', title: 'Ingénieur Principal d\'État', phone: '0550 11 22 33', is_active: true },
+  { id: 'eng-2', name: 'Ing. Benali', title: 'Ingénieur d\'État', phone: '0661 44 55 66', is_active: true },
+  { id: 'eng-3', name: 'Ing. Khelifi', title: 'Ingénieur d\'État', phone: '0772 77 88 99', is_active: true },
+  { id: 'eng-4', name: 'Ing. Rahmani', title: 'Ingénieur Chef de Centre', phone: '0555 88 99 00', is_active: true },
+];
+
+const DEFAULT_EXAM_CENTERS: ExamCenter[] = [
+  { id: 'ctr-1', name: 'Centre d\'Examen Aïn Oulmene', commune: 'Aïn Oulmene', is_active: true },
+  { id: 'ctr-2', name: 'Piste Auto-École Beidha Bordj', commune: 'Beidha Bordj', is_active: true },
+  { id: 'ctr-3', name: 'Centre d\'Examen Sétif Ville', commune: 'Sétif', is_active: true },
+  { id: 'ctr-4', name: 'Centre d\'Examen El Eulma', commune: 'El Eulma', is_active: true },
+];
 
 const DEFAULT_SETTINGS: SchoolSettings = {
   working_days: ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday'], // Samedi au Jeudi
@@ -1032,6 +1052,8 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<SchoolSettings>(DEFAULT_SETTINGS);
   const [searchQuery, setSearchQuery] = useState('');
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(DEFAULT_AUDIT_LOGS);
+  const [engineers, setEngineers] = useState<Ingenieur[]>(DEFAULT_ENGINEERS);
+  const [examCenters, setExamCenters] = useState<ExamCenter[]>(DEFAULT_EXAM_CENTERS);
 
   // 1. Load preferences and data from localStorage
   useEffect(() => {
@@ -1084,10 +1106,57 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       } else {
         localStorage.setItem('kreno_audit_logs', JSON.stringify(DEFAULT_AUDIT_LOGS));
       }
+
+      const savedEngineers = localStorage.getItem('kreno_engineers');
+      if (savedEngineers) {
+        setEngineers(JSON.parse(savedEngineers));
+      } else {
+        localStorage.setItem('kreno_engineers', JSON.stringify(DEFAULT_ENGINEERS));
+      }
+
+      const savedCenters = localStorage.getItem('kreno_exam_centers');
+      if (savedCenters) {
+        setExamCenters(JSON.parse(savedCenters));
+      } else {
+        localStorage.setItem('kreno_exam_centers', JSON.stringify(DEFAULT_EXAM_CENTERS));
+      }
     } catch (err) {
       console.warn('Failed to load local storage state:', err);
     }
   }, []);
+
+  const addEngineer = (name: string, title?: string, phone?: string): Ingenieur => {
+    const newEng: Ingenieur = {
+      id: `eng-${Date.now()}`,
+      name: name.trim(),
+      title: title?.trim() || 'Ingénieur d\'État',
+      phone: phone?.trim(),
+      is_active: true,
+    };
+    setEngineers(prev => {
+      const updated = [...prev, newEng];
+      localStorage.setItem('kreno_engineers', JSON.stringify(updated));
+      return updated;
+    });
+    logAction('create', 'settings', newEng.id, newEng.name, `Ajout de l'ingénieur examinateur ${newEng.name}`);
+    return newEng;
+  };
+
+  const addExamCenter = (name: string, commune?: string): ExamCenter => {
+    const newCenter: ExamCenter = {
+      id: `ctr-${Date.now()}`,
+      name: name.trim(),
+      commune: commune?.trim(),
+      is_active: true,
+    };
+    setExamCenters(prev => {
+      const updated = [...prev, newCenter];
+      localStorage.setItem('kreno_exam_centers', JSON.stringify(updated));
+      return updated;
+    });
+    logAction('create', 'settings', newCenter.id, newCenter.name, `Ajout du centre d'examen ${newCenter.name}`);
+    return newCenter;
+  };
 
   const logAction = (
     action: AuditLogEntry['action'],
@@ -1789,6 +1858,10 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         searchQuery,
         setSearchQuery,
         auditLogs,
+        engineers,
+        addEngineer,
+        examCenters,
+        addExamCenter,
         logAction,
       }}
     >

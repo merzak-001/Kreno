@@ -26,7 +26,7 @@ export function ExamModal({
   const [examType, setExamType] = useState<ExamType>(initialType);
   const [examDate, setExamDate] = useState<string>('2026-11-28');
   const [examCenter, setExamCenter] = useState<string>('Centre Aïn Oulmene');
-  const [examinerName, setExaminerName] = useState<string>('M. Makhloufi (Inspecteur)');
+  const [examinerName, setExaminerName] = useState<string>('Ing. Makhloufi');
   const [feeAmount, setFeeAmount] = useState<number>(settings.standard_exam_fee || 2000);
   const [feePaid, setFeePaid] = useState<boolean>(true);
   const [result, setResult] = useState<ExamResult>('passed');
@@ -210,13 +210,13 @@ export function ExamModal({
             {/* Examiner */}
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Nom de l&apos;Inspecteur / Examinateur d&apos;État:
+                Nom de l&apos;Ingénieur d&apos;État (Examinateur):
               </label>
               <input
                 type="text"
                 value={examinerName}
                 onChange={(e) => setExaminerName(e.target.value)}
-                placeholder="ex: M. Makhloufi"
+                placeholder="ex: Ing. Makhloufi"
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-xl text-xs font-medium text-slate-900 dark:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none"
               />
             </div>
