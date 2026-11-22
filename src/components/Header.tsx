@@ -21,7 +21,7 @@ export function Header({ onOpenRegister }: HeaderProps) {
   return (
     <>
       <header 
-        className="h-20 bg-surface border-b border-border-subtle px-8 flex items-center justify-between sticky top-0 z-30 transition-colors"
+        className="h-20 bg-surface/95 dark:bg-surface/90 backdrop-blur-md border-b border-border-subtle px-8 flex items-center justify-between sticky top-0 z-30 transition-colors shadow-2xs"
       >
         {/* Search Input */}
         <div className="flex items-center gap-4 flex-1 max-w-lg">
@@ -32,7 +32,7 @@ export function Header({ onOpenRegister }: HeaderProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Rechercher un candidat (Nom, Prénom, NIN, Téléphone)..."
-              className="w-full pr-4 pl-10 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-800 dark:text-slate-200 placeholder-slate-400"
+              className="w-full pr-4 pl-10 py-2.5 bg-slate-100/70 dark:bg-surface-elevated border border-border-subtle rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-slate-900 dark:text-slate-100 placeholder-slate-400 shadow-inner"
             />
           </div>
         </div>
@@ -43,7 +43,7 @@ export function Header({ onOpenRegister }: HeaderProps) {
           {/* Audit Log / Journal d'audit Button */}
           <button
             onClick={() => setIsAuditOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border-subtle bg-slate-50 dark:bg-surface text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition cursor-pointer text-xs font-medium"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border-subtle bg-surface hover:bg-slate-100 dark:hover:bg-surface-hover text-slate-700 dark:text-slate-300 transition cursor-pointer text-xs font-bold shadow-2xs"
             title="Consulter le journal d'audit des modifications"
           >
             <History className="w-4 h-4 text-slate-500 dark:text-slate-400" />
@@ -53,7 +53,7 @@ export function Header({ onOpenRegister }: HeaderProps) {
           {/* Dark / Light Mode Toggle Button */}
           <button
             onClick={toggleTheme}
-            className="p-2.5 rounded-xl border border-border-subtle bg-slate-50 dark:bg-surface text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition cursor-pointer shadow-2xs"
+            className="p-2.5 rounded-xl border border-border-subtle bg-surface hover:bg-slate-100 dark:hover:bg-surface-hover text-slate-600 dark:text-slate-300 transition cursor-pointer shadow-2xs"
             title={theme === 'dark' ? 'Basculer en Mode Clair' : 'Basculer en Mode Sombre'}
           >
             {theme === 'dark' ? (
@@ -64,19 +64,19 @@ export function Header({ onOpenRegister }: HeaderProps) {
           </button>
 
           {/* Role Pill */}
-          <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold border ${
+          <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border shadow-2xs ${
             isOwner 
               ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60' 
-              : 'bg-primary-subtle text-primary border-primary-subtle-border'
+              : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
           }`}>
-            {isOwner ? <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> : <UserCheck className="w-3.5 h-3.5 text-primary" />}
+            {isOwner ? <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> : <UserCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
             <span>{isOwner ? 'Mode Propriétaire (Gérant)' : 'Mode Secrétariat (Accueil)'}</span>
           </div>
 
           {/* Quick Student Register Button */}
           <button
             onClick={onOpenRegister}
-            className="flex items-center gap-2 bg-primary hover:bg-primary-hover active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition-all cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             <span>Nouveau Candidat</span>

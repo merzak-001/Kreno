@@ -49,7 +49,7 @@ export default function SettingsPage() {
 
   if (!isOwner) {
     return (
-      <div className="bg-card-bg p-12 rounded-2xl border border-card-border text-center space-y-3">
+      <div className="bg-surface p-12 rounded-3xl border border-border-subtle text-center space-y-3 shadow-xs">
         <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">Accès Restreint</h3>
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Seul le Propriétaire (Gérant de l&apos;auto-école) peut modifier les paramètres généraux, jours ouvrables et tarifs.
@@ -81,8 +81,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       {/* Page Title */}
-      <div className="bg-card-bg p-5 rounded-2xl border border-card-border shadow-xs transition-colors">
-        <h2 className="text-lg font-black text-slate-900 dark:text-slate-200">Paramètres Généraux de l&apos;Établissement</h2>
+      <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs transition-colors">
+        <h2 className="text-lg font-black text-slate-900 dark:text-white">Paramètres Généraux de l&apos;Établissement</h2>
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Configuration de la langue du système, des jours d&apos;ouverture hebdomadaires (Samedi au Jeudi par défaut), des unités de 01 heure et des frais d&apos;examen.
         </p>
@@ -92,10 +92,10 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Language Selection Card */}
-        <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
-          <div className="flex items-center gap-2 pb-3 border-b border-card-border">
+        <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4 transition-colors">
+          <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
             <Languages className="w-5 h-5 text-blue-600" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Langue de l&apos;Interface Applicative</h3>
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Langue de l&apos;Interface Applicative</h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Sélectionnez la langue par défaut. Votre choix est mémorisé sur ce poste de travail jusqu&apos;à modification ultérieure.
@@ -107,8 +107,8 @@ export default function SettingsPage() {
               onClick={() => setLang('fr')}
               className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
                 lang === 'fr'
-                  ? 'border-blue-700 bg-blue-50 dark:bg-blue-950/50 text-blue-900 dark:text-blue-200 ring-2 ring-blue-600/20'
-                  : 'border-card-border bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                  ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/50 text-blue-900 dark:text-blue-200 ring-2 ring-blue-600/20'
+                  : 'border-border-subtle bg-slate-50 dark:bg-surface-elevated text-slate-700 dark:text-slate-300 hover:bg-slate-100'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -125,8 +125,8 @@ export default function SettingsPage() {
               onClick={() => setLang('ar')}
               className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
                 lang === 'ar'
-                  ? 'border-blue-700 bg-blue-50 dark:bg-blue-950/50 text-blue-900 dark:text-blue-200 ring-2 ring-blue-600/20'
-                  : 'border-card-border bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100'
+                  ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/50 text-blue-900 dark:text-blue-200 ring-2 ring-blue-600/20'
+                  : 'border-border-subtle bg-slate-50 dark:bg-surface-elevated text-slate-700 dark:text-slate-300 hover:bg-slate-100'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -140,223 +140,238 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Standard Exam Fee & Tariff */}
-        <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
-          <div className="flex items-center gap-2 pb-3 border-b border-card-border">
-            <DollarSign className="w-5 h-5 text-blue-600" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Droits & Frais d&apos;Examen par Passage</h3>
+        {/* Exam Fees Settings Card */}
+        <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4 transition-colors">
+          <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
+            <DollarSign className="w-5 h-5 text-emerald-600" />
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Frais Réglementaires de Session d&apos;Examen</h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Tarif réglementaire des frais administratifs exigibles à chaque épreuve d&apos;examen (Code, Créneau, Conduite).
+            Fixez le montant des frais de passage d&apos;examen par candidat (droits d&apos;inscription aux commissions hebdomadaires).
           </p>
 
-          <div className="space-y-4 pt-1">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Frais d&apos;examen par défaut (DZD):
-              </label>
+          <div className="p-4 rounded-xl border border-border-subtle bg-slate-50/70 dark:bg-surface-elevated space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Frais par épreuve (Code, Créneau ou Conduite) :</span>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
-                  step="500"
-                  value={settings.standard_exam_fee || 2000}
-                  onChange={(e) => updateSettings({ standard_exam_fee: Number(e.target.value) })}
-                  className="w-40 px-3 py-2 bg-white dark:bg-slate-800 border border-card-border rounded-xl font-mono font-bold text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none text-slate-900 dark:text-slate-200"
+                  value={settings.standard_exam_fee}
+                  onChange={(e) => updateSettings({ standard_exam_fee: Number(e.target.value) || 2000 })}
+                  className="w-28 px-3 py-1.5 border border-border-subtle rounded-lg font-mono font-bold text-sm text-right bg-white dark:bg-surface text-slate-900 dark:text-white"
                 />
-                <span className="text-xs font-bold text-slate-500">DZD / épreuve</span>
+                <span className="font-mono text-xs font-bold text-slate-600 dark:text-slate-300">DZD</span>
               </div>
             </div>
-
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800/40 text-xs text-blue-800 dark:text-blue-200">
-              <span className="font-bold block">Rappel sur les encaissements :</span>
-              <span>Chaque fois qu&apos;un candidat passe un examen, le système enregistre automatiquement cette ligne de frais et permet de marquer son encaissement.</span>
-            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Chaque épreuve programmée pour un candidat applique ce montant par défaut (ex: 2 000 DZD).
+            </p>
           </div>
         </div>
 
       </div>
 
-      {/* Row 2: Working Days & Daily Hours */}
+      {/* Row 2: Working Days & Working Hours */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Working Days */}
-        <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
-          <div className="flex items-center gap-2 pb-3 border-b border-card-border">
+        {/* Working Days Card */}
+        <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4 transition-colors">
+          <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
             <Calendar className="w-5 h-5 text-blue-600" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Jours Ouvrables Hebdomadaires</h3>
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Jours Ouvrables de la Semaine</h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Par défaut en Algérie : <strong>du Samedi au Jeudi</strong>. Vendredi est le jour de repos légal. Le générateur de planning automatique respecte strictement ces jours.
+            Par défaut : <strong>Du Samedi au Jeudi</strong>. Le planning s&apos;ajuste automatiquement selon les jours cochés ci-dessous.
           </p>
 
-          <div className="space-y-2 pt-2">
+          <div className="space-y-2 pt-1">
             {daysList.map(d => {
               const isChecked = settings.working_days.includes(d.id);
               return (
-                <label 
+                <div 
                   key={d.id} 
-                  className={`flex items-center justify-between p-3 rounded-xl border transition cursor-pointer text-xs ${
+                  onClick={() => toggleDay(d.id)}
+                  className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
                     isChecked 
-                      ? 'bg-blue-50/50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-900 text-slate-900 dark:text-slate-200 font-bold' 
-                      : 'bg-slate-50/50 dark:bg-slate-800/40 border-card-border text-slate-400 font-medium'
+                      ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200' 
+                      : 'border-border-subtle bg-slate-50/50 dark:bg-surface-elevated/40 text-slate-500'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleDay(d.id)}
-                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-600"
-                    />
-                    <span>{d.label}</span>
+                  <span className="text-xs font-bold">{d.label}</span>
+                  <div className={`w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold transition ${
+                    isChecked ? 'bg-blue-600 text-white' : 'border border-slate-300 dark:border-slate-600'
+                  }`}>
+                    {isChecked && <Check className="w-3.5 h-3.5" />}
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {isChecked ? 'Ouvert (Séances programmées)' : 'Fermé'}
-                  </span>
-                </label>
+                </div>
               );
             })}
           </div>
         </div>
 
-        {/* Working Hours & Unit */}
-        <div className="space-y-6">
-          <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
-            <div className="flex items-center gap-2 pb-3 border-b border-card-border">
-              <Clock className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Créneaux Horaires Quotidiens (Unité 01 Heure)</h3>
+        {/* Working Hours & 1h Unit Card */}
+        <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4 transition-colors">
+          <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
+            <Clock className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Amplitude Horaire Quotidienne (Unité: 01 Heure)</h3>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Toutes les séances de formation sont calculées en unités de <strong>01 heure</strong> fixe.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4 p-4 rounded-xl border border-border-subtle bg-slate-50/70 dark:bg-surface-elevated">
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Heure de Début :
+              </label>
+              <input
+                type="time"
+                value={settings.start_hour}
+                onChange={(e) => updateSettings({ start_hour: e.target.value })}
+                className="w-full px-3 py-2 border border-border-subtle rounded-xl font-mono text-sm font-bold bg-white dark:bg-surface text-slate-900 dark:text-white"
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Heure d&apos;ouverture:</label>
-                <input
-                  type="time"
-                  value={settings.start_hour}
-                  onChange={(e) => updateSettings({ start_hour: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-card-border rounded-lg font-mono font-bold text-slate-900 dark:text-slate-200"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Heure de fermeture:</label>
-                <input
-                  type="time"
-                  value={settings.end_hour}
-                  onChange={(e) => updateSettings({ end_hour: e.target.value })}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-card-border rounded-lg font-mono font-bold text-slate-900 dark:text-slate-200"
-                />
-              </div>
-            </div>
-
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-card-border text-xs text-slate-600 dark:text-slate-300">
-              <span className="font-bold block text-slate-900 dark:text-slate-200">Unité de séance standard:</span>
-              <span>1 séance = <strong>01 heure fixe</strong> (ex: 08:00 - 09:00, 09:00 - 10:00). Pause déjeuner de 12:00 à 13:00.</span>
+            <div>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Heure de Fin :
+              </label>
+              <input
+                type="time"
+                value={settings.end_hour}
+                onChange={(e) => updateSettings({ end_hour: e.target.value })}
+                className="w-full px-3 py-2 border border-border-subtle rounded-xl font-mono text-sm font-bold bg-white dark:bg-surface text-slate-900 dark:text-white"
+              />
             </div>
           </div>
 
-          {/* School Legal Info */}
-          <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
-            <div className="flex items-center gap-2 pb-3 border-b border-card-border">
-              <Building className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Agrément & Établissement</h3>
+          {/* School Identity */}
+          <div className="pt-2">
+            <div className="flex items-center gap-2 pb-2 border-b border-border-subtle mb-3">
+              <Building className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+              <h4 className="font-bold text-xs text-slate-800 dark:text-slate-200">Établissement & Agrément</h4>
             </div>
-
-            <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <span className="text-slate-400 block">N° d&apos;Agrément Officiel:</span>
-                <strong className="font-mono text-slate-800 dark:text-slate-200">{school.agrement_number}</strong>
+                <label className="text-[11px] text-slate-500 block mb-1">Nom de l&apos;Auto-École :</label>
+                <input
+                  type="text"
+                  value={school.name}
+                  onChange={(e) => setSchool({ ...school, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-border-subtle rounded-lg font-bold bg-white dark:bg-surface text-slate-900 dark:text-white"
+                />
               </div>
               <div>
-                <span className="text-slate-400 block">Police d&apos;Assurance:</span>
-                <strong className="font-mono text-slate-800 dark:text-slate-200">{school.insurance_policy_number}</strong>
+                <label className="text-[11px] text-slate-500 block mb-1">N° d&apos;Agrément :</label>
+                <input
+                  type="text"
+                  value={school.agrement_number}
+                  onChange={(e) => setSchool({ ...school, agrement_number: e.target.value })}
+                  className="w-full px-3 py-2 border border-border-subtle rounded-lg font-mono font-bold bg-white dark:bg-surface text-slate-900 dark:text-white"
+                />
               </div>
               <div>
-                <span className="text-slate-400 block">Gérant Propriétaire:</span>
-                <strong className="text-slate-800 dark:text-slate-200">{school.owner_name}</strong>
+                <label className="text-[11px] text-slate-500 block mb-1">Wilaya :</label>
+                <input
+                  type="text"
+                  value={school.wilaya}
+                  onChange={(e) => setSchool({ ...school, wilaya: e.target.value })}
+                  className="w-full px-3 py-2 border border-border-subtle rounded-lg font-bold bg-white dark:bg-surface text-slate-900 dark:text-white"
+                />
               </div>
               <div>
-                <span className="text-slate-400 block">Téléphone:</span>
-                <strong className="font-mono text-slate-800 dark:text-slate-200">{school.phone}</strong>
+                <label className="text-[11px] text-slate-500 block mb-1">Téléphone :</label>
+                <input
+                  type="text"
+                  value={school.phone}
+                  onChange={(e) => setSchool({ ...school, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-border-subtle rounded-lg font-mono font-bold bg-white dark:bg-surface text-slate-900 dark:text-white"
+                />
               </div>
             </div>
           </div>
         </div>
+
       </div>
 
-      {/* Row 3: Exceptions & Unavailability Manager (Day or Half-Day) */}
-      <div className="bg-card-bg p-6 rounded-2xl border border-card-border shadow-xs space-y-4 transition-colors">
-        <div className="flex items-center gap-2 pb-3 border-b border-card-border">
+      {/* Row 3: Manage Unavailabilities */}
+      <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4 transition-colors">
+        <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
           <AlertTriangle className="w-5 h-5 text-amber-600" />
-          <h3 className="font-bold text-sm text-slate-900 dark:text-slate-200">Indisponibilités & Fermetures Exceptionnelles</h3>
+          <h3 className="font-bold text-sm text-slate-900 dark:text-white">Déclarer une Indisponibilité ou Fermeture Exceptionnelle</h3>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          En cas d&apos;indisponibilité (journée complète ou demi-journée : matinée ou après-midi), déclarez-la ci-dessous. Le système réajuste les plannings automatiquement.
+          Si l&apos;auto-école ou un moniteur s&apos;absente sur une demi-journée ou journée entière, le planning se réadapte instantanément.
         </p>
 
-        {/* Form to add unavailability */}
-        <form onSubmit={handleAddUnavailable} className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-card-border grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+        {/* Add Form */}
+        <form onSubmit={handleAddUnavailable} className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs bg-slate-50/70 dark:bg-surface-elevated p-4 rounded-xl border border-border-subtle">
           <div>
-            <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Date d&apos;indisponibilité:</label>
+            <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Date concernée :</label>
             <input
               type="date"
               value={unDate}
               onChange={(e) => setUnDate(e.target.value)}
-              className="w-full px-3 py-2 bg-card-bg border border-card-border rounded-lg font-mono font-bold text-slate-900 dark:text-slate-200"
-              required
+              className="w-full px-3 py-2 border border-border-subtle rounded-lg font-mono bg-white dark:bg-surface text-slate-900 dark:text-white font-bold"
             />
           </div>
 
           <div>
-            <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Période d&apos;absence:</label>
+            <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Période d&apos;absence :</label>
             <select
               value={unPeriod}
               onChange={(e) => setUnPeriod(e.target.value as any)}
-              className="w-full px-3 py-2 bg-card-bg border border-card-border rounded-lg font-bold text-slate-900 dark:text-slate-200"
+              className="w-full px-3 py-2 border border-border-subtle rounded-lg font-bold bg-white dark:bg-surface text-slate-900 dark:text-white"
             >
-              <option value="full_day">Journée entière (Toute la journée)</option>
-              <option value="morning">Matinée uniquement (08h - 12h)</option>
-              <option value="afternoon">Après-midi uniquement (13h - 17h)</option>
+              <option value="full_day">Journée entière (24h)</option>
+              <option value="morning">Matinée uniquement</option>
+              <option value="afternoon">Après-midi uniquement</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Motif:</label>
+            <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">Motif / Justification :</label>
             <input
               type="text"
               value={unReason}
               onChange={(e) => setUnReason(e.target.value)}
-              placeholder="ex: Maintenance véhicule ou jour férié"
-              className="w-full px-3 py-2 bg-card-bg border border-card-border rounded-lg text-slate-900 dark:text-slate-200"
-              required
+              placeholder="Ex: Entretien véhicule, congé, etc."
+              className="w-full px-3 py-2 border border-border-subtle rounded-lg bg-white dark:bg-surface text-slate-900 dark:text-white"
             />
           </div>
 
           <div className="flex items-end">
             <button
               type="submit"
-              className="w-full py-2 bg-slate-900 hover:bg-slate-800 dark:bg-brand-primary dark:hover:bg-blue-800 text-white rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-lg transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer h-[38px]"
             >
-              <Plus className="w-4 h-4" /> Enregistrer l&apos;absence
+              <Plus className="w-4 h-4" />
+              <span>Enregistrer l&apos;Absence</span>
             </button>
           </div>
         </form>
 
-        {/* List of active exceptions */}
+        {/* Existing Unavailabilities List */}
         <div className="space-y-2 pt-2">
           {settings.unavailable_periods.length > 0 ? (
             settings.unavailable_periods.map(p => (
-              <div key={p.id} className="p-3 bg-white dark:bg-slate-800 border border-card-border rounded-xl flex items-center justify-between text-xs">
+              <div 
+                key={p.id}
+                className="p-3.5 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20 flex items-center justify-between text-xs"
+              >
                 <div>
-                  <span className="font-mono font-bold text-slate-900 dark:text-slate-200 mr-2">{p.date}</span>
-                  <span className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 text-[10px] mr-2">
-                    {p.period === 'full_day' ? 'Journée complète' : p.period === 'morning' ? 'Matinée (08h-12h)' : 'Après-midi (13h-17h)'}
+                  <span className="font-mono font-bold text-amber-900 dark:text-amber-200">{p.date}</span>
+                  <span className="text-slate-400 mx-2">•</span>
+                  <span className="font-bold capitalize text-slate-700 dark:text-slate-300">
+                    {p.period === 'full_day' ? 'Journée entière' : p.period === 'morning' ? 'Matinée' : 'Après-midi'}
                   </span>
-                  <span className="text-slate-600 dark:text-slate-300">{p.reason}</span>
+                  <span className="text-slate-400 mx-2">•</span>
+                  <span className="text-slate-600 dark:text-slate-400">{p.reason}</span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => removeUnavailablePeriod(p.id)}
-                  className="text-rose-600 hover:text-rose-700 p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition cursor-pointer"
+                  className="p-1.5 text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-950/60 rounded-lg transition cursor-pointer"
                   title="Supprimer cette indisponibilité"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -364,7 +379,7 @@ export default function SettingsPage() {
               </div>
             ))
           ) : (
-            <p className="text-xs text-slate-400 py-3 text-center">Aucune fermeture exceptionnelle déclarée.</p>
+            <p className="text-xs text-slate-400 py-3 text-center">Aucune indisponibilité déclarée actuellement.</p>
           )}
         </div>
       </div>

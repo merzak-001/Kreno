@@ -83,7 +83,7 @@ export function ConfirmModal({
             className={`px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-md transition cursor-pointer flex items-center gap-2 ${
               danger
                 ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20 active:scale-95'
-                : 'bg-brand-primary hover:bg-brand-primary-hover shadow-blue-950/30 active:scale-95'
+                : 'bg-primary hover:bg-primary-hover shadow-blue-950/30 active:scale-95'
             }`}
           >
             <Trash2 className="w-3.5 h-3.5" />

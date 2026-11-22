@@ -80,7 +80,7 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
           {/* Modal Topbar */}
           <div className="px-6 py-4 border-b border-card-border flex items-center justify-between bg-slate-50 dark:bg-card-bg shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/70 text-brand-primary dark:text-brand-soft flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-xl bg-primary-subtle text-primary border border-primary-subtle-border flex items-center justify-center font-bold">
                 <Printer className="w-5 h-5" />
               </div>
               <div>
@@ -96,7 +96,7 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
             <div className="flex items-center gap-3">
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary hover:bg-brand-primary-hover active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-950/30 transition cursor-pointer"
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-hover active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-primary/20 transition cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <span>Imprimer sur Papier A4</span>

@@ -61,24 +61,24 @@ export default function CandidatesPage() {
   return (
     <div className="space-y-6">
       {/* Title & Filters */}
-      <div className="flex items-center justify-between flex-wrap gap-4 bg-card-bg p-5 rounded-2xl border border-card-border shadow-xs transition-colors">
+      <div className="flex items-center justify-between flex-wrap gap-4 bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs transition-colors">
         <div>
-          <h2 className="text-lg font-black text-slate-900 dark:text-slate-200">Registre des Candidats & Dossiers</h2>
+          <h2 className="text-lg font-black text-slate-900 dark:text-white">Registre des Candidats & Dossiers</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {filteredStudents.length} candidats trouvés • <strong>Cliquez sur une ligne</strong> pour ouvrir la fiche synthèse (historique, paiements, examens).
           </p>
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto text-xs">
-          <span className="font-medium text-slate-500 dark:text-slate-400 mr-2">Filtrer par Catégorie:</span>
+          <span className="font-bold text-slate-500 dark:text-slate-400 mr-2">Filtrer par Catégorie :</span>
           {['all', 'B', 'A', 'C', 'D', 'BE'].map(cat => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl font-bold transition cursor-pointer ${
                 categoryFilter === cat 
-                  ? 'bg-primary text-white shadow-xs' 
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
+                  : 'bg-slate-100 dark:bg-surface-elevated text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-surface-hover border border-border-subtle'
               }`}
             >
               {cat === 'all' ? 'Toutes' : `Cat. ${cat}`}
@@ -88,131 +88,133 @@ export default function CandidatesPage() {
       </div>
 
       {/* Candidates List Table */}
-      <div className="bg-card-bg rounded-2xl border border-card-border shadow-xs overflow-hidden transition-colors">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-slate-50 dark:bg-black/20 text-slate-600 dark:text-slate-400 font-semibold border-b border-card-border">
-            <tr>
-              <th className="p-4">Dossier</th>
-              <th className="p-4">Candidat</th>
-              <th className="p-4">NIN</th>
-              <th className="p-4">Permis</th>
-              <th className="p-4">Téléphone</th>
-              <th className="p-4 text-center">Étape 1: Code</th>
-              <th className="p-4 text-center">Étape 2: Créneau</th>
-              <th className="p-4 text-center">Étape 3: Conduite</th>
-              <th className="p-4 text-center">Situation Financière</th>
-              <th className="p-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-card-border">
-            {filteredStudents.map(st => {
-              const codePassed = st.exams.some(e => e.exam_type === 'code' && e.result === 'passed');
-              const creneauPassed = st.exams.some(e => e.exam_type === 'creneau' && e.result === 'passed');
-              const circPassed = st.exams.some(e => e.exam_type === 'circulation' && e.result === 'passed');
-              const remaining = Math.max(0, (st.total_package_price || 0) - (st.amount_paid || 0));
+      <div className="bg-surface rounded-2xl border border-border-subtle shadow-xs overflow-hidden transition-colors">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 dark:bg-surface-elevated text-slate-600 dark:text-slate-400 font-bold border-b border-border-subtle uppercase tracking-wider text-[10px]">
+              <tr>
+                <th className="p-4">Dossier</th>
+                <th className="p-4">Candidat</th>
+                <th className="p-4">NIN</th>
+                <th className="p-4">Permis</th>
+                <th className="p-4">Téléphone</th>
+                <th className="p-4 text-center">Étape 1: Code</th>
+                <th className="p-4 text-center">Étape 2: Créneau</th>
+                <th className="p-4 text-center">Étape 3: Conduite</th>
+                <th className="p-4 text-center">Situation Financière</th>
+                <th className="p-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle">
+              {filteredStudents.map(st => {
+                const codePassed = st.exams.some(e => e.exam_type === 'code' && e.result === 'passed');
+                const creneauPassed = st.exams.some(e => e.exam_type === 'creneau' && e.result === 'passed');
+                const circPassed = st.exams.some(e => e.exam_type === 'circulation' && e.result === 'passed');
+                const remaining = Math.max(0, (st.total_package_price || 0) - (st.amount_paid || 0));
 
-              return (
-                <tr 
-                  key={st.id} 
-                  onClick={() => handleRowClick(st)}
-                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition cursor-pointer group"
-                >
-                  <td className="p-4 font-mono font-bold text-slate-700 dark:text-slate-300 group-hover:text-brand-primary">
-                    {st.dossier_number}
-                  </td>
-                  <td className="p-4">
-                    <span className="font-bold text-slate-900 dark:text-slate-200 text-sm block group-hover:text-brand-primary">
-                      {st.first_name} {st.last_name}
-                    </span>
-                    <span className="text-[10px] text-slate-400">Inscrit le {st.deposit_date}</span>
-                  </td>
-                  <td className="p-4 font-mono text-slate-600 dark:text-slate-400">{st.nin}</td>
-                  
-                  {/* Eye-friendly distinct category badge */}
-                  <td className="p-4">
-                    <span className={`px-2.5 py-1 rounded-lg text-xs border ${getCategoryBadgeClass(st.requested_category)}`}>
-                      Cat. {st.requested_category}
-                    </span>
-                  </td>
-
-                  <td className="p-4">
-                    <span className="font-mono text-slate-700 dark:text-slate-300 block font-semibold">{st.phone_number}</span>
-                    <span className="text-[11px] text-slate-400">{st.birth_commune}</span>
-                  </td>
-                  <td className="p-4 text-center">
-                    {codePassed ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400/90 font-medium text-[10px] border border-emerald-200/50 dark:border-emerald-800/30">Admis</span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-black/20 text-slate-500 dark:text-slate-400 text-[10px]">En cours</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-center">
-                    {creneauPassed ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400/90 font-medium text-[10px] border border-emerald-200/50 dark:border-emerald-800/30">Admis</span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-black/20 text-slate-500 dark:text-slate-400 text-[10px]">En attente</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-center">
-                    {circPassed ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400/90 font-medium text-[10px] border border-emerald-200/50 dark:border-emerald-800/30">Admis</span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-black/20 text-slate-500 dark:text-slate-400 text-[10px]">En attente</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-center">
-                    {remaining === 0 ? (
-                      <span className="px-2 py-0.5 rounded-full bg-brand-soft/20 text-brand-dark dark:text-brand-soft font-medium text-[10px] border border-brand-soft/30">
-                        Soldé ({st.amount_paid.toLocaleString()} DZD)
+                return (
+                  <tr 
+                    key={st.id} 
+                    onClick={() => handleRowClick(st)}
+                    className="hover:bg-slate-50 dark:hover:bg-surface-elevated/70 transition cursor-pointer group"
+                  >
+                    <td className="p-4 font-mono font-bold text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                      {st.dossier_number}
+                    </td>
+                    <td className="p-4">
+                      <span className="font-bold text-slate-900 dark:text-white text-sm block group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                        {st.first_name} {st.last_name}
                       </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400/90 font-medium text-[10px] border border-amber-200/50 dark:border-amber-800/30">
-                        Reste {remaining.toLocaleString()} DZD
+                      <span className="text-[10px] text-slate-400">Inscrit le {st.deposit_date}</span>
+                    </td>
+                    <td className="p-4 font-mono text-slate-600 dark:text-slate-400">{st.nin}</td>
+                    
+                    {/* Distinct category badge */}
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs border shadow-2xs ${getCategoryBadgeClass(st.requested_category)}`}>
+                        Cat. {st.requested_category}
                       </span>
-                    )}
-                  </td>
-                  
-                  {/* Actions: View / Edit / Delete / Open Profile */}
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
-                      <button
-                        onClick={() => handleRowClick(st)}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 hover:text-blue-600 transition cursor-pointer"
-                        title="Fiche Synthèse Popup"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                    </td>
 
-                      <button
-                        onClick={() => setEditingStudent(st)}
-                        className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-950/60 rounded-lg text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer"
-                        title="Modifier ce candidat"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
+                    <td className="p-4">
+                      <span className="font-mono text-slate-700 dark:text-slate-300 block font-semibold">{st.phone_number}</span>
+                      <span className="text-[11px] text-slate-400">{st.birth_commune}</span>
+                    </td>
+                    <td className="p-4 text-center">
+                      {codePassed ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">Admis</span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-medium">En cours</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      {creneauPassed ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">Admis</span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-medium">En attente</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      {circPassed ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">Admis</span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-medium">En attente</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      {remaining === 0 ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">
+                          Soldé ({st.amount_paid.toLocaleString()} DZD)
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold text-[10px] border border-amber-200 dark:border-amber-800/60 shadow-2xs">
+                          Reste {remaining.toLocaleString()} DZD
+                        </span>
+                      )}
+                    </td>
+                    
+                    {/* Actions: View / Edit / Delete / Open Profile */}
+                    <td className="p-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={() => handleRowClick(st)}
+                          className="p-2 hover:bg-slate-100 dark:hover:bg-surface-elevated rounded-xl text-slate-600 dark:text-slate-300 hover:text-blue-600 transition cursor-pointer border border-transparent hover:border-border-subtle"
+                          title="Fiche Synthèse Popup"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
 
-                      <Link
-                        href={`/candidates/${st.id}`}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
-                        title="Ouvrir le Profil Complet (Page)"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Link>
+                        <button
+                          onClick={() => setEditingStudent(st)}
+                          className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/60 rounded-xl text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer border border-transparent hover:border-blue-200 dark:hover:border-blue-800/60"
+                          title="Modifier ce candidat"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
 
-                      <button
-                        onClick={() => setConfirmDelete({ isOpen: true, student: st })}
-                        className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
-                        title="Supprimer définitivement ce candidat"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                        <Link
+                          href={`/candidates/${st.id}`}
+                          className="p-2 hover:bg-slate-100 dark:hover:bg-surface-elevated rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer border border-transparent hover:border-border-subtle"
+                          title="Ouvrir le Profil Complet (Page)"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Link>
+
+                        <button
+                          onClick={() => setConfirmDelete({ isOpen: true, student: st })}
+                          className="p-2 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-xl text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer border border-transparent hover:border-rose-200 dark:hover:border-rose-800/60"
+                          title="Supprimer définitivement ce candidat"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Candidate Summary Modal */}

@@ -224,8 +224,8 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                       onClick={() => setActiveFilter(tab.id as any)}
                       className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer text-[11px] ${
                         activeFilter === tab.id
-                          ? 'bg-slate-900 text-white dark:bg-brand-primary dark:text-white'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                          ? 'bg-primary text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                       }`}
                     >
                       {tab.label}
@@ -312,7 +312,7 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                                   className="w-3.5 h-3.5 text-blue-600 rounded"
                                 />
                                 <span className={`text-[11px] font-bold ${
-                                  currentSelection?.fee_paid ? 'text-brand-primary dark:text-brand-soft' : 'text-slate-400'
+                                  currentSelection?.fee_paid ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'
                                 }`}>
                                   {currentSelection?.fee_paid ? 'Réglé (2000 DZD)' : 'Non réglé'}
                                 </span>
@@ -323,9 +323,9 @@ export function NewExamSessionModal({ isOpen, onClose }: NewExamSessionModalProp
                           </td>
                           <td className="p-3 text-right font-mono">
                             {remaining === 0 ? (
-                              <span className="text-blue-600 font-bold text-[11px]">Soldé</span>
+                              <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Soldé</span>
                             ) : (
-                              <span className="text-amber-600 font-bold text-[11px]">Reste {remaining.toLocaleString()} DZD</span>
+                              <span className="text-amber-600 dark:text-amber-400 font-bold text-[11px]">Reste {remaining.toLocaleString()} DZD</span>
                             )}
                           </td>
                         </tr>

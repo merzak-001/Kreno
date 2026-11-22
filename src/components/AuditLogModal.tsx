@@ -52,12 +52,12 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-card-bg rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-card-border overflow-hidden text-slate-900 dark:text-slate-100">
+      <div className="bg-surface rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl border border-border-subtle overflow-hidden text-slate-900 dark:text-slate-100 animate-in fade-in zoom-in-95 duration-150">
         
         {/* Topbar */}
-        <div className="px-6 py-4 border-b border-card-border flex items-center justify-between bg-slate-50 dark:bg-card-bg shrink-0">
+        <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between bg-surface shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center font-bold">
               <History className="w-5 h-5" />
             </div>
             <div>
@@ -72,14 +72,14 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition cursor-pointer"
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="p-4 bg-slate-100/60 dark:bg-card-bg/60 border-b border-card-border flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="p-4 bg-slate-50/70 dark:bg-slate-900/50 border-b border-border-subtle flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -87,7 +87,7 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher par candidat, montant, détail..."
-              className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-card-border rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-800 dark:text-slate-100"
+              className="w-full pl-9 pr-3 py-1.5 bg-surface border border-border-subtle rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-800 dark:text-slate-100"
             />
           </div>
 
@@ -95,7 +95,7 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value as any)}
-              className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-card-border rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300"
+              className="px-3 py-1.5 bg-surface border border-border-subtle rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300"
             >
               <option value="all">Tous les rôles</option>
               <option value="owner">Propriétaire (Gérant)</option>
@@ -105,7 +105,7 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
             <select
               value={filterAction}
               onChange={(e) => setFilterAction(e.target.value)}
-              className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-card-border rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300"
+              className="px-3 py-1.5 bg-surface border border-border-subtle rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300"
             >
               <option value="all">Toutes les actions</option>
               <option value="cancel_payment">Annulation paiement</option>
@@ -128,9 +128,9 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
               <p className="text-xs font-medium">Aucun événement ne correspond à vos filtres.</p>
             </div>
           ) : (
-            <div className="border border-card-border rounded-xl overflow-hidden divide-y divide-card-border bg-card-bg">
+            <div className="border border-border-subtle rounded-xl overflow-hidden divide-y divide-border-subtle bg-surface">
               {filteredLogs.map(log => (
-                <div key={log.id} className="p-3.5 hover:bg-slate-50/80 dark:hover:bg-slate-850/50 transition flex items-start justify-between gap-4 text-xs">
+                <div key={log.id} className="p-3.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition flex items-start justify-between gap-4 text-xs">
                   
                   <div className="space-y-1.5 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -170,11 +170,11 @@ export function AuditLogModal({ isOpen, onClose }: AuditLogModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-card-border bg-slate-50 dark:bg-card-bg text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between shrink-0">
+        <div className="p-4 border-t border-border-subtle bg-surface text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between shrink-0">
           <span>Total : {filteredLogs.length} action(s) consignée(s)</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-lg font-bold text-xs transition cursor-pointer"
+            className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-lg font-bold text-xs transition cursor-pointer"
           >
             Fermer
           </button>

@@ -245,7 +245,7 @@ export default function PipelinePage() {
 
           <button
             onClick={() => setIsNewSessionOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-hover active:scale-95 text-white rounded-xl text-xs font-semibold transition shadow-xs cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-600/20 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Programmer une Journée d&apos;Examen</span>
@@ -422,7 +422,7 @@ export default function PipelinePage() {
                     <div className="w-full max-w-[170px] px-3 py-2 rounded-xl bg-slate-50 dark:bg-card-bg border border-card-border flex items-center gap-2.5 shadow-2xs">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                         session.passedCount > 0 
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300' 
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300' 
                           : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                       }`}>
                         <Award className="w-4 h-4" />
@@ -442,7 +442,7 @@ export default function PipelinePage() {
                   <div className="lg:col-span-1 flex justify-start lg:justify-center w-full">
                     <div className={`w-full px-2.5 py-1.5 rounded-xl border flex flex-col items-center justify-center text-center shadow-2xs ${
                       session.unpaidFeesCount === 0 
-                        ? 'bg-blue-50/70 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800/60' 
+                        ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60' 
                         : 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60'
                     }`}>
                       <span className="font-mono font-black text-slate-900 dark:text-slate-200 text-xs block leading-tight">
@@ -450,7 +450,7 @@ export default function PipelinePage() {
                       </span>
                       <span className={`text-[9px] font-black uppercase tracking-wider block truncate ${
                         session.unpaidFeesCount === 0 
-                          ? 'text-brand-primary' 
+                          ? 'text-emerald-600 dark:text-emerald-400' 
                           : 'text-amber-600 dark:text-amber-400'
                       }`}>
                         {session.unpaidFeesCount === 0 ? '100% Réglé' : `${session.unpaidFeesCount} Impayé(s)`}
@@ -563,8 +563,8 @@ export default function PipelinePage() {
                                   <div className="flex items-center justify-center gap-1.5">
                                     <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
                                       isPaid
-                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                                        : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                        : 'bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
                                     }`}>
                                       {isPaid ? 'Payé (2 000 DZD)' : 'Impayé (2 000 DZD)'}
                                     </span>
@@ -573,7 +573,7 @@ export default function PipelinePage() {
                                       className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition cursor-pointer ${
                                         isPaid 
                                           ? 'text-slate-400 hover:text-rose-600' 
-                                          : 'bg-brand-primary hover:bg-brand-primary-hover text-white shadow-2xs'
+                                          : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs'
                                       }`}
                                       title={isPaid ? 'Marquer comme non réglé' : 'Encaisser les frais maintenant'}
                                     >
@@ -584,9 +584,9 @@ export default function PipelinePage() {
 
                                 <td className="p-3 text-center font-mono">
                                   {remaining === 0 ? (
-                                    <span className="text-blue-600 font-bold text-[11px]">Soldé</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Soldé</span>
                                   ) : (
-                                    <span className="text-amber-600 font-bold text-[11px]">
+                                    <span className="text-amber-600 dark:text-amber-400 font-bold text-[11px]">
                                       Reste {remaining.toLocaleString()} DZD
                                     </span>
                                   )}
@@ -599,8 +599,8 @@ export default function PipelinePage() {
                                       onClick={() => handleResultChange(student.id, exam.id, 'passed')}
                                       className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${
                                         exam.result === 'passed'
-                                          ? 'bg-brand-primary text-white shadow-xs ring-2 ring-blue-600/30 font-black'
-                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-blue-50 hover:text-blue-700'
+                                          ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-600/30 font-black'
+                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40'
                                       }`}
                                       title="Déclarer Admis (Succès)"
                                     >
@@ -612,7 +612,7 @@ export default function PipelinePage() {
                                       className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer flex items-center gap-1 ${
                                         exam.result === 'failed'
                                           ? 'bg-rose-600 text-white shadow-xs ring-2 ring-rose-600/30 font-black'
-                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-700'
+                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40'
                                       }`}
                                       title="Déclarer Ajourné (Échec)"
                                     >
@@ -624,7 +624,7 @@ export default function PipelinePage() {
                                       className={`px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
                                         exam.result === 'absent_unexcused'
                                           ? 'bg-amber-600 text-white shadow-xs'
-                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-amber-700'
+                                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-amber-700 dark:hover:bg-amber-950/40'
                                       }`}
                                       title="Déclarer Absent"
                                     >
@@ -779,7 +779,7 @@ export default function PipelinePage() {
           <div className="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-2xl border border-card-border space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-card-border">
               <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-lg bg-brand-primary text-white flex items-center justify-center font-bold text-xs">3</span>
+                <span className="w-7 h-7 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-xs">3</span>
                 <div>
                   <h3 className="font-bold text-xs text-slate-900 dark:text-slate-200">Étape 3: Conduite (Circulation)</h3>
                   <span className="text-[10px] text-slate-400">Circuit Routier Final</span>
