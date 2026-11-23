@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Users, 
   Search, 
@@ -10,24 +11,21 @@ import {
   XCircle, 
   Clock, 
   Calendar, 
-  Printer,
-  DollarSign,
-  Eye,
-  Edit2,
-  Trash2,
-  ExternalLink
+  Printer, 
+  DollarSign, 
+  Eye, 
+  Edit2, 
+  Trash2 
 } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
-import { LicenseCategory, Student, getCategoryBadgeClass } from '@/types/kreno';
-import { CandidateSummaryModal } from '@/components/CandidateSummaryModal';
+import { Student, getCategoryBadgeClass } from '@/types/kreno';
 import { EditStudentModal } from '@/components/EditStudentModal';
 import { ConfirmModal } from '@/components/ConfirmModal';
 
 export default function CandidatesPage() {
+  const router = useRouter();
   const { students, searchQuery, deleteStudent, userRole } = useKreno();
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; student: Student | null }>({
     isOpen: false,
@@ -53,9 +51,8 @@ export default function CandidatesPage() {
     });
   }, [students, searchQuery, categoryFilter]);
 
-  const handleRowClick = (student: Student) => {
-    setSelectedStudent(student);
-    setIsModalOpen(true);
+  const handleNavigateToCandidate = (id: string) => {
+    router.push(`/candidates/${id}`);
   };
 
   return (
@@ -65,7 +62,7 @@ export default function CandidatesPage() {
         <div>
           <h2 className="text-lg font-black text-slate-900 dark:text-white">Registre des Candidats & Dossiers</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {filteredStudents.length} candidats trouvés • <strong>Cliquez sur une ligne</strong> pour ouvrir la fiche synthèse (historique, paiements, examens).
+            {filteredStudents.length} candidats trouvés • Cliquez sur n&apos;importe quelle ligne pour ouvrir la page complète du candidat.
           </p>
         </div>
 
@@ -111,7 +108,7 @@ export default function CandidatesPage() {
                 return (
                   <tr 
                     key={st.id} 
-                    onClick={() => handleRowClick(st)}
+                    onClick={() => handleNavigateToCandidate(st.id)}
                     className="hover:bg-slate-50 dark:hover:bg-surface-elevated/70 transition cursor-pointer group"
                   >
                     <td className="p-4">
@@ -172,14 +169,14 @@ export default function CandidatesPage() {
                     {/* Actions: View / Edit / Delete */}
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
-                        <button
-                          onClick={() => handleRowClick(st)}
+                        <Link
+                          href={`/candidates/${st.id}`}
                           className="px-2.5 py-1.5 bg-slate-100 dark:bg-surface-elevated hover:bg-primary hover:text-white rounded-lg text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer flex items-center gap-1"
                           title="Consulter la fiche complète"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          <span>Dossier</span>
-                        </button>
+                          <span>Ouvrir Fiche</span>
+                        </Link>
 
                         <button
                           onClick={() => setEditingStudent(st)}
@@ -207,13 +204,6 @@ export default function CandidatesPage() {
           </table>
         </div>
       </div>
-
-      {/* Candidate Summary Modal */}
-      <CandidateSummaryModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        student={selectedStudent}
-      />
 
       {/* Edit Student Modal */}
       <EditStudentModal

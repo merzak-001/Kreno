@@ -17,7 +17,8 @@ import {
   ExamSessionCandidateSelection,
   AuditLogEntry,
   Ingenieur,
-  ExamCenter
+  ExamCenter,
+  DayOfWeek
 } from '@/types/kreno';
 
 export type ColorPalette = 'ocean' | 'warm';
@@ -35,6 +36,9 @@ interface KrenoContextType {
   setSchool: React.Dispatch<React.SetStateAction<School>>;
   students: Student[];
   vehicles: Vehicle[];
+  addVehicle: (vehicleData: Omit<Vehicle, 'id'>) => Vehicle;
+  updateVehicle: (id: string, updated: Partial<Vehicle>) => void;
+  deleteVehicle: (id: string) => void;
   settings: SchoolSettings;
   updateSettings: (newSettings: Partial<SchoolSettings>) => void;
   addUnavailablePeriod: (period: Omit<UnavailablePeriod, 'id'>) => void;
@@ -47,6 +51,7 @@ interface KrenoContextType {
   deleteExamRecord: (studentId: string, examId: string) => void;
   deleteExamSession: (sessionDate: string) => void;
   deleteScheduleSlot: (studentId: string, slotId: string) => void;
+  updateScheduleSlot: (studentId: string, slotId: string, updated: Partial<ScheduleSlot>) => void;
   programExam: (
     studentId: string, 
     examType: ExamType, 
@@ -87,7 +92,12 @@ interface KrenoContextType {
     examId: string,
     feePaid: boolean
   ) => void;
-  generateScheduleForStudent: (student: Student, startDate?: string) => ScheduleSlot[];
+  generateScheduleForStudent: (
+    student: Student, 
+    preferredDays?: DayOfWeek[], 
+    preferredTime?: 'morning' | 'afternoon' | 'any',
+    startDate?: string
+  ) => ScheduleSlot[];
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   auditLogs: AuditLogEntry[];
@@ -1068,7 +1078,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRoleState] = useState<UserRole>('owner');
   const [school, setSchool] = useState<School>(DEFAULT_SCHOOL);
   const [students, setStudents] = useState<Student[]>(DEFAULT_STUDENTS);
-  const [vehicles] = useState<Vehicle[]>(DEFAULT_VEHICLES);
+  const [vehicles, setVehicles] = useState<Vehicle[]>(DEFAULT_VEHICLES);
   const [settings, setSettings] = useState<SchoolSettings>(DEFAULT_SETTINGS);
   const [searchQuery, setSearchQuery] = useState('');
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(DEFAULT_AUDIT_LOGS);
@@ -1113,6 +1123,13 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         localStorage.setItem('kreno_students', JSON.stringify(DEFAULT_STUDENTS));
+      }
+
+      const savedVehicles = localStorage.getItem('kreno_vehicles');
+      if (savedVehicles) {
+        setVehicles(JSON.parse(savedVehicles));
+      } else {
+        localStorage.setItem('kreno_vehicles', JSON.stringify(DEFAULT_VEHICLES));
       }
 
       const savedSettings = localStorage.getItem('kreno_settings');
@@ -1251,6 +1268,39 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const addVehicle = (vehicleData: Omit<Vehicle, 'id'>): Vehicle => {
+    const newVehicle: Vehicle = {
+      ...vehicleData,
+      id: `v-${Date.now()}`,
+    };
+    setVehicles(prev => {
+      const updated = [...prev, newVehicle];
+      localStorage.setItem('kreno_vehicles', JSON.stringify(updated));
+      return updated;
+    });
+    logAction('create', 'settings', newVehicle.id, `${newVehicle.brand} ${newVehicle.model}`, `Ajout du véhicule matriculé ${newVehicle.plate_number}`);
+    return newVehicle;
+  };
+
+  const updateVehicle = (id: string, updated: Partial<Vehicle>) => {
+    setVehicles(prev => {
+      const updatedList = prev.map(v => v.id === id ? { ...v, ...updated } : v);
+      localStorage.setItem('kreno_vehicles', JSON.stringify(updatedList));
+      return updatedList;
+    });
+    logAction('update', 'settings', id, updated.plate_number || 'Véhicule', 'Mise à jour des informations du véhicule');
+  };
+
+  const deleteVehicle = (id: string) => {
+    const target = vehicles.find(v => v.id === id);
+    setVehicles(prev => {
+      const updatedList = prev.filter(v => v.id !== id);
+      localStorage.setItem('kreno_vehicles', JSON.stringify(updatedList));
+      return updatedList;
+    });
+    logAction('delete', 'settings', id, target?.plate_number || 'Véhicule', 'Suppression du véhicule du parc automobile');
+  };
+
   const removeUnavailablePeriod = (id: string) => {
     setSettings(prev => {
       const updated = {
@@ -1262,10 +1312,15 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // Automatic Schedule Generator
-  const generateScheduleForStudent = (student: Student, startDateStr?: string): ScheduleSlot[] => {
+  // Automatic 30-Hour Conflict-Free Schedule Generator
+  const generateScheduleForStudent = (
+    student: Student,
+    preferredDays?: DayOfWeek[],
+    preferredTime?: 'morning' | 'afternoon' | 'any',
+    startDateStr?: string
+  ): ScheduleSlot[] => {
     const slots: ScheduleSlot[] = [];
-    const dayMap: Record<number, string> = {
+    const dayMap: Record<number, DayOfWeek> = {
       0: 'sunday',
       1: 'monday',
       2: 'tuesday',
@@ -1275,61 +1330,95 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       6: 'saturday',
     };
 
+    // Collect all already booked slots across all existing students to avoid conflicts
+    const bookedSlotMap = new Set<string>();
+    students.forEach(st => {
+      if (st.id === student.id) return; // ignore current student if regenerating
+      (st.schedule_slots || []).forEach(slot => {
+        if (slot.status !== 'cancelled') {
+          bookedSlotMap.add(`${slot.date}_${slot.time_start}`);
+        }
+      });
+    });
+
     let currentDate = startDateStr ? new Date(startDateStr) : new Date();
     currentDate.setDate(currentDate.getDate() + 1);
 
-    const hours = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
-    let hoursIndex = 0;
+    // Working days filtering with preferred days
+    const allowedDays = preferredDays && preferredDays.length > 0 
+      ? preferredDays.filter(d => settings.working_days.includes(d))
+      : settings.working_days;
 
+    // Time ranges based on preference
+    let possibleHours = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
+    if (preferredTime === 'morning') {
+      possibleHours = ['08:00', '09:00', '10:00', '11:00'];
+    } else if (preferredTime === 'afternoon') {
+      possibleHours = ['14:00', '15:00', '16:00'];
+    }
+
+    // Official Algerian 30-Hour Dispatch:
+    // 10 hours Code Theorique, 10 hours Creneau/Manoeuvres, 10 hours Circulation
     const sessionTypes: Array<'code' | 'creneau' | 'circulation'> = [
-      'code', 'code', 'code', 'code', 'creneau', 'creneau'
+      ...Array(10).fill('code'),
+      ...Array(10).fill('creneau'),
+      ...Array(10).fill('circulation'),
     ];
 
-    for (let i = 0; i < sessionTypes.length; i++) {
-      let attempts = 0;
-      while (attempts < 30) {
-        attempts++;
-        const dayOfWeek = dayMap[currentDate.getDay()];
-        const dateIso = currentDate.toISOString().split('T')[0];
+    let sessionIdx = 0;
+    let dayScanCount = 0;
 
-        const isWorkingDay = settings.working_days.includes(dayOfWeek as any);
-        const isUnavailable = settings.unavailable_periods.some(
-          p => p.date === dateIso && p.period === 'full_day'
-        );
+    // Scan days and find empty conflict-free slots (max 1 or 2 slots per day)
+    while (sessionIdx < sessionTypes.length && dayScanCount < 120) {
+      dayScanCount++;
+      const dayOfWeek = dayMap[currentDate.getDay()];
+      const dateIso = currentDate.toISOString().split('T')[0];
 
-        if (isWorkingDay && !isUnavailable) {
-          const timeStart = hours[hoursIndex % hours.length];
-          const [startHourNum] = timeStart.split(':').map(Number);
-          const endHourNum = startHourNum + 1;
-          const timeEnd = `${endHourNum < 10 ? '0' : ''}${endHourNum}:00`;
+      const isWorkingDay = allowedDays.includes(dayOfWeek);
+      const isUnavailable = settings.unavailable_periods.some(
+        p => p.date === dateIso && p.period === 'full_day'
+      );
 
-          slots.push({
-            id: `sc-auto-${Date.now()}-${i}`,
-            student_id: student.id,
-            student_name: `${student.first_name} ${student.last_name}`,
-            category: student.requested_category,
-            date: dateIso,
-            time_start: timeStart,
-            time_end: timeEnd,
-            type: sessionTypes[i],
-            instructor_name: sessionTypes[i] === 'code' ? 'M. Amine' : 'M. Khaled',
-            status: 'scheduled',
-            notes: `Séance N° ${i + 1} de formation (1h)`,
-          });
+      if (isWorkingDay && !isUnavailable) {
+        // Find first free hour slot on this day
+        let bookedOnDay = false;
+        for (const timeStart of possibleHours) {
+          const key = `${dateIso}_${timeStart}`;
+          if (!bookedSlotMap.has(key)) {
+            const [startHourNum] = timeStart.split(':').map(Number);
+            const endHourNum = startHourNum + 1;
+            const timeEnd = `${endHourNum < 10 ? '0' : ''}${endHourNum}:00`;
+            const currentType = sessionTypes[sessionIdx];
 
-          hoursIndex++;
-          currentDate.setDate(currentDate.getDate() + 1);
-          break;
-        } else {
-          currentDate.setDate(currentDate.getDate() + 1);
+            slots.push({
+              id: `sc-auto-${Date.now()}-${sessionIdx}`,
+              student_id: student.id,
+              student_name: `${student.first_name} ${student.last_name}`,
+              category: student.requested_category,
+              date: dateIso,
+              time_start: timeStart,
+              time_end: timeEnd,
+              type: currentType,
+              instructor_name: currentType === 'code' ? 'M. Amine' : currentType === 'creneau' ? 'M. Khaled' : 'M. Toufik',
+              status: 'scheduled',
+              notes: `Séance N° ${sessionIdx + 1} / 30 (${currentType === 'code' ? 'Code théorique' : currentType === 'creneau' ? 'Créneau sur piste' : 'Circulation'})`,
+            });
+
+            bookedSlotMap.add(key); // reserve this slot
+            sessionIdx++;
+            bookedOnDay = true;
+            break; // Move to next day (1 hour per day for optimal progressive training)
+          }
         }
       }
+
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
     return slots;
   };
 
-  // Add new Student
+  // Add new Student with optional availability preferences
   const addStudent = (studentData: Omit<Student, 'id' | 'exams' | 'schedule_slots' | 'payments'>): Student => {
     const studentId = `st-${Date.now()}`;
     const initialPayment: PaymentRecord[] = studentData.amount_paid > 0 ? [
@@ -1363,6 +1452,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       schedule_slots: [],
     };
 
+    // Auto-generate initial 30-hour dispatch
     const generatedSlots = generateScheduleForStudent(newStudentBase);
     const completeStudent: Student = {
       ...newStudentBase,
@@ -1380,7 +1470,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       'candidate',
       completeStudent.id,
       `${completeStudent.first_name} ${completeStudent.last_name}`,
-      `Création du dossier ${completeStudent.dossier_number} (Permis Cat. ${completeStudent.requested_category})`
+      `Création du dossier ${completeStudent.dossier_number} et génération du programme légal de 30 heures`
     );
 
     return completeStudent;
@@ -1552,6 +1642,20 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         return {
           ...s,
           schedule_slots: s.schedule_slots.filter(sc => sc.id !== slotId),
+        };
+      });
+      localStorage.setItem('kreno_students', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const updateScheduleSlot = (studentId: string, slotId: string, updatedSlot: Partial<ScheduleSlot>) => {
+    setStudents(prev => {
+      const updated = prev.map(s => {
+        if (s.id !== studentId) return s;
+        return {
+          ...s,
+          schedule_slots: s.schedule_slots.map(sc => sc.id === slotId ? { ...sc, ...updatedSlot } : sc),
         };
       });
       localStorage.setItem('kreno_students', JSON.stringify(updated));
@@ -1929,6 +2033,9 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         setSchool,
         students,
         vehicles,
+        addVehicle,
+        updateVehicle,
+        deleteVehicle,
         settings,
         updateSettings,
         addUnavailablePeriod,
@@ -1941,6 +2048,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         deleteExamRecord,
         deleteExamSession,
         deleteScheduleSlot,
+        updateScheduleSlot,
         programExam,
         recordExamResult,
         createExamDaySession,

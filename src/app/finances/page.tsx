@@ -2,18 +2,18 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { DollarSign, CheckCircle2, Clock, ChevronRight, Download, Receipt, Plus, Eye } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
 import { Student, getCategoryBadgeClass } from '@/types/kreno';
-import { CandidateSummaryModal } from '@/components/CandidateSummaryModal';
 import { PaymentModal } from '@/components/PaymentModal';
 
 export default function FinancesPage() {
+  const router = useRouter();
   const { students, userRole } = useKreno();
   const isOwner = userRole === 'owner';
 
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
   if (!isOwner) {
@@ -105,8 +105,7 @@ export default function FinancesPage() {
                   <tr 
                     key={st.id} 
                     onClick={() => {
-                      setSelectedStudent(st);
-                      setIsSummaryOpen(true);
+                      router.push(`/candidates/${st.id}`);
                     }}
                     className="hover:bg-slate-50 dark:hover:bg-surface-elevated/70 transition cursor-pointer"
                   >
@@ -144,16 +143,13 @@ export default function FinancesPage() {
                         >
                           Encaisser
                         </button>
-                        <button
-                          onClick={() => {
-                            setSelectedStudent(st);
-                            setIsSummaryOpen(true);
-                          }}
-                          className="p-1.5 hover:bg-slate-100 dark:hover:bg-surface-elevated rounded-lg text-slate-600 dark:text-slate-300 transition cursor-pointer border border-transparent hover:border-border-subtle"
-                          title="Fiche Synthèse Popup"
+                        <Link
+                          href={`/candidates/${st.id}`}
+                          className="p-1.5 hover:bg-slate-100 dark:hover:bg-surface-elevated rounded-lg text-slate-600 dark:text-slate-300 transition cursor-pointer border border-transparent hover:border-border-subtle inline-flex items-center"
+                          title="Ouvrir la page du candidat"
                         >
                           <Eye className="w-4 h-4" />
-                        </button>
+                        </Link>
                       </div>
                     </td>
                   </tr>
@@ -165,12 +161,6 @@ export default function FinancesPage() {
       </div>
 
       {/* Modals */}
-      <CandidateSummaryModal
-        isOpen={isSummaryOpen}
-        onClose={() => setIsSummaryOpen(false)}
-        student={selectedStudent}
-      />
-
       <PaymentModal
         isOpen={isPaymentOpen}
         onClose={() => setIsPaymentOpen(false)}

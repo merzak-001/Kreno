@@ -1,11 +1,40 @@
 'use client';
 
-import React from 'react';
-import { Car, ShieldCheck, Wrench, Plus, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Car, ShieldCheck, Wrench, Plus, Edit2, Trash2 } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
+import { Vehicle } from '@/types/kreno';
+import { VehicleModal } from '@/components/VehicleModal';
+import { ConfirmModal } from '@/components/ConfirmModal';
 
 export default function VehiclesPage() {
-  const { vehicles } = useKreno();
+  const { vehicles, addVehicle, updateVehicle, deleteVehicle, userRole } = useKreno();
+  const isOwner = userRole === 'owner';
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean; vehicle: Vehicle | null }>({
+    isOpen: false,
+    vehicle: null,
+  });
+
+  const handleOpenAdd = () => {
+    setEditingVehicle(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (v: Vehicle) => {
+    setEditingVehicle(v);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveVehicle = (vehicleData: Omit<Vehicle, 'id'>) => {
+    if (editingVehicle) {
+      updateVehicle(editingVehicle.id, vehicleData);
+    } else {
+      addVehicle(vehicleData);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -14,10 +43,13 @@ export default function VehiclesPage() {
         <div>
           <h2 className="text-lg font-black text-slate-900 dark:text-white">Parc des Véhicules d&apos;Apprentissage</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Suivi des dates d&apos;échéance du contrôle technique et des polices d&apos;assurance pour chaque véhicule.
+            {vehicles.length} véhicules répertoriés • Suivi des dates d&apos;échéance du contrôle technique et des polices d&apos;assurance.
           </p>
         </div>
-        <button className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-blue-600/20">
+        <button 
+          onClick={handleOpenAdd}
+          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-blue-600/20"
+        >
           <Plus className="w-4 h-4" />
           <span>Ajouter un Véhicule</span>
         </button>
@@ -34,8 +66,26 @@ export default function VehiclesPage() {
                 </span>
                 <h3 className="text-base font-black text-slate-900 dark:text-white mt-2">{v.brand} {v.model}</h3>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-surface-elevated text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-2xs border border-border-subtle">
-                <Car className="w-5 h-5" />
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleOpenEdit(v)}
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-surface-elevated text-slate-400 hover:text-blue-600 rounded-lg transition cursor-pointer"
+                  title="Modifier ce véhicule"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                {isOwner && (
+                  <button
+                    onClick={() => setConfirmDelete({ isOpen: true, vehicle: v })}
+                    className="p-1.5 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 rounded-lg transition cursor-pointer"
+                    title="Supprimer ce véhicule"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-surface-elevated text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-2xs border border-border-subtle ml-1">
+                  <Car className="w-4 h-4" />
+                </div>
               </div>
             </div>
 
@@ -61,7 +111,37 @@ export default function VehiclesPage() {
             </div>
           </div>
         ))}
+
+        {vehicles.length === 0 && (
+          <div className="col-span-full bg-surface p-12 rounded-2xl border border-dashed border-border-subtle text-center text-slate-400">
+            <Car className="w-8 h-8 mx-auto mb-2 opacity-40" />
+            <p className="font-bold text-sm">Aucun véhicule enregistré.</p>
+            <p className="text-xs text-slate-500 mt-1">Cliquez sur &quot;Ajouter un Véhicule&quot; pour enrichir votre flotte.</p>
+          </div>
+        )}
       </div>
+
+      <VehicleModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveVehicle}
+        vehicleToEdit={editingVehicle}
+      />
+
+      <ConfirmModal
+        isOpen={confirmDelete.isOpen}
+        title="Supprimer le véhicule"
+        message={`Êtes-vous sûr de vouloir supprimer le véhicule ${confirmDelete.vehicle?.brand} ${confirmDelete.vehicle?.model} (${confirmDelete.vehicle?.plate_number}) ?`}
+        warningNote="Cette opération sera enregistrée dans le journal d'audit."
+        confirmText="Supprimer"
+        onConfirm={() => {
+          if (confirmDelete.vehicle) {
+            deleteVehicle(confirmDelete.vehicle.id);
+          }
+          setConfirmDelete({ isOpen: false, vehicle: null });
+        }}
+        onCancel={() => setConfirmDelete({ isOpen: false, vehicle: null })}
+      />
     </div>
   );
 }

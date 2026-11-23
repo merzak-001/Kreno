@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Users, 
   Award, 
@@ -18,12 +19,10 @@ import {
 } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
 import { ExamType, Student, getCategoryBadgeClass } from '@/types/kreno';
-import { CandidateSummaryModal } from '@/components/CandidateSummaryModal';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { students, userRole, school } = useKreno();
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const isOwner = userRole === 'owner';
 
   // Statistics calculation
@@ -76,8 +75,7 @@ export default function DashboardPage() {
   }, [students]);
 
   const handleRowClick = (student: Student) => {
-    setSelectedStudent(student);
-    setIsModalOpen(true);
+    router.push(`/candidates/${student.id}`);
   };
 
   return (
@@ -371,12 +369,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Candidate Summary Modal */}
-      <CandidateSummaryModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        student={selectedStudent}
-      />
+      {/* End Table Section */}
     </div>
   );
 }

@@ -4,10 +4,14 @@ import React, { useState, Suspense } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { RegisterModal } from '@/components/RegisterModal';
+import { CandidateAvailabilityModal } from '@/components/CandidateAvailabilityModal';
 import { useKreno } from '@/context/KrenoContext';
+import { Student } from '@/types/kreno';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [newlyCreatedStudent, setNewlyCreatedStudent] = useState<Student | null>(null);
+  const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
   const { addStudent } = useKreno();
 
   return (
@@ -32,8 +36,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         isOpen={isRegisterOpen}
         onClose={() => setIsRegisterOpen(false)}
         onSaveStudent={(data) => {
-          addStudent(data);
+          const created = addStudent(data);
+          // Directly prompt for student weekly availability to dispatch the 30 hours
+          setNewlyCreatedStudent(created);
+          setIsAvailabilityOpen(true);
         }}
+      />
+
+      {/* Post-Creation Availability & 30-Hour Auto-Scheduler Modal */}
+      <CandidateAvailabilityModal
+        isOpen={isAvailabilityOpen}
+        onClose={() => setIsAvailabilityOpen(false)}
+        student={newlyCreatedStudent}
       />
     </div>
   );
