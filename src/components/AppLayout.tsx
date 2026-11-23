@@ -16,15 +16,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans flex antialiased transition-colors">
-      {/* 1. Left Sidebar strictly on the left */}
-      <Suspense fallback={<div className="w-72 bg-slate-900 h-screen fixed left-0 top-0" />}>
+      {/* 1. Left Sidebar - 64 (16rem = 256px) on 13" laptop screens (xl), 72 on large desktop (2xl) */}
+      <Suspense fallback={<div className="w-64 xl:w-64 2xl:w-72 bg-slate-900 h-screen fixed left-0 top-0" />}>
         <Sidebar />
       </Suspense>
 
-      {/* 2. Main Content offset by sidebar width (w-72 = 18rem = 288px) */}
-      <div className="flex-1 ml-72 flex flex-col min-w-0">
+      {/* 2. Main Content offset by responsive sidebar width, taking 100% full width with responsive padding */}
+      <div className="flex-1 ml-64 2xl:ml-72 flex flex-col min-w-0 w-full overflow-x-hidden">
         <Header onOpenRegister={() => setIsRegisterOpen(true)} />
-        <main className="p-8 flex-1 min-w-0">
+        <main className="p-4 sm:p-6 lg:p-8 flex-1 min-w-0 w-full">
           <Suspense fallback={<div className="p-8 text-xs text-slate-400">Chargement de la page...</div>}>
             {children}
           </Suspense>

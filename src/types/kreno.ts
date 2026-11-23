@@ -91,6 +91,21 @@ export interface SchoolSettings {
   unavailable_periods: UnavailablePeriod[];
 }
 
+export interface ContractDetails {
+  theory_hours?: number;          // Default 15
+  theory_hour_rate?: number;      // Default 800 DZD
+  practical_hours?: number;       // Default 20
+  practical_hour_rate?: number;   // Default 1500 DZD
+  contract_city?: string;         // Lieu de signature
+  contract_date?: string;         // Date de signature
+  guardian_name?: string;         // Nom du tuteur légal
+  guardian_surname?: string;      // Prénom du tuteur
+  guardian_birth_date?: string;   // Date de naissance
+  guardian_birth_place?: string;  // Lieu de naissance
+  guardian_address?: string;      // Adresse du tuteur
+  guardian_phone?: string;        // Téléphone du tuteur
+}
+
 export interface Student {
   id: string;
   school_id: string;
@@ -127,6 +142,9 @@ export interface Student {
   total_package_price: number;
   amount_paid: number;
   
+  // Contract specific settings
+  contract_details?: ContractDetails;
+
   // Historique & Progression
   exams: ExamRecord[];
   payments: PaymentRecord[];

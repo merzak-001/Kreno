@@ -4,36 +4,38 @@
 
 :root {
   /* ========================================================= */
-  /* SAAS MODERNE LIGHT PALETTE (Crisp Ice-Blue & Pure White)   */
+  /* UI/UX PRO MAX - SAAS EXECUTIVE PALETTE (LIGHT)            */
+  /* Clean ice-slate canvas, pure white card surfaces,         */
+  /* subtle border delimiters, and accessible cobalt brand.    */
   /* ========================================================= */
-  --bg-canvas: #f4f6fb;
+  --bg-canvas: #f8fafc;
   --bg-surface: #ffffff;
   --bg-surface-elevated: #ffffff;
-  --bg-surface-hover: #eef2f9;
+  --bg-surface-hover: #f1f5f9;
   
-  --border-subtle: #e2e8f4;
-  --border-strong: #cbd5e7;
-  --border-focus: #3b82f6;
+  --border-subtle: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --border-focus: #2563eb;
 
-  /* Executive Dark Navy Sidebar even in Light Mode for Contrast */
-  --sidebar-bg: #0b132b;
-  --sidebar-border: #162244;
-  --sidebar-text: #e2e8f0;
-  --sidebar-text-muted: #8899b5;
+  /* Executive Deep Navy Sidebar */
+  --sidebar-bg: #0f172a;
+  --sidebar-border: #1e293b;
+  --sidebar-text: #f8fafc;
+  --sidebar-text-muted: #94a3b8;
 
-  /* Typography */
-  --text-primary: #0b152d;
+  /* Typography Hierarchy */
+  --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-muted: #64748b;
 
-  /* Primary Interactive: Vibrant Royal Cobalt */
+  /* Primary Interactive: Cobalt Royal */
   --primary: #2563eb;
   --primary-hover: #1d4ed8;
   --primary-subtle: #eff6ff;
-  --primary-subtle-border: #bfdbfe;
+  --primary-subtle-border: #dbeafe;
   --primary-contrast: #ffffff;
 
-  /* Semantic Accents: Emerald (Success) & Warm Amber (Pending/Alerts) */
+  /* Semantic Accents */
   --emerald-accent: #059669;
   --emerald-subtle: #ecfdf5;
   --emerald-border: #a7f3d0;
@@ -46,56 +48,61 @@
   --danger-subtle: #fef2f2;
   --danger-border: #fecaca;
 
-  /* Global Body */
+  --purple-accent: #7c3aed;
+  --purple-subtle: #f5f3ff;
+  --purple-border: #ddd6fe;
+
   --background: var(--bg-canvas);
   --foreground: var(--text-primary);
   color-scheme: light;
 }
 
 /* ========================================================= */
-/* SAAS MODERNE DARK PALETTE (Deep Midnight Navy & Glowing)  */
+/* UI/UX PRO MAX - SAAS EXECUTIVE PALETTE (DARK)             */
+/* Deep midnight slate, layered elevations, accessible       */
+/* contrast text, and glowing accents.                       */
 /* ========================================================= */
 .dark {
-  --bg-canvas: #070c18;
-  --bg-surface: #0e172a;
-  --bg-surface-elevated: #141f36;
-  --bg-surface-hover: #1a2744;
+  --bg-canvas: #090d16;
+  --bg-surface: #0f172a;
+  --bg-surface-elevated: #1e293b;
+  --bg-surface-hover: #24324c;
 
-  --border-subtle: #1c2b4c;
-  --border-strong: #2a3d6a;
-  --border-focus: #60a5fa;
+  --border-subtle: #1e293b;
+  --border-strong: #334155;
+  --border-focus: #3b82f6;
 
-  --sidebar-bg: #050813;
-  --sidebar-border: #131c33;
-  --sidebar-text: #e2e8f0;
+  --sidebar-bg: #050914;
+  --sidebar-border: #141f36;
+  --sidebar-text: #f8fafc;
   --sidebar-text-muted: #64748b;
 
-  /* Typography */
-  --text-primary: #f1f5f9;
-  --text-secondary: #9cb0d1;
-  --text-muted: #5e7399;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
 
-  /* Primary Interactive: Electric Cobalt */
   --primary: #3b82f6;
   --primary-hover: #60a5fa;
-  --primary-subtle: rgba(59, 130, 246, 0.16);
-  --primary-subtle-border: rgba(59, 130, 246, 0.35);
+  --primary-subtle: rgba(59, 130, 246, 0.15);
+  --primary-subtle-border: rgba(59, 130, 246, 0.3);
   --primary-contrast: #ffffff;
 
-  /* Semantic Accents: Luminous Emerald & Warm Golden Amber */
   --emerald-accent: #10b981;
-  --emerald-subtle: rgba(16, 185, 129, 0.15);
-  --emerald-border: rgba(16, 185, 129, 0.35);
+  --emerald-subtle: rgba(16, 185, 129, 0.14);
+  --emerald-border: rgba(16, 185, 129, 0.3);
 
   --amber-accent: #f59e0b;
-  --amber-subtle: rgba(245, 158, 11, 0.15);
-  --amber-border: rgba(245, 158, 11, 0.35);
+  --amber-subtle: rgba(245, 158, 11, 0.14);
+  --amber-border: rgba(245, 158, 11, 0.3);
 
-  --danger-accent: #f43f5e;
-  --danger-subtle: rgba(244, 63, 94, 0.15);
-  --danger-border: rgba(244, 63, 94, 0.35);
+  --danger-accent: #ef4444;
+  --danger-subtle: rgba(239, 68, 68, 0.14);
+  --danger-border: rgba(239, 68, 68, 0.3);
 
-  /* Global Body */
+  --purple-accent: #a855f7;
+  --purple-subtle: rgba(168, 85, 247, 0.14);
+  --purple-border: rgba(168, 85, 247, 0.3);
+
   --background: var(--bg-canvas);
   --foreground: var(--text-primary);
   color-scheme: dark;
@@ -119,40 +126,38 @@
   --color-brand-primary-hover: var(--primary-hover);
   --color-brand-soft: var(--primary-subtle);
 
-  --color-emerald-accent: var(--emerald-accent);
-  --color-emerald-subtle: var(--emerald-subtle);
-  --color-emerald-border: var(--emerald-border);
-
-  --color-amber-accent: var(--amber-accent);
-  --color-amber-subtle: var(--amber-subtle);
-  --color-amber-border: var(--amber-border);
-
-  --color-danger-accent: var(--danger-accent);
-  --color-danger-subtle: var(--danger-subtle);
-  --color-danger-border: var(--danger-border);
-
-  /* Semantic UI Helpers */
-  --color-card-bg: var(--bg-surface);
-  --color-card-border: var(--border-subtle);
   --color-sidebar-bg: var(--sidebar-bg);
   --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-text: var(--sidebar-text);
+  --color-sidebar-text-muted: var(--sidebar-text-muted);
 }
 
-::selection {
-  background-color: var(--primary);
-  color: #ffffff;
+/* Base resets & typography discipline */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.011em;
   transition: background-color 0.2s ease, color 0.2s ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Crisp Custom Scrollbars */
+/* UI/UX Pro Max Typography Balance: No harsh 900 bold blocks */
+.font-black {
+  font-weight: 700 !important;
+}
+
+.font-extrabold {
+  font-weight: 600 !important;
+}
+
+/* Refined, smooth scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

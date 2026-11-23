@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, User, Phone, MapPin, DollarSign, Save } from 'lucide-react';
-import { Student, LicenseCategory } from '@/types/kreno';
+import { X, User, Phone, MapPin, DollarSign, Save, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Student, LicenseCategory, ContractDetails } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 
@@ -14,6 +14,7 @@ interface EditStudentModalProps {
 
 export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalProps) {
   const { updateStudent } = useKreno();
+  const [showContractSection, setShowContractSection] = useState(false);
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -29,6 +30,21 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
     address_commune: '',
     address_wilaya: '',
     total_package_price: 40000,
+  });
+
+  const [contractData, setContractData] = useState<ContractDetails>({
+    theory_hours: 15,
+    theory_hour_rate: 800,
+    practical_hours: 20,
+    practical_hour_rate: 1500,
+    contract_city: '',
+    contract_date: '',
+    guardian_name: '',
+    guardian_surname: '',
+    guardian_birth_date: '',
+    guardian_birth_place: '',
+    guardian_address: '',
+    guardian_phone: '',
   });
 
   useEffect(() => {
@@ -48,6 +64,21 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
         address_wilaya: student.address_wilaya || '',
         total_package_price: student.total_package_price || 40000,
       });
+
+      setContractData({
+        theory_hours: student.contract_details?.theory_hours ?? 15,
+        theory_hour_rate: student.contract_details?.theory_hour_rate ?? 800,
+        practical_hours: student.contract_details?.practical_hours ?? 20,
+        practical_hour_rate: student.contract_details?.practical_hour_rate ?? 1500,
+        contract_city: student.contract_details?.contract_city || student.address_commune || '',
+        contract_date: student.contract_details?.contract_date || student.deposit_date || '',
+        guardian_name: student.contract_details?.guardian_name || '',
+        guardian_surname: student.contract_details?.guardian_surname || '',
+        guardian_birth_date: student.contract_details?.guardian_birth_date || '',
+        guardian_birth_place: student.contract_details?.guardian_birth_place || '',
+        guardian_address: student.contract_details?.guardian_address || '',
+        guardian_phone: student.contract_details?.guardian_phone || '',
+      });
     }
   }, [student]);
 
@@ -60,6 +91,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
     updateStudent(student.id, {
       ...formData,
       total_package_price: Number(formData.total_package_price),
+      contract_details: contractData,
     });
     onClose();
   };
@@ -232,6 +264,172 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 className="w-full px-3 py-2 rounded-xl border border-border-subtle bg-slate-50 dark:bg-slate-900/50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-slate-200"
               />
             </div>
+          </div>
+
+          {/* Section Personnalisation du Contrat d'Enseignement (Page 1 & 2) */}
+          <div className="border border-border-subtle rounded-xl overflow-hidden bg-slate-50/50 dark:bg-slate-900/20">
+            <button
+              type="button"
+              onClick={() => setShowContractSection(!showContractSection)}
+              className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-primary" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Paramètres Spécifiques du Contrat (Page 1 & Page 2)
+                </span>
+                <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                  Tarification & Tuteur
+                </span>
+              </div>
+              {showContractSection ? (
+                <ChevronUp className="w-4 h-4 text-slate-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-slate-400" />
+              )}
+            </button>
+
+            {showContractSection && (
+              <div className="p-4 pt-2 border-t border-border-subtle space-y-4 text-xs">
+                {/* 1. Tarifs et Heures de la Page 2 */}
+                <div>
+                  <h4 className="font-bold text-[11px] text-slate-700 dark:text-slate-300 mb-2">
+                    1. Détail de la Grille Tarifaire (Page 2 - خامسا) :
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white dark:bg-slate-900/50 p-3 rounded-lg border border-border-subtle">
+                    <div>
+                      <label className="block text-[10px] text-slate-500 mb-1">Heures Théoriques (Code)</label>
+                      <input
+                        type="number"
+                        value={contractData.theory_hours ?? 15}
+                        onChange={e => setContractData({ ...contractData, theory_hours: Number(e.target.value) })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-500 mb-1">Prix Heure Théorie (DZD)</label>
+                      <input
+                        type="number"
+                        value={contractData.theory_hour_rate ?? 800}
+                        onChange={e => setContractData({ ...contractData, theory_hour_rate: Number(e.target.value) })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-500 mb-1">Heures Pratiques (Conduite)</label>
+                      <input
+                        type="number"
+                        value={contractData.practical_hours ?? 20}
+                        onChange={e => setContractData({ ...contractData, practical_hours: Number(e.target.value) })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-500 mb-1">Prix Heure Pratique (DZD)</label>
+                      <input
+                        type="number"
+                        value={contractData.practical_hour_rate ?? 1500}
+                        onChange={e => setContractData({ ...contractData, practical_hour_rate: Number(e.target.value) })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-slate-800 text-xs font-mono font-bold"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Signature & Lieu */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Lieu de Signature (حرر بـ)</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Sétif / سطيف"
+                      value={contractData.contract_city || ''}
+                      onChange={e => setContractData({ ...contractData, contract_city: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-xl border border-border-subtle bg-white dark:bg-slate-900/50 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Date de Signature (بتاريخ)</label>
+                    <input
+                      type="date"
+                      value={contractData.contract_date || ''}
+                      onChange={e => setContractData({ ...contractData, contract_date: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-xl border border-border-subtle bg-white dark:bg-slate-900/50 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Tuteur Légal (Pour Candidat Mineur) */}
+                <div>
+                  <h4 className="font-bold text-[11px] text-slate-700 dark:text-slate-300 mb-2">
+                    2. Renseignements du Tuteur Légal (عند الاقتضاء - الممثل الشرعي) :
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 bg-white dark:bg-slate-900/50 p-3 rounded-lg border border-border-subtle">
+                    <div>
+                      <label className="block text-[10px] text-slate-500 mb-1">اللقب (Nom du Tuteur)</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: بن علي"
+                        value={contractData.guardian_surname || ''}
+                        onChange={e => setContractData({ ...contractData, guardian_surname: e.target.value })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-slate-800 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-500 mb-1">الاسم (Prénom du Tuteur)</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: محمد"
+                        value={contractData.guardian_name || ''}
+                        onChange={e => setContractData({ ...contractData, guardian_name: e.target.value })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-slate-800 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-500 mb-1">المولود في (Date de naissance)</label>
+                      <input
+                        type="text"
+                        placeholder="JJ/MM/AAAA"
+                        value={contractData.guardian_birth_date || ''}
+                        onChange={e => setContractData({ ...contractData, guardian_birth_date: e.target.value })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-slate-800 text-xs font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-500 mb-1">بـ (Lieu de naissance)</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: سطيف"
+                        value={contractData.guardian_birth_place || ''}
+                        onChange={e => setContractData({ ...contractData, guardian_birth_place: e.target.value })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-slate-800 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-500 mb-1">العنوان (Adresse du Tuteur)</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: حي 500 مسكن، سطيف"
+                        value={contractData.guardian_address || ''}
+                        onChange={e => setContractData({ ...contractData, guardian_address: e.target.value })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-slate-800 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-500 mb-1">الهاتف (Téléphone du Tuteur)</label>
+                      <input
+                        type="text"
+                        placeholder="0550 00 00 00"
+                        value={contractData.guardian_phone || ''}
+                        onChange={e => setContractData({ ...contractData, guardian_phone: e.target.value })}
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-slate-800 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
           </div>
 
           {/* Footer Actions */}

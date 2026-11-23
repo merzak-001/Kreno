@@ -153,7 +153,7 @@ export function ExamSessionPrintModal({
       }} />
 
       <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-7xl max-h-[96vh] flex flex-col shadow-2xl border border-slate-300 dark:border-slate-700 overflow-hidden text-slate-900 dark:text-slate-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-[96vw] 2xl:max-w-7xl max-h-[96vh] flex flex-col shadow-2xl border border-slate-300 dark:border-slate-700 overflow-hidden text-slate-900 dark:text-slate-100">
           
           {/* Topbar Actions */}
           <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">

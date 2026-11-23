@@ -8,7 +8,6 @@ import {
   User, 
   ChevronRight, 
   Filter, 
-  AlertTriangle,
   CalendarDays,
   Columns3,
   List,
@@ -29,7 +28,6 @@ export default function SchedulePage() {
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
   const [filterType, setFilterType] = useState<'all' | 'code' | 'creneau' | 'circulation'>('all');
   const [selectedDate, setSelectedDate] = useState<string>('all');
-  const [editingSlot, setEditingSlot] = useState<{ slot: ScheduleSlot; studentId: string } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; slot: ScheduleSlot | null }>({
     isOpen: false,
     slot: null,
@@ -64,50 +62,55 @@ export default function SchedulePage() {
     });
   }, [allSlotsWithStudent, filterType, selectedDate]);
 
-  // Kanban Columns: Scheduled (Planifiée), Completed (Terminée/Validée), Cancelled (Annulée)
+  // Kanban Columns
   const scheduledSlots = useMemo(() => 
     filteredSlots.filter(s => s.status === 'scheduled' || !s.status), 
     [filteredSlots]
   );
+
   const completedSlots = useMemo(() => 
     filteredSlots.filter(s => s.status === 'completed'), 
     [filteredSlots]
   );
+
   const cancelledSlots = useMemo(() => 
     filteredSlots.filter(s => s.status === 'cancelled'), 
     [filteredSlots]
   );
 
-  const handleStatusChange = (studentId: string, slotId: string, newStatus: 'scheduled' | 'completed' | 'cancelled') => {
-    updateScheduleSlot(studentId, slotId, { status: newStatus });
+  const handleStatusChange = (slot: ScheduleSlot & { studentId: string }, newStatus: ScheduleSlot['status']) => {
+    updateScheduleSlot(slot.studentId, slot.id, { status: newStatus });
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       
-      {/* 1. Top Header */}
-      <div className="bg-surface p-6 rounded-3xl border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-4 transition-colors">
+      {/* Top Banner */}
+      <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-4 transition-colors">
         <div>
-          <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <span>Gestion & Éditeur du Planning (Unités 1 Heure)</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800">
-              {allSlotsWithStudent.length} Heures Programmées
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+              Unité Légale 1 Heure
             </span>
-          </h2>
+            <span className="text-xs text-slate-400 font-medium font-mono">• Quota 30h Algérie</span>
+          </div>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
+            Planning des Séances d&apos;Apprentissage
+          </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Jours d&apos;ouverture configurés : <strong className="text-slate-800 dark:text-slate-200">Du Samedi au Jeudi</strong> ({settings.start_hour} à {settings.end_hour}) • Système Kanban pour éditer et valider les séances.
+            Suivi des cours de Code (10h), Manœuvres Créneau (10h) et Circulation (10h).
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* View Switcher: Kanban vs Table */}
-          <div className="flex p-1 bg-slate-100 dark:bg-surface-elevated rounded-xl text-xs font-bold">
+        {/* View Switcher & Filters */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center bg-slate-100 dark:bg-surface-elevated p-1 rounded-xl border border-border-subtle text-xs">
             <button
               onClick={() => setViewMode('kanban')}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer font-medium ${
                 viewMode === 'kanban' 
-                  ? 'bg-surface text-slate-900 dark:text-white shadow-xs font-black' 
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-surface text-blue-600 shadow-xs' 
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
               }`}
             >
               <Columns3 className="w-3.5 h-3.5" />
@@ -115,56 +118,52 @@ export default function SchedulePage() {
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer font-medium ${
                 viewMode === 'table' 
-                  ? 'bg-surface text-slate-900 dark:text-white shadow-xs font-black' 
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-surface text-blue-600 shadow-xs' 
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
               }`}
             >
               <List className="w-3.5 h-3.5" />
-              <span>Liste & Tableau</span>
+              <span>Vue Liste</span>
             </button>
           </div>
-
-          <Link
-            href="/settings"
-            className="px-4 py-2 bg-surface hover:bg-slate-100 dark:hover:bg-surface-elevated text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-border-subtle"
-          >
-            <CalendarDays className="w-4 h-4 text-blue-600" />
-            <span>Réglages Horaires</span>
-          </Link>
         </div>
       </div>
 
-      {/* 2. Filter Bar */}
-      <div className="bg-surface p-4 rounded-2xl border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-4 text-xs transition-colors">
-        {/* Discipline Filter */}
+      {/* Filter Toolbar */}
+      <div className="bg-surface p-4 rounded-xl border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-4 text-xs">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-bold text-slate-500 dark:text-slate-400 mr-1">Discipline :</span>
-          {(['all', 'code', 'creneau', 'circulation'] as const).map(type => (
+          <span className="text-slate-400 font-medium">Discipline :</span>
+          {[
+            { id: 'all', label: 'Toutes les séances' },
+            { id: 'code', label: '1. Code théorique' },
+            { id: 'creneau', label: '2. Créneau sur piste' },
+            { id: 'circulation', label: '3. Circulation routière' },
+          ].map(f => (
             <button
-              key={type}
-              onClick={() => setFilterType(type)}
-              className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer capitalize ${
-                filterType === type 
-                  ? 'bg-blue-600 text-white shadow-xs' 
-                  : 'bg-slate-100 dark:bg-surface-elevated text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-surface-hover border border-border-subtle'
+              key={f.id}
+              onClick={() => setFilterType(f.id as any)}
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer font-medium border ${
+                filterType === f.id
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                  : 'bg-slate-50 dark:bg-surface-elevated text-slate-600 dark:text-slate-300 border-border-subtle hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              {type === 'all' ? 'Toutes disciplines' : type === 'code' ? 'Code (Théorie)' : type === 'creneau' ? 'Créneau (Piste)' : 'Circulation (Route)'}
+              {f.label}
             </button>
           ))}
         </div>
 
         {/* Date Filter */}
         <div className="flex items-center gap-2">
-          <span className="font-bold text-slate-500 dark:text-slate-400">Filtrer par date :</span>
+          <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
           <select
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="px-3 py-1.5 border border-border-subtle rounded-xl font-mono text-xs bg-white dark:bg-surface-elevated font-bold text-slate-900 dark:text-white"
+            className="px-2.5 py-1.5 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-lg font-medium text-slate-700 dark:text-slate-200 text-xs"
           >
-            <option value="all">Toutes les dates</option>
+            <option value="all">Toutes les dates ({uniqueDates.length} jours)</option>
             {uniqueDates.map(d => (
               <option key={d} value={d}>{d}</option>
             ))}
@@ -172,214 +171,165 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      {/* 3. VIEW 1: KANBAN SCHEDULE EDITOR (3 STATUS COLUMNS) */}
+      {/* KANBAN VIEW */}
       {viewMode === 'kanban' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* COLUMN 1: SÉANCES PROGRAMMÉES */}
-          <div className="bg-slate-50 dark:bg-surface-elevated/40 p-5 rounded-3xl border border-border-subtle space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
+          {/* Column 1: Scheduled */}
+          <div className="bg-slate-50/70 dark:bg-surface-elevated/40 p-4 rounded-2xl border border-border-subtle space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-blue-600"></span>
-                <h3 className="font-black text-sm text-slate-900 dark:text-white">Séances Programmées</h3>
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                <h3 className="font-semibold text-xs text-slate-900 dark:text-white uppercase tracking-wider">
+                  Séances Planifiées ({scheduledSlots.length})
+                </h3>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 font-mono font-bold text-xs">
-                {scheduledSlots.length}
-              </span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5 max-h-[700px] overflow-y-auto pr-1">
               {scheduledSlots.map(slot => (
                 <div 
                   key={slot.id} 
-                  className="bg-surface p-4 rounded-2xl border border-border-subtle shadow-xs space-y-3 hover:border-slate-300 dark:hover:border-slate-700 transition"
+                  className="bg-surface p-3.5 rounded-xl border border-border-subtle shadow-xs space-y-2 hover:border-blue-400/40 transition group"
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between">
                     <div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${getCategoryBadgeClass(slot.category)}`}>
+                        Cat. {slot.category}
+                      </span>
                       <Link 
                         href={`/candidates/${slot.studentId}`}
-                        className="font-black text-sm text-slate-900 dark:text-white hover:text-blue-600 block transition"
+                        className="font-semibold text-xs text-slate-900 dark:text-white block mt-1 hover:text-blue-600 transition"
                       >
                         {slot.student_name}
                       </Link>
-                      <span className="text-[11px] text-slate-400 font-mono">
-                        Date: <strong className="text-slate-700 dark:text-slate-300">{slot.date}</strong>
-                      </span>
                     </div>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                      slot.type === 'code' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300' :
-                      slot.type === 'creneau' ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300' :
-                      'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                    }`}>
-                      {slot.type}
+                    <span className="font-mono text-blue-600 dark:text-blue-400 font-medium text-xs">
+                      {slot.time_start} - {slot.time_end}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs pt-2 border-t border-border-subtle">
-                    <span className="font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-lg border border-blue-200 dark:border-blue-900">
-                      {slot.time_start} - {slot.time_end} (1h)
-                    </span>
-                    <span className="text-[11px] text-slate-500">{slot.instructor_name}</span>
-                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">
+                    {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Circulation routière'}
+                  </p>
 
-                  {/* Kanban Quick Action Buttons to Move / Edit */}
-                  <div className="pt-2 flex items-center justify-between border-t border-border-subtle text-xs gap-1.5">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-border-subtle pt-2">
+                    <span className="font-mono">{slot.date}</span>
                     <button
-                      onClick={() => handleStatusChange(slot.studentId, slot.id, 'completed')}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 font-bold text-[11px] transition flex items-center gap-1 cursor-pointer border border-emerald-200 dark:border-emerald-800"
-                      title="Valider l'heure comme effectuée"
+                      onClick={() => handleStatusChange(slot, 'completed')}
+                      className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 rounded font-medium border border-emerald-200 dark:border-emerald-800 transition cursor-pointer"
                     >
-                      <CheckCircle2 className="w-3 h-3" />
-                      <span>Terminer</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleStatusChange(slot.studentId, slot.id, 'cancelled')}
-                      className="px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-surface-elevated text-slate-400 hover:text-slate-700 font-bold text-[11px] transition cursor-pointer"
-                      title="Marquer comme annulée / reportée"
-                    >
-                      Annuler
-                    </button>
-
-                    <button
-                      onClick={() => setDeleteConfirm({ isOpen: true, slot })}
-                      className="p-1 text-slate-300 hover:text-rose-600 rounded transition cursor-pointer"
-                      title="Supprimer du planning"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      Valider 1h
                     </button>
                   </div>
                 </div>
               ))}
-
               {scheduledSlots.length === 0 && (
-                <p className="text-xs text-slate-400 py-6 text-center italic">
-                  Aucune séance en attente pour ces filtres.
-                </p>
+                <p className="text-xs text-slate-400 py-8 text-center italic">Aucune séance planifiée.</p>
               )}
             </div>
           </div>
 
-          {/* COLUMN 2: SÉANCES EFFECTUÉES / VALIDÉES */}
-          <div className="bg-slate-50 dark:bg-surface-elevated/40 p-5 rounded-3xl border border-border-subtle space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
+          {/* Column 2: Completed */}
+          <div className="bg-slate-50/70 dark:bg-surface-elevated/40 p-4 rounded-2xl border border-border-subtle space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                <h3 className="font-black text-sm text-slate-900 dark:text-white">Séances Effectuées</h3>
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <h3 className="font-semibold text-xs text-slate-900 dark:text-white uppercase tracking-wider">
+                  Séances Effectuées ({completedSlots.length})
+                </h3>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-mono font-bold text-xs">
-                {completedSlots.length}
-              </span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5 max-h-[700px] overflow-y-auto pr-1">
               {completedSlots.map(slot => (
                 <div 
                   key={slot.id} 
-                  className="bg-surface p-4 rounded-2xl border border-emerald-200 dark:border-emerald-900/60 shadow-xs space-y-3 bg-emerald-50/10"
+                  className="bg-surface p-3.5 rounded-xl border border-emerald-200/60 dark:border-emerald-900/60 shadow-xs space-y-2"
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between">
                     <div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${getCategoryBadgeClass(slot.category)}`}>
+                        Cat. {slot.category}
+                      </span>
                       <Link 
                         href={`/candidates/${slot.studentId}`}
-                        className="font-black text-sm text-slate-900 dark:text-white hover:text-emerald-600 block transition"
+                        className="font-semibold text-xs text-slate-900 dark:text-white block mt-1 hover:text-emerald-600 transition"
                       >
                         {slot.student_name}
                       </Link>
-                      <span className="text-[11px] text-slate-400 font-mono">
-                        Date: <strong className="text-slate-700 dark:text-slate-300">{slot.date}</strong>
-                      </span>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                    <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium text-xs">
                       Effectuée (1h)
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs pt-2 border-t border-border-subtle">
-                    <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300">
-                      {slot.time_start} - {slot.time_end}
-                    </span>
-                    <span className="text-[11px] text-slate-500">{slot.instructor_name}</span>
-                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">
+                    {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Circulation routière'}
+                  </p>
 
-                  <div className="pt-2 flex items-center justify-between border-t border-border-subtle text-xs">
-                    <button
-                      onClick={() => handleStatusChange(slot.studentId, slot.id, 'scheduled')}
-                      className="text-[11px] text-slate-400 hover:text-blue-600 font-bold transition"
-                    >
-                      ← Rebasculer en &quot;Programmée&quot;
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm({ isOpen: true, slot })}
-                      className="p-1 text-slate-300 hover:text-rose-600 rounded transition cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-border-subtle pt-2">
+                    <span className="font-mono">{slot.date} • {slot.time_start}</span>
+                    <span className="text-emerald-600 font-medium inline-flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Validée
+                    </span>
                   </div>
                 </div>
               ))}
-
               {completedSlots.length === 0 && (
-                <p className="text-xs text-slate-400 py-6 text-center italic">
-                  Aucune séance validée pour l&apos;instant.
-                </p>
+                <p className="text-xs text-slate-400 py-8 text-center italic">Aucune séance effectuée.</p>
               )}
             </div>
           </div>
 
-          {/* COLUMN 3: SÉANCES ANNULÉES / À REPLANIFIER */}
-          <div className="bg-slate-50 dark:bg-surface-elevated/40 p-5 rounded-3xl border border-border-subtle space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
+          {/* Column 3: Cancelled */}
+          <div className="bg-slate-50/70 dark:bg-surface-elevated/40 p-4 rounded-2xl border border-border-subtle space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-slate-400"></span>
-                <h3 className="font-black text-sm text-slate-900 dark:text-white">Annulées / À Replanifier</h3>
+                <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                <h3 className="font-semibold text-xs text-slate-900 dark:text-white uppercase tracking-wider">
+                  Séances Annulées ({cancelledSlots.length})
+                </h3>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-bold text-xs">
-                {cancelledSlots.length}
-              </span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5 max-h-[700px] overflow-y-auto pr-1">
               {cancelledSlots.map(slot => (
                 <div 
                   key={slot.id} 
-                  className="bg-surface p-4 rounded-2xl border border-border-subtle shadow-xs space-y-3 opacity-75"
+                  className="bg-surface p-3.5 rounded-xl border border-border-subtle shadow-xs space-y-2 opacity-70"
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between">
                     <div>
-                      <span className="font-black text-sm text-slate-800 dark:text-slate-200 block line-through">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${getCategoryBadgeClass(slot.category)}`}>
+                        Cat. {slot.category}
+                      </span>
+                      <strong className="font-semibold text-xs text-slate-900 dark:text-white block mt-1">
                         {slot.student_name}
-                      </span>
-                      <span className="text-[11px] text-slate-400 font-mono">
-                        Était prévue le {slot.date} ({slot.time_start})
-                      </span>
+                      </strong>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                    <span className="font-mono text-slate-400 text-xs">
                       Annulée
                     </span>
                   </div>
 
-                  <div className="pt-2 flex items-center justify-between border-t border-border-subtle text-xs">
+                  <p className="text-[11px] text-slate-500 capitalize">
+                    {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Circulation routière'}
+                  </p>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 border-t border-border-subtle pt-2">
+                    <span className="font-mono">{slot.date} • {slot.time_start}</span>
                     <button
-                      onClick={() => handleStatusChange(slot.studentId, slot.id, 'scheduled')}
-                      className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-[11px] transition"
+                      onClick={() => handleStatusChange(slot, 'scheduled')}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-medium transition cursor-pointer"
                     >
-                      Replanifier cette séance
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm({ isOpen: true, slot })}
-                      className="p-1 text-slate-300 hover:text-rose-600 rounded transition cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      Reprogrammer
                     </button>
                   </div>
                 </div>
               ))}
-
               {cancelledSlots.length === 0 && (
-                <p className="text-xs text-slate-400 py-6 text-center italic">
-                  Aucune séance annulée.
-                </p>
+                <p className="text-xs text-slate-400 py-8 text-center italic">Aucune séance annulée.</p>
               )}
             </div>
           </div>
@@ -387,103 +337,74 @@ export default function SchedulePage() {
         </div>
       )}
 
-      {/* 4. VIEW 2: TRADITIONAL LIST & TABLE VIEW */}
+      {/* TABLE VIEW */}
       {viewMode === 'table' && (
-        <div className="bg-surface rounded-3xl border border-border-subtle shadow-xs overflow-hidden transition-colors">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-surface-elevated text-slate-600 dark:text-slate-400 font-bold border-b border-border-subtle uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="p-4">Horaire (Unité 1h)</th>
-                  <th className="p-4">Date</th>
-                  <th className="p-4">Candidat</th>
-                  <th className="p-4">Discipline</th>
-                  <th className="p-4">Moniteur</th>
-                  <th className="p-4 text-center">Statut</th>
-                  <th className="p-4 text-right">Actions</th>
+        <div className="bg-surface rounded-2xl border border-border-subtle shadow-xs overflow-hidden">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50 dark:bg-surface-elevated/70 text-slate-500 dark:text-slate-400 border-b border-border-subtle text-[10px] uppercase font-semibold tracking-wider">
+              <tr>
+                <th className="py-3 px-4">Date & Heure</th>
+                <th className="py-3 px-4">Candidat</th>
+                <th className="py-3 px-4">Discipline</th>
+                <th className="py-3 px-4">Moniteur</th>
+                <th className="py-3 px-4">Statut</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle">
+              {filteredSlots.map(slot => (
+                <tr key={slot.id} className="hover:bg-slate-50/70 dark:hover:bg-surface-elevated/50 transition">
+                  <td className="py-3 px-4 font-mono">
+                    <span className="font-medium text-slate-900 dark:text-white block">{slot.date}</span>
+                    <span className="text-[11px] text-blue-600 dark:text-blue-400">{slot.time_start} - {slot.time_end}</span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <Link href={`/candidates/${slot.studentId}`} className="font-medium text-slate-900 dark:text-white hover:text-blue-600 transition">
+                      {slot.student_name}
+                    </Link>
+                  </td>
+                  <td className="py-3 px-4 capitalize text-slate-700 dark:text-slate-300">
+                    {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Circulation routière'}
+                  </td>
+                  <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
+                    {slot.instructor_name}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                      slot.status === 'completed'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                        : slot.status === 'cancelled'
+                        ? 'bg-slate-100 dark:bg-surface-elevated text-slate-500 border-border-subtle'
+                        : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                    }`}>
+                      {slot.status === 'completed' ? 'Effectuée' : slot.status === 'cancelled' ? 'Annulée' : 'Planifiée'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {slot.status !== 'completed' && (
+                        <button
+                          onClick={() => handleStatusChange(slot, 'completed')}
+                          className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded text-[10px] font-medium border border-emerald-200 transition cursor-pointer"
+                        >
+                          Valider
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteScheduleSlot(slot.studentId, slot.id)}
+                        className="p-1 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded transition cursor-pointer"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
-                {filteredSlots.map(slot => (
-                  <tr key={slot.id} className="hover:bg-slate-50 dark:hover:bg-surface-elevated/70 transition">
-                    <td className="p-4 font-mono font-bold text-blue-600 dark:text-blue-400">
-                      {slot.time_start} - {slot.time_end}
-                    </td>
-                    <td className="p-4 font-mono font-bold text-slate-700 dark:text-slate-300">
-                      {slot.date}
-                    </td>
-                    <td className="p-4 font-bold text-slate-900 dark:text-white">
-                      <Link href={`/candidates/${slot.studentId}`} className="hover:text-blue-600 transition">
-                        {slot.student_name}
-                      </Link>
-                    </td>
-                    <td className="p-4 capitalize">
-                      <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${
-                        slot.type === 'code' 
-                          ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60'
-                          : slot.type === 'creneau'
-                          ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
-                          : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60'
-                      }`}>
-                        {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Circulation routière'}
-                      </span>
-                    </td>
-                    <td className="p-4 text-slate-600 dark:text-slate-400 font-medium">
-                      {slot.instructor_name}
-                    </td>
-                    <td className="p-4 text-center">
-                      <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${
-                        slot.status === 'completed'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
-                          : slot.status === 'cancelled'
-                          ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
-                          : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
-                      }`}>
-                        {slot.status === 'completed' ? 'Effectuée' : slot.status === 'cancelled' ? 'Annulée' : 'Programmée'}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => handleStatusChange(slot.studentId, slot.id, slot.status === 'completed' ? 'scheduled' : 'completed')}
-                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-surface-elevated dark:hover:bg-surface-hover rounded-lg text-[11px] font-bold transition cursor-pointer"
-                        >
-                          {slot.status === 'completed' ? 'Remettre en cours' : 'Marquer terminée'}
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm({ isOpen: true, slot })}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
-
-      {/* Delete confirmation modal */}
-      <ConfirmModal
-        isOpen={deleteConfirm.isOpen}
-        title="Supprimer la séance"
-        message={`Êtes-vous certain de vouloir retirer la séance de ${deleteConfirm.slot?.student_name} du ${deleteConfirm.slot?.date} (${deleteConfirm.slot?.time_start}) ?`}
-        warningNote="Cette opération libérera le créneau horaire."
-        confirmText="Supprimer la séance"
-        onConfirm={() => {
-          if (deleteConfirm.slot) {
-            const student = students.find(s => (s.schedule_slots || []).some(sl => sl.id === deleteConfirm.slot?.id));
-            if (student) {
-              deleteScheduleSlot(student.id, deleteConfirm.slot.id);
-            }
-          }
-          setDeleteConfirm({ isOpen: false, slot: null });
-        }}
-        onCancel={() => setDeleteConfirm({ isOpen: false, slot: null })}
-      />
 
     </div>
   );

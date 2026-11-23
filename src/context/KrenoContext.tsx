@@ -208,7 +208,74 @@ const DEFAULT_VEHICLES: Vehicle[] = [
   },
 ];
 
-const DEFAULT_STUDENTS: Student[] = [
+// Helper to auto-generate the 30-hour regulatory training syllabus for Algerian Driving Schools
+function ensureFull30HourSlots(student: Student, offset: number = 2): ScheduleSlot[] {
+  if (student.schedule_slots && student.schedule_slots.length >= 30) {
+    return student.schedule_slots;
+  }
+  const slots: ScheduleSlot[] = [];
+  const dayMap: Record<number, DayOfWeek> = {
+    0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday', 4: 'thursday', 5: 'friday', 6: 'saturday'
+  };
+  const workingDays: DayOfWeek[] = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday'];
+  const possibleHours = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
+  const sessionTypes: Array<'code' | 'creneau' | 'circulation'> = [
+    ...Array(10).fill('code'),
+    ...Array(10).fill('creneau'),
+    ...Array(10).fill('circulation')
+  ];
+
+  const codePassed = (student.exams || []).some(e => e.exam_type === 'code' && e.result === 'passed');
+  const creneauPassed = (student.exams || []).some(e => e.exam_type === 'creneau' && e.result === 'passed');
+  const circulationPassed = (student.exams || []).some(e => e.exam_type === 'circulation' && e.result === 'passed');
+
+  const startBase = student.deposit_date ? new Date(student.deposit_date) : new Date('2026-10-01');
+  startBase.setDate(startBase.getDate() + offset);
+
+  let current = new Date(startBase);
+  let sessionIdx = 0;
+  let safety = 0;
+
+  while (sessionIdx < sessionTypes.length && safety < 140) {
+    safety++;
+    const dayName = dayMap[current.getDay()];
+    if (workingDays.includes(dayName)) {
+      const type = sessionTypes[sessionIdx];
+      const timeStart = possibleHours[sessionIdx % possibleHours.length];
+      const [startHourNum] = timeStart.split(':').map(Number);
+      const timeEnd = (startHourNum + 1 < 10 ? '0' : '') + (startHourNum + 1) + ':00';
+      const dateIso = current.toISOString().split('T')[0];
+
+      let status: 'completed' | 'scheduled' = 'scheduled';
+      if (type === 'code' && codePassed) status = 'completed';
+      else if (type === 'creneau' && creneauPassed) status = 'completed';
+      else if (type === 'circulation' && circulationPassed) status = 'completed';
+      else if (current < new Date('2026-11-23')) {
+        if (sessionIdx < 16) status = 'completed';
+      }
+
+      const typeLabel = type === 'code' ? 'Code théorique' : type === 'creneau' ? 'Créneau sur piste' : 'Circulation';
+      slots.push({
+        id: 'sc-' + student.id + '-' + (sessionIdx + 1),
+        student_id: student.id,
+        student_name: student.first_name + ' ' + student.last_name,
+        category: student.requested_category,
+        date: dateIso,
+        time_start: timeStart,
+        time_end: timeEnd,
+        type: type,
+        instructor_name: type === 'code' ? 'M. Amine' : type === 'creneau' ? 'M. Khaled' : 'M. Toufik',
+        status: status,
+        notes: 'Séance N° ' + (sessionIdx + 1) + ' / 30 (' + typeLabel + ')',
+      });
+      sessionIdx++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return slots;
+}
+
+const RAW_DEFAULT_STUDENTS: Student[] = [
   {
     id: 'st-1',
     school_id: 'school-1',
@@ -1016,6 +1083,11 @@ const DEFAULT_STUDENTS: Student[] = [
   },
 ];
 
+const DEFAULT_STUDENTS: Student[] = RAW_DEFAULT_STUDENTS.map((st, idx) => ({
+  ...st,
+  schedule_slots: ensureFull30HourSlots(st, (idx % 4) + 1),
+}));
+
 const DEFAULT_AUDIT_LOGS: AuditLogEntry[] = [
   {
     id: 'log-1',
@@ -1116,12 +1188,19 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       if (savedStudents) {
         const parsed = JSON.parse(savedStudents);
         if (Array.isArray(parsed) && parsed.length >= 10) {
-          setStudents(parsed);
+          // Guarantee all candidate profiles have the complete 30h syllabus
+          const populated = parsed.map((st: Student, idx: number) => ({
+            ...st,
+            schedule_slots: ensureFull30HourSlots(st, (idx % 4) + 1),
+          }));
+          setStudents(populated);
+          localStorage.setItem('kreno_students', JSON.stringify(populated));
         } else {
           setStudents(DEFAULT_STUDENTS);
           localStorage.setItem('kreno_students', JSON.stringify(DEFAULT_STUDENTS));
         }
       } else {
+        setStudents(DEFAULT_STUDENTS);
         localStorage.setItem('kreno_students', JSON.stringify(DEFAULT_STUDENTS));
       }
 

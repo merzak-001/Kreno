@@ -245,7 +245,7 @@ export function NewExamSessionModal({ isOpen, onClose, editSession }: NewExamSes
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-surface rounded-2xl w-full max-w-7xl shadow-2xl border-2 border-slate-300 dark:border-slate-700 overflow-hidden text-slate-900 dark:text-slate-100 max-h-[96vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-surface rounded-2xl w-full max-w-[96vw] 2xl:max-w-7xl shadow-2xl border-2 border-slate-300 dark:border-slate-700 overflow-hidden text-slate-900 dark:text-slate-100 max-h-[96vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Eye,
   TrendingUp,
-  FileText
+  FileText,
+  UserCheck
 } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
 import { ExamType, Student, getCategoryBadgeClass } from '@/types/kreno';
@@ -68,308 +69,282 @@ export default function DashboardPage() {
 
   // Upcoming scheduled 1-hour slots
   const upcomingSlots = useMemo(() => {
-    const allSlots = students.flatMap(s => s.schedule_slots || []);
-    return allSlots
+    return students
+      .flatMap(st => (st.schedule_slots || []).map(s => ({ ...s, studentName: `${st.first_name} ${st.last_name}`, studentId: st.id })))
+      .filter(s => s.status === 'scheduled')
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(0, 4);
+      .slice(0, 5);
   }, [students]);
 
-  const handleRowClick = (student: Student) => {
-    router.push(`/candidates/${student.id}`);
-  };
+  // Candidates with pending exam results
+  const pendingExamStudents = useMemo(() => {
+    return students.filter(st => st.exams.some(e => e.result === 'pending')).slice(0, 5);
+  }, [students]);
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="bg-surface rounded-2xl p-6 border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-4 transition-colors">
+    <div className="space-y-6 w-full">
+      
+      {/* Top Welcome Banner */}
+      <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-xl font-black text-slate-900 dark:text-white">
-            Tableau de Bord
-          </h2>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+              Session 2026
+            </span>
+            <span className="text-xs text-slate-400 font-medium font-mono">• {school.commune}, {school.wilaya}</span>
+          </div>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
+            Tableau de Bord — {school.commercial_name || school.name}
+          </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Auto-École {school.name} • Suivi simplifié des candidats, des séances de conduite et des examens.
+            Suivi temps réel des dossiers candidats, des 3 étapes d&apos;examen et des leçons de conduite.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
             href="/candidates"
-            className="px-4 py-2 bg-primary hover:bg-primary-hover active:scale-95 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium transition shadow-xs shadow-blue-600/20"
           >
             <Users className="w-4 h-4" />
-            <span>Voir les Candidats</span>
+            <span>Tous les candidats</span>
           </Link>
           <Link
             href="/pipeline"
-            className="px-4 py-2 bg-slate-100 dark:bg-surface-elevated hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-border-subtle cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-xl text-xs font-medium transition shadow-xs"
           >
             <Award className="w-4 h-4" />
-            <span>Examens Hebdo</span>
+            <span>Sessions d&apos;examen</span>
           </Link>
         </div>
       </div>
 
-      {/* KPI Cards: Structured 4-column layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 1. Total Candidates */}
-        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs space-y-3 transition-all hover:border-slate-300 dark:hover:border-slate-700">
+      {/* 4 Primary KPI Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Total Dossiers */}
+        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Dossiers</span>
-            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 flex items-center justify-center font-bold shadow-2xs">
-              <Users className="w-5 h-5" />
+            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Candidats Inscrits</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <Users className="w-4 h-4" />
             </div>
           </div>
-          <div>
-            <span className="text-3xl font-black text-slate-900 dark:text-white font-mono">{stats.total}</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 block mt-1 font-medium">Candidats actifs inscrits</span>
+          <div className="mt-3">
+            <span className="text-2xl font-semibold text-slate-900 dark:text-white font-mono">{stats.total}</span>
+            <span className="text-xs text-slate-400 ml-2">dossiers actifs</span>
+          </div>
+          <div className="mt-2 text-[11px] text-slate-500 flex items-center justify-between border-t border-border-subtle pt-2">
+            <span>En cours de formation</span>
+            <strong className="text-slate-800 dark:text-slate-200 font-mono font-medium">{stats.total - stats.graduated}</strong>
           </div>
         </div>
 
-        {/* 2. Étape 1: Code */}
-        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs space-y-3 transition-all hover:border-slate-300 dark:hover:border-slate-700">
+        {/* Étape Code */}
+        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">1. Épreuve Code</span>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center font-bold shadow-2xs">
-              <Clock className="w-5 h-5" />
+            <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider">1. Code de la Route</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <Award className="w-4 h-4" />
             </div>
           </div>
-          <div>
-            <span className="text-3xl font-black text-slate-900 dark:text-white font-mono">{stats.codeReady}</span>
-            <span className="text-xs text-amber-600 dark:text-amber-400 block mt-1 font-semibold">En cours d&apos;apprentissage</span>
+          <div className="mt-3">
+            <span className="text-2xl font-semibold text-slate-900 dark:text-white font-mono">{stats.codeReady}</span>
+            <span className="text-xs text-slate-400 ml-2">en apprentissage</span>
+          </div>
+          <div className="mt-2 text-[11px] text-slate-500 flex items-center justify-between border-t border-border-subtle pt-2">
+            <span>Quota minimum légal</span>
+            <span className="text-slate-800 dark:text-slate-200 font-mono font-medium">10 heures</span>
           </div>
         </div>
 
-        {/* 3. Étape 2: Créneau */}
-        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs space-y-3 transition-all hover:border-slate-300 dark:hover:border-slate-700">
+        {/* Étape Créneau & Conduite */}
+        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">2. Épreuve Créneau</span>
-            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center font-bold shadow-2xs">
-              <Car className="w-5 h-5" />
+            <span className="text-[11px] font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wider">2. Créneau & Route</span>
+            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+              <Car className="w-4 h-4" />
             </div>
           </div>
-          <div>
-            <span className="text-3xl font-black text-slate-900 dark:text-white font-mono">{stats.creneauReady}</span>
-            <span className="text-xs text-purple-600 dark:text-purple-400 block mt-1 font-semibold">Code validé, sur piste</span>
+          <div className="mt-3">
+            <span className="text-2xl font-semibold text-slate-900 dark:text-white font-mono">{stats.creneauReady + stats.circulationReady}</span>
+            <span className="text-xs text-slate-400 ml-2">en conduite</span>
+          </div>
+          <div className="mt-2 text-[11px] text-slate-500 flex items-center justify-between border-t border-border-subtle pt-2">
+            <span>Créneau ({stats.creneauReady}) • Circuit ({stats.circulationReady})</span>
           </div>
         </div>
 
-        {/* 4. Étape 3: Conduite & Succès */}
-        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs space-y-3 transition-all hover:border-slate-300 dark:hover:border-slate-700">
+        {/* Permis Délivrés */}
+        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">3. Conduite & Succès</span>
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center font-bold shadow-2xs">
-              <Award className="w-5 h-5" />
+            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Permis Obtenus</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <div>
-            <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{stats.graduated}</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 block mt-1 font-medium">
-              Permis délivrés • <strong className="text-slate-900 dark:text-slate-200">{stats.circulationReady}</strong> en circuit
-            </span>
+          <div className="mt-3">
+            <span className="text-2xl font-semibold text-emerald-600 dark:text-emerald-400 font-mono">{stats.graduated}</span>
+            <span className="text-xs text-slate-400 ml-2">admis aux 3 étapes</span>
+          </div>
+          <div className="mt-2 text-[11px] text-slate-500 flex items-center justify-between border-t border-border-subtle pt-2">
+            <span>Taux de réussite global</span>
+            <strong className="text-emerald-600 font-mono font-medium">
+              {stats.total > 0 ? Math.round((stats.graduated / stats.total) * 100) : 0}%
+            </strong>
           </div>
         </div>
+
       </div>
 
-      {/* Two Column Section: Upcoming 1-Hour Sessions & Financial Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left: Upcoming 1-Hour Schedule Sessions */}
-        <div className="lg:col-span-2 bg-surface rounded-2xl border border-border-subtle p-6 shadow-xs space-y-4 transition-colors">
-          <div className="flex items-center justify-between border-b border-border-subtle pb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                <Calendar className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Prochaines Séances de Formation (Unité 1h)</h3>
-                <p className="text-[11px] text-slate-400">Planning hebdomadaire conforme aux réglages</p>
-              </div>
+      {/* Owner Financial Snapshot */}
+      {isOwner && (
+        <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs">
+          <div className="flex items-center justify-between border-b border-border-subtle pb-3 mb-4">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-emerald-600" />
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-white">Aperçu Comptable & Recettes Forfaits</h3>
             </div>
-            <Link href="/schedule" className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-bold flex items-center gap-1">
-              <span>Voir le planning complet</span>
-              <ChevronRight className="w-4 h-4" />
+            <Link href="/finances" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+              Registre détaillé →
             </Link>
           </div>
 
-          <div className="space-y-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
+            <div className="p-3.5 bg-slate-50/70 dark:bg-surface-elevated/60 rounded-xl border border-border-subtle">
+              <span className="text-[10px] text-slate-400 font-sans block uppercase tracking-wider font-medium">Total Contrats Signés</span>
+              <strong className="text-base font-semibold text-slate-900 dark:text-white mt-1 block">
+                {stats.totalRevenue.toLocaleString()} DZD
+              </strong>
+            </div>
+
+            <div className="p-3.5 bg-emerald-50/60 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800/60">
+              <span className="text-[10px] text-emerald-800 dark:text-emerald-300 font-sans block uppercase tracking-wider font-medium">Total Encaissé</span>
+              <strong className="text-base font-semibold text-emerald-700 dark:text-emerald-300 mt-1 block">
+                +{stats.totalPaid.toLocaleString()} DZD
+              </strong>
+            </div>
+
+            <div className="p-3.5 bg-amber-50/60 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-800/60">
+              <span className="text-[10px] text-amber-800 dark:text-amber-300 font-sans block uppercase tracking-wider font-medium">Reste à Recouvrer</span>
+              <strong className="text-base font-semibold text-amber-700 dark:text-amber-300 mt-1 block">
+                {stats.outstanding.toLocaleString()} DZD
+              </strong>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Two Column Grid: Upcoming Sessions & Exam Pipeline Candidates */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Upcoming Scheduled 1-Hour Lessons */}
+        <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-blue-600" />
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-white">Prochaines Séances de Conduite (1h)</h3>
+            </div>
+            <Link href="/schedule" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+              Planning complet →
+            </Link>
+          </div>
+
+          <div className="space-y-2">
             {upcomingSlots.length > 0 ? (
               upcomingSlots.map(slot => (
                 <div 
-                  key={slot.id} 
-                  className="p-3.5 rounded-xl border border-border-subtle bg-slate-50/70 dark:bg-surface-elevated flex items-center justify-between hover:border-slate-300 dark:hover:border-slate-700 transition"
+                  key={slot.id}
+                  onClick={() => router.push(`/candidates/${slot.studentId}`)}
+                  className="p-3 bg-slate-50/70 dark:bg-surface-elevated/70 rounded-xl border border-border-subtle flex items-center justify-between text-xs hover:border-blue-400/40 cursor-pointer transition"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-mono font-bold text-xs shadow-xs">
-                      {slot.time_start} - {slot.time_end}
-                    </div>
+                    <span className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-mono font-medium flex items-center justify-center text-xs">
+                      1h
+                    </span>
                     <div>
-                      <h4 className="font-bold text-xs text-slate-900 dark:text-white">{slot.student_name}</h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">
-                        {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Conduite en circulation'} • Moniteur : <strong className="text-slate-700 dark:text-slate-300">{slot.instructor_name}</strong>
-                      </p>
+                      <strong className="text-slate-900 dark:text-white font-medium block">
+                        {slot.studentName}
+                      </strong>
+                      <span className="text-[11px] text-slate-500 capitalize">
+                        {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Circulation routière'}
+                      </span>
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-mono font-bold bg-white dark:bg-surface border border-border-subtle px-2.5 py-1 rounded-md text-slate-700 dark:text-slate-300 shadow-2xs">
-                    {slot.date}
-                  </span>
+                  <div className="text-right">
+                    <span className="font-mono text-slate-800 dark:text-slate-200 font-medium block">
+                      {slot.time_start} - {slot.time_end}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">{slot.date}</span>
+                  </div>
                 </div>
               ))
             ) : (
-              <p className="text-xs text-slate-400 py-6 text-center">Aucune séance planifiée pour le moment.</p>
+              <p className="text-xs text-slate-400 py-6 text-center italic">
+                Aucune séance programmée aujourd&apos;hui.
+              </p>
             )}
           </div>
         </div>
 
-        {/* Right: Financial Recap (Owner Only) */}
-        <div className="bg-surface rounded-2xl border border-border-subtle p-6 shadow-xs flex flex-col justify-between transition-colors">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-border-subtle pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                  <DollarSign className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">Situation Financière</h3>
-                  <p className="text-[11px] text-slate-400">Recettes & Acomptes</p>
-                </div>
-              </div>
-              {!isOwner && (
-                <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2.5 py-0.5 rounded-full font-bold">
-                  Privé
-                </span>
-              )}
+        {/* Pending Exam Candidates */}
+        <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-white">Examens en Attente de Résultat</h3>
             </div>
-
-            {isOwner ? (
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3.5 bg-slate-50 dark:bg-surface-elevated rounded-xl border border-border-subtle">
-                  <span className="text-xs text-slate-600 dark:text-slate-400 font-bold">Total des contrats :</span>
-                  <strong className="text-sm font-mono text-slate-900 dark:text-white font-black">{stats.totalRevenue.toLocaleString()} DZD</strong>
-                </div>
-                <div className="flex justify-between items-center p-3.5 bg-emerald-50/70 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">
-                  <span className="text-xs text-emerald-900 dark:text-emerald-300 font-bold">Versements encaissés :</span>
-                  <strong className="text-sm font-mono text-emerald-700 dark:text-emerald-300 font-black">{stats.totalPaid.toLocaleString()} DZD</strong>
-                </div>
-                <div className="flex justify-between items-center p-3.5 bg-amber-50/70 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-800/60 shadow-2xs">
-                  <span className="text-xs text-amber-900 dark:text-amber-300 font-bold">Créances en attente :</span>
-                  <strong className="text-sm font-mono text-amber-700 dark:text-amber-300 font-black">{stats.outstanding.toLocaleString()} DZD</strong>
-                </div>
-              </div>
-            ) : (
-              <div className="p-6 text-center bg-slate-50 dark:bg-surface-elevated rounded-xl border border-dashed border-border-subtle text-slate-400 space-y-1">
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Données financières masquées</p>
-                <p className="text-[11px] text-slate-400">Basculez en mode Gérant dans la barre latérale pour afficher.</p>
-              </div>
-            )}
+            <Link href="/pipeline" className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+              Sessions d&apos;examen →
+            </Link>
           </div>
 
-          {isOwner && (
-            <div className="pt-4 border-t border-border-subtle mt-4 text-right">
-              <Link href="/finances" className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center justify-end gap-1">
-                <span>Consulter le registre financier</span>
-                <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Candidate List Preview: Structured Table with Clickable Rows */}
-      <div className="bg-surface rounded-2xl border border-border-subtle shadow-xs overflow-hidden transition-colors">
-        <div className="p-5 border-b border-border-subtle flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Candidats Récents & Progression dans le Cycle</h3>
-            <p className="text-[11px] text-slate-400">Cliquez sur une ligne pour ouvrir la Fiche Synthèse officielle.</p>
-          </div>
-          <Link 
-            href="/candidates"
-            className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-bold flex items-center gap-1"
-          >
-            <span>Voir tous les candidats</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-surface-elevated text-slate-600 dark:text-slate-400 font-bold border-b border-border-subtle uppercase tracking-wider text-[10px]">
-              <tr>
-                <th className="p-3.5">Candidat & Dossier</th>
-                <th className="p-3.5">Catégorie</th>
-                <th className="p-3.5">Téléphone</th>
-                <th className="p-3.5 text-center">Épreuve Actuelle</th>
-                <th className="p-3.5 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {students.slice(0, 5).map(st => {
-                const codePassed = st.exams.some(e => e.exam_type === 'code' && e.result === 'passed');
-                const creneauPassed = st.exams.some(e => e.exam_type === 'creneau' && e.result === 'passed');
-                const circPassed = st.exams.some(e => e.exam_type === 'circulation' && e.result === 'passed');
-
+          <div className="space-y-2">
+            {pendingExamStudents.length > 0 ? (
+              pendingExamStudents.map(st => {
+                const pendingExam = st.exams.find(e => e.result === 'pending');
                 return (
-                  <tr 
-                    key={st.id} 
-                    onClick={() => handleRowClick(st)}
-                    className="hover:bg-slate-50 dark:hover:bg-surface-elevated/70 transition cursor-pointer group"
+                  <div 
+                    key={st.id}
+                    onClick={() => router.push(`/candidates/${st.id}`)}
+                    className="p-3 bg-slate-50/70 dark:bg-surface-elevated/70 rounded-xl border border-border-subtle flex items-center justify-between text-xs hover:border-blue-400/40 cursor-pointer transition"
                   >
-                    <td className="p-3.5">
-                      <span className="font-bold text-slate-900 dark:text-white block group-hover:text-primary transition">
-                        {st.first_name} {st.last_name}
-                      </span>
-                      <span className="text-[11px] text-slate-400 font-mono">
-                        {st.dossier_number} • Inscrit le {st.deposit_date}
-                      </span>
-                    </td>
-                    <td className="p-3.5">
-                      <span className={`px-2.5 py-1 rounded-md text-xs font-bold border shadow-2xs ${getCategoryBadgeClass(st.requested_category)}`}>
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${getCategoryBadgeClass(st.requested_category)}`}>
                         Cat. {st.requested_category}
                       </span>
-                    </td>
-                    <td className="p-3.5 font-mono text-slate-600 dark:text-slate-400 font-semibold">{st.phone_number}</td>
-                    
-                    <td className="p-3.5 text-center">
-                      {circPassed ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 font-bold text-xs border border-emerald-200 dark:border-emerald-800 shadow-2xs">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Permis Obtenu
+                      <div>
+                        <strong className="text-slate-900 dark:text-white font-medium block">
+                          {st.first_name} {st.last_name}
+                        </strong>
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          {st.dossier_number}
                         </span>
-                      ) : creneauPassed ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 font-bold text-xs border border-amber-200 dark:border-amber-800 shadow-2xs">
-                          3. Prêt pour Conduite
-                        </span>
-                      ) : codePassed ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 font-bold text-xs border border-purple-200 dark:border-purple-800 shadow-2xs">
-                          2. Prêt pour Créneau
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 font-bold text-xs border border-blue-200 dark:border-blue-800 shadow-2xs">
-                          1. En cours de Code
-                        </span>
-                      )}
-                    </td>
+                      </div>
+                    </div>
 
-                    <td className="p-3.5 text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRowClick(st);
-                        }}
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-primary hover:text-white dark:bg-surface-elevated dark:hover:bg-primary text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 cursor-pointer border border-border-subtle shadow-2xs"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                        <span>Fiche</span>
-                      </button>
-                    </td>
-                  </tr>
+                    <div className="text-right">
+                      <span className="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-medium text-[10px] border border-amber-200 dark:border-amber-800/60 inline-block">
+                        {pendingExam?.exam_type === 'code' ? 'Examen Code' : pendingExam?.exam_type === 'creneau' ? 'Examen Créneau' : 'Examen Circulation'}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
+                        {pendingExam?.exam_date || 'Date non fixée'}
+                      </span>
+                    </div>
+                  </div>
                 );
-              })}
-            </tbody>
-          </table>
+              })
+            ) : (
+              <p className="text-xs text-slate-400 py-6 text-center italic">
+                Tous les examens enregistrés ont été notés.
+              </p>
+            )}
+          </div>
         </div>
+
       </div>
 
-      {/* End Table Section */}
     </div>
   );
 }
