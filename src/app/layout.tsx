@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-slate-100/70">
+      <body className="min-h-full flex flex-col bg-canvas text-[var(--foreground)]">
         <KrenoProvider>
           <AppLayout>
             {children}

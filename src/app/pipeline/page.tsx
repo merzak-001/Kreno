@@ -83,7 +83,9 @@ export default function PipelinePage() {
         const key = `${exam.exam_date}___${exam.exam_center || 'Centre Principal'}`;
 
         if (!map.has(key)) {
-          const isPast = new Date(exam.exam_date) < new Date('2026-11-23');
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const isPast = new Date(exam.exam_date) < today;
           map.set(key, {
             date: exam.exam_date,
             center: exam.exam_center || 'Centre Principal',

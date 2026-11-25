@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, User, Phone, MapPin, DollarSign, Save, FileText, ChevronDown, ChevronUp } from 'lucide-react';
-import { Student, LicenseCategory, ContractDetails } from '@/types/kreno';
+import { X, User, Save, FileText, ChevronDown, ChevronUp, Award, AlertTriangle } from 'lucide-react';
+import { Student, LicenseCategory, ContractDetails, HeldLicense } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { LICENSE_RULES, checkCirculationEligibility, formatDateFR } from '@/lib/licenseRules';
 
 interface EditStudentModalProps {
   isOpen: boolean;
@@ -47,6 +48,11 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
     guardian_phone: '',
   });
 
+  const [heldNumber, setHeldNumber] = useState('');
+  const [heldObtainedDate, setHeldObtainedDate] = useState('');
+  const [heldExpiryDate, setHeldExpiryDate] = useState('');
+  const [heldAuthority, setHeldAuthority] = useState('Wilaya de Sétif');
+
   useEffect(() => {
     if (student) {
       setFormData({
@@ -64,6 +70,12 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
         address_wilaya: student.address_wilaya || '',
         total_package_price: student.total_package_price || 40000,
       });
+
+      const firstHeld = student.held_licenses?.[0];
+      setHeldNumber(firstHeld?.license_number || '');
+      setHeldObtainedDate(firstHeld?.obtained_date || '');
+      setHeldExpiryDate(firstHeld?.expiry_date || '');
+      setHeldAuthority(firstHeld?.issuing_authority || 'Wilaya de Sétif');
 
       setContractData({
         theory_hours: student.contract_details?.theory_hours ?? 15,
@@ -86,12 +98,33 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
 
   if (!isOpen || !student) return null;
 
+  const rule = LICENSE_RULES[formData.requested_category];
+  const heldLicensesDraft: HeldLicense[] =
+    rule.prerequisite && heldObtainedDate
+      ? [
+          {
+            category: rule.prerequisite,
+            license_number: heldNumber.trim(),
+            obtained_date: heldObtainedDate,
+            expiry_date: heldExpiryDate || undefined,
+            issuing_authority: heldAuthority.trim() || undefined,
+          },
+        ]
+      : [];
+
+  const eligibility = checkCirculationEligibility({
+    requestedCategory: formData.requested_category,
+    birthDate: formData.birth_date,
+    heldLicenses: heldLicensesDraft,
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateStudent(student.id, {
       ...formData,
       total_package_price: Number(formData.total_package_price),
       contract_details: contractData,
+      held_licenses: heldLicensesDraft.length > 0 ? heldLicensesDraft : undefined,
     });
     onClose();
   };
@@ -213,6 +246,7 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                 <option value="B">Catégorie B (Tourisme)</option>
                 <option value="BE">Catégorie BE (Remorque)</option>
                 <option value="C1">Catégorie C1 (Poids moyen)</option>
+                <option value="C1E">Catégorie C1E</option>
                 <option value="C">Catégorie C (Poids lourd)</option>
                 <option value="CE">Catégorie CE (Semi-remorque)</option>
                 <option value="D">Catégorie D (Transport en commun)</option>
@@ -243,6 +277,69 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
               />
             </div>
           </div>
+
+          {rule.prerequisite && (
+            <div className="p-3.5 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/60 dark:bg-blue-950/30 space-y-2.5">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-900 dark:text-blue-200">
+                  <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <span>
+                    Permis Prérequis : Catégorie {rule.prerequisite} (+ {rule.minSeniorityYears} ans)
+                  </span>
+                </div>
+                {heldObtainedDate && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    eligibility.seniorityMet
+                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200'
+                      : 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200'
+                  }`}>
+                    {eligibility.seniorityMet
+                      ? `Ancienneté ${rule.minSeniorityYears} ans OK`
+                      : `2 ans le ${formatDateFR(eligibility.seniorityUnlockDate || '')}`}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <input
+                  type="text"
+                  value={heldNumber}
+                  onChange={e => setHeldNumber(e.target.value)}
+                  placeholder={`N° Permis ${rule.prerequisite}`}
+                  className="px-2.5 py-1.5 rounded-lg border border-border-subtle bg-white dark:bg-slate-900 text-xs font-mono"
+                />
+                <input
+                  type="date"
+                  value={heldObtainedDate}
+                  onChange={e => setHeldObtainedDate(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-lg border border-border-subtle bg-white dark:bg-slate-900 text-xs font-mono"
+                  title="Date d'obtention"
+                />
+                <input
+                  type="date"
+                  value={heldExpiryDate}
+                  onChange={e => setHeldExpiryDate(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-lg border border-border-subtle bg-white dark:bg-slate-900 text-xs font-mono"
+                  title="Date d'expiration"
+                />
+                <input
+                  type="text"
+                  value={heldAuthority}
+                  onChange={e => setHeldAuthority(e.target.value)}
+                  placeholder="Wilaya"
+                  className="px-2.5 py-1.5 rounded-lg border border-border-subtle bg-white dark:bg-slate-900 text-xs"
+                />
+              </div>
+            </div>
+          )}
+
+          {!eligibility.circulationEligible && (
+            <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 text-[11px] flex items-center gap-2 font-medium">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                Code &amp; Créneau autorisés • Circulation bloquée jusqu&apos;au {formatDateFR(eligibility.circulationUnlockDate || '') || 'conditions remplies'}
+              </span>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>

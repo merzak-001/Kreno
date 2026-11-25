@@ -20,11 +20,101 @@ import {
 } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
 import { ExamType, Student, getCategoryBadgeClass } from '@/types/kreno';
+import { checkCirculationEligibility } from '@/lib/licenseRules';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { students, userRole, school } = useKreno();
+  const { students, vehicles, userRole, school } = useKreno();
   const isOwner = userRole === 'owner';
+  const currentYear = new Date().getFullYear();
+
+  // Operational alerts: expiring vehicle docs, unpaid exam fees, exam-ready candidates
+  const alerts = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const in30Days = new Date(today);
+    in30Days.setDate(in30Days.getDate() + 30);
+
+    const expiringVehicles = vehicles
+      .filter(v => v.is_active)
+      .flatMap(v => {
+        const items: { id: string; label: string; date: string; expired: boolean }[] = [];
+        const techDate = new Date(v.technical_control_expiry);
+        if (techDate <= in30Days) {
+          items.push({
+            id: `${v.id}-tech`,
+            label: `${v.brand} ${v.model} (${v.plate_number}) — Contrôle technique`,
+            date: v.technical_control_expiry,
+            expired: techDate < today,
+          });
+        }
+        const insDate = new Date(v.insurance_expiry);
+        if (insDate <= in30Days) {
+          items.push({
+            id: `${v.id}-ins`,
+            label: `${v.brand} ${v.model} (${v.plate_number}) — Assurance`,
+            date: v.insurance_expiry,
+            expired: insDate < today,
+          });
+        }
+        return items;
+      });
+
+    const unpaidExamFees = students.flatMap(st =>
+      (st.exams || [])
+        .filter(e => e.result === 'pending' && !e.fee_paid)
+        .map(e => ({
+          id: `${st.id}-${e.id}`,
+          studentId: st.id,
+          studentName: `${st.first_name} ${st.last_name}`,
+          examType: e.exam_type,
+          amount: e.fee_amount,
+        }))
+    );
+
+    const readyForExam = students
+      .map(st => {
+        const passedCode = st.exams.some(e => e.exam_type === 'code' && e.result === 'passed');
+        const passedCreneau = st.exams.some(e => e.exam_type === 'creneau' && e.result === 'passed');
+        const passedCirc = st.exams.some(e => e.exam_type === 'circulation' && e.result === 'passed');
+        if (passedCirc) return null;
+
+        const nextStage: ExamType = !passedCode ? 'code' : !passedCreneau ? 'creneau' : 'circulation';
+        const hasPendingForStage = st.exams.some(e => e.exam_type === nextStage && e.result === 'pending');
+        if (hasPendingForStage) return null;
+
+        if (nextStage === 'circulation') {
+          const circCheck = checkCirculationEligibility({
+            requestedCategory: st.requested_category,
+            birthDate: st.birth_date,
+            heldLicenses: st.held_licenses,
+          });
+          if (!circCheck.circulationEligible) return null;
+        }
+
+        const completedHours = (st.schedule_slots || []).filter(
+          s => s.type === nextStage && s.status === 'completed'
+        ).length;
+
+        if (completedHours >= 10) {
+          return {
+            id: st.id,
+            name: `${st.first_name} ${st.last_name}`,
+            stage: nextStage,
+            hours: completedHours,
+          };
+        }
+        return null;
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    return {
+      expiringVehicles,
+      unpaidExamFees,
+      readyForExam,
+      totalCount: expiringVehicles.length + unpaidExamFees.length + readyForExam.length,
+    };
+  }, [students, vehicles]);
 
   // Statistics calculation
   const stats = useMemo(() => {
@@ -89,7 +179,7 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
-              Session 2026
+              Session {currentYear}
             </span>
             <span className="text-xs text-slate-400 font-medium font-mono">• {school.commune}, {school.wilaya}</span>
           </div>
@@ -196,6 +286,76 @@ export default function DashboardPage() {
         </div>
 
       </div>
+
+      {/* Actionable Priorities & Alerts Strip */}
+      {alerts.totalCount > 0 && (
+        <div className="bg-surface p-5 rounded-2xl border border-amber-200/80 dark:border-amber-800/50 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-white">
+                Priorités &amp; Alertes ({alerts.totalCount})
+              </h3>
+            </div>
+            <span className="text-[11px] text-slate-400">Actions recommandées</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            {alerts.expiringVehicles.length > 0 && (
+              <Link
+                href="/vehicles"
+                className="p-3.5 rounded-xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/50 hover:border-rose-300 transition flex flex-col justify-between gap-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-rose-800 dark:text-rose-300">Documents Véhicules</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-200">
+                    {alerts.expiringVehicles.length}
+                  </span>
+                </div>
+                <p className="text-[11px] text-rose-700/80 dark:text-rose-300/80 truncate">
+                  {alerts.expiringVehicles[0].label} ({alerts.expiringVehicles[0].date})
+                </p>
+              </Link>
+            )}
+
+            {alerts.unpaidExamFees.length > 0 && (
+              <Link
+                href="/pipeline"
+                className="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 hover:border-amber-300 transition flex flex-col justify-between gap-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-amber-800 dark:text-amber-300">Droits d&apos;Examen Impayés</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-200">
+                    {alerts.unpaidExamFees.length}
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-700/80 dark:text-amber-300/80 truncate">
+                  {alerts.unpaidExamFees[0].studentName} • {alerts.unpaidExamFees[0].amount.toLocaleString()} DZD
+                </p>
+              </Link>
+            )}
+
+            {alerts.readyForExam.length > 0 && (
+              <Link
+                href={`/candidates/${alerts.readyForExam[0].id}`}
+                className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 hover:border-blue-300 transition flex flex-col justify-between gap-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-blue-800 dark:text-blue-300">Prêts pour l&apos;Examen (10h+)</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-200">
+                    {alerts.readyForExam.length}
+                  </span>
+                </div>
+                <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80 truncate">
+                  {alerts.readyForExam[0].name} ({alerts.readyForExam[0].stage})
+                </p>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Owner Financial Snapshot */}
       {isOwner && (

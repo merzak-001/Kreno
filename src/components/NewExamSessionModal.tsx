@@ -5,6 +5,7 @@ import { X, Calendar, Plus, CheckCircle2, User, Award, DollarSign, Filter, Searc
 import { Student, ExamType, ExamSessionCandidateSelection, LicenseCategory, ExamRecord } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { checkCirculationEligibility, formatDateFR } from '@/lib/licenseRules';
 
 interface NewExamSessionModalProps {
   isOpen: boolean;
@@ -587,25 +588,39 @@ export function NewExamSessionModal({ isOpen, onClose, editSession }: NewExamSes
                       {eligibleCandidates.map(st => {
                         const isSelected = !!selectedMap[st.id];
                         const { readyFor, reason } = getCandidateEligibility(st);
+                        const circCheck = checkCirculationEligibility({
+                          requestedCategory: st.requested_category,
+                          birthDate: st.birth_date,
+                          heldLicenses: st.held_licenses,
+                          asOfDate: date,
+                        });
+                        const isBlockedForCirc = readyFor === 'circulation' && !circCheck.circulationEligible;
                         const remainingOwed = Math.max(0, (st.total_package_price || 0) - (st.amount_paid || 0));
 
                         return (
                           <tr 
                             key={st.id}
-                            onClick={() => toggleSelect(st)}
-                            className={`cursor-pointer transition select-none ${
-                              isSelected 
-                                ? 'bg-blue-100/70 dark:bg-blue-950/70 font-semibold border-l-4 border-l-blue-600' 
-                                : 'hover:bg-slate-100/60 dark:hover:bg-slate-800/40'
+                            onClick={() => {
+                              if (!isBlockedForCirc) toggleSelect(st);
+                            }}
+                            className={`transition select-none ${
+                              isBlockedForCirc
+                                ? 'opacity-60 bg-rose-50/40 dark:bg-rose-950/20 cursor-not-allowed'
+                                : isSelected 
+                                  ? 'bg-blue-100/70 dark:bg-blue-950/70 font-semibold border-l-4 border-l-blue-600 cursor-pointer' 
+                                  : 'hover:bg-slate-100/60 dark:hover:bg-slate-800/40 cursor-pointer'
                             }`}
                           >
                             <td className="p-3 text-center">
                               <input
                                 type="checkbox"
                                 checked={isSelected}
-                                onChange={() => toggleSelect(st)}
+                                disabled={isBlockedForCirc}
+                                onChange={() => {
+                                  if (!isBlockedForCirc) toggleSelect(st);
+                                }}
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-600 cursor-pointer"
+                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-600 cursor-pointer disabled:cursor-not-allowed"
                               />
                             </td>
                             <td className="p-3">
@@ -623,13 +638,17 @@ export function NewExamSessionModal({ isOpen, onClose, editSession }: NewExamSes
                             </td>
                             <td className="p-3">
                               <span className={`px-2.5 py-1 rounded text-xs font-bold inline-block whitespace-nowrap ${
-                                readyFor === 'code'
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200'
-                                  : readyFor === 'creneau'
-                                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200'
-                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200'
+                                isBlockedForCirc
+                                  ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200'
+                                  : readyFor === 'code'
+                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200'
+                                    : readyFor === 'creneau'
+                                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200'
+                                      : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200'
                               }`}>
-                                {reason}
+                                {isBlockedForCirc
+                                  ? `Circulation bloquée (${circCheck.circulationUnlockDate ? `le ${formatDateFR(circCheck.circulationUnlockDate)}` : `prérequis ${circCheck.prerequisite}`})`
+                                  : reason}
                               </span>
                             </td>
                             <td className="p-3 text-right font-mono whitespace-nowrap">

@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, CheckCircle, AlertTriangle, UserPlus } from 'lucide-react';
-import { Student, LicenseCategory } from '@/types/kreno';
+import { X, CheckCircle, AlertTriangle, UserPlus, Award } from 'lucide-react';
+import { Student, LicenseCategory, HeldLicense } from '@/types/kreno';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { LICENSE_RULES, checkCirculationEligibility, formatDateFR } from '@/lib/licenseRules';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -32,6 +33,12 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
   const [totalPackagePrice, setTotalPackagePrice] = useState(40000);
   const [amountPaid, setAmountPaid] = useState(15000);
 
+  // Prerequisite held license fields (shown dynamically when category requires another license)
+  const [heldNumber, setHeldNumber] = useState('');
+  const [heldObtainedDate, setHeldObtainedDate] = useState('');
+  const [heldExpiryDate, setHeldExpiryDate] = useState('');
+  const [heldAuthority, setHeldAuthority] = useState('Wilaya de Sétif');
+
   useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
@@ -45,27 +52,26 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
     }
   };
 
-  // Age calculation and validation
-  const calculateAge = (dateStr: string) => {
-    const today = new Date();
-    const birth = new Date(dateStr);
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-    return age;
-  };
+  const rule = LICENSE_RULES[requestedCategory];
+  const heldLicensesDraft: HeldLicense[] =
+    rule.prerequisite && heldObtainedDate
+      ? [
+          {
+            category: rule.prerequisite,
+            license_number: heldNumber.trim(),
+            obtained_date: heldObtainedDate,
+            expiry_date: heldExpiryDate || undefined,
+            issuing_authority: heldAuthority.trim() || undefined,
+          },
+        ]
+      : [];
 
-  const candidateAge = calculateAge(birthDate);
-
-  // Check Algerian legal conditions
-  let ageWarning = '';
-  if (requestedCategory === 'A1' && candidateAge < 16) {
-    ageWarning = 'La catégorie A1 exige au minimum 16 ans révolus avec autorisation du tuteur légal.';
-  } else if ((requestedCategory === 'B' || requestedCategory === 'A') && candidateAge < 18) {
-    ageWarning = `La catégorie ${requestedCategory} exige 18 ans révolus. Âge actuel du candidat: ${candidateAge} ans.`;
-  } else if (['C', 'C1', 'D', 'BE', 'CE', 'DE'].includes(requestedCategory) && candidateAge < 25) {
-    ageWarning = `Les catégories Poids Lourd et Transport (C, D, E) exigent 25 ans minimum et 2 ans d'ancienneté en Catégorie B.`;
-  }
+  const eligibility = checkCirculationEligibility({
+    requestedCategory,
+    birthDate,
+    heldLicenses: heldLicensesDraft,
+  });
+  const candidateAge = eligibility.age;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +85,7 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
     onSaveStudent({
       school_id: 'school-1',
       dossier_number: dossierNumber,
-      deposit_date: '2026-11-21',
+      deposit_date: new Date().toISOString().split('T')[0],
       nin,
       blood_type: bloodType,
       first_name: firstName,
@@ -99,6 +105,7 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
       requested_category: requestedCategory,
       total_package_price: totalPackagePrice,
       amount_paid: amountPaid,
+      held_licenses: heldLicensesDraft.length > 0 ? heldLicensesDraft : undefined,
     });
 
     onClose();
@@ -134,11 +141,20 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Age Alert */}
-          {ageWarning && (
-            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 rounded-xl text-xs flex items-center gap-3 font-medium">
-              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span>{ageWarning}</span>
+          {/* Regulatory Eligibility Banner (Code & Créneau always allowed; Circulation locked if under age/seniority) */}
+          {(!eligibility.circulationEligible || eligibility.isMinor) && (
+            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 rounded-xl text-xs space-y-1">
+              <div className="flex items-center gap-2 font-bold">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>
+                  {eligibility.circulationEligible
+                    ? 'Candidat mineur — Autorisation du tuteur légal requise'
+                    : `Code & Créneau autorisés • Circulation bloquée jusqu'au ${formatDateFR(eligibility.circulationUnlockDate || '') || 'conditions remplies'}`}
+                </span>
+              </div>
+              {eligibility.blockingReasons.map((r, i) => (
+                <p key={i} className="text-[11px] pr-6">• {r}</p>
+              ))}
             </div>
           )}
 
@@ -306,11 +322,13 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
                   <option value="B">Catégorie B - Véhicule Léger / Tourisme</option>
                   <option value="A">Catégorie A - Moto Lourde</option>
                   <option value="A1">Catégorie A1 - Moto Légère (dès 16 ans)</option>
-                  <option value="C">Catégorie C - Poids Lourd (Camion)</option>
-                  <option value="C1">Catégorie C1 - Camion Moyen</option>
-                  <option value="CE">Catégorie CE - Semi-Remorque</option>
-                  <option value="D">Catégorie D - Transport Voyageurs / Bus</option>
-                  <option value="BE">Catégorie BE - Voiture + Remorque</option>
+                  <option value="BE">Catégorie BE - Voiture + Remorque (B + 2 ans)</option>
+                  <option value="C1">Catégorie C1 - Camion Moyen (B + 2 ans)</option>
+                  <option value="C1E">Catégorie C1E - C1 + Remorque</option>
+                  <option value="C">Catégorie C - Poids Lourd (B + 2 ans)</option>
+                  <option value="CE">Catégorie CE - Semi-Remorque (C + 2 ans)</option>
+                  <option value="D">Catégorie D - Transport Voyageurs (B + 2 ans)</option>
+                  <option value="DE">Catégorie DE - D + Remorque</option>
                   <option value="F">Catégorie F - Véhicule Adapté</option>
                 </select>
               </div>
@@ -338,6 +356,80 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
                 </span>
               </div>
             </div>
+
+            {/* Dynamic Prerequisite License Box */}
+            {rule.prerequisite && (
+              <div className="mt-4 p-4 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/60 dark:bg-blue-950/30 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-blue-900 dark:text-blue-200">
+                    <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span>
+                      Permis Prérequis Obligatoire : Catégorie {rule.prerequisite} (+ {rule.minSeniorityYears} ans d&apos;ancienneté)
+                    </span>
+                  </div>
+                  {heldObtainedDate && (
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                      eligibility.seniorityMet
+                        ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                        : 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                    }`}>
+                      {eligibility.seniorityMet
+                        ? `Ancienneté ${rule.minSeniorityYears} ans validée`
+                        : `2 ans atteints le ${formatDateFR(eligibility.seniorityUnlockDate || '')}`}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      N° du Permis {rule.prerequisite}
+                    </label>
+                    <input
+                      type="text"
+                      value={heldNumber}
+                      onChange={(e) => setHeldNumber(e.target.value)}
+                      placeholder="ex: 19/124578"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-border-subtle rounded-lg text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Date d&apos;obtention *
+                    </label>
+                    <input
+                      type="date"
+                      value={heldObtainedDate}
+                      onChange={(e) => setHeldObtainedDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-border-subtle rounded-lg text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Date d&apos;expiration
+                    </label>
+                    <input
+                      type="date"
+                      value={heldExpiryDate}
+                      onChange={(e) => setHeldExpiryDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-border-subtle rounded-lg text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Autorité (Wilaya)
+                    </label>
+                    <input
+                      type="text"
+                      value={heldAuthority}
+                      onChange={(e) => setHeldAuthority(e.target.value)}
+                      placeholder="Wilaya de Sétif"
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-border-subtle rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer Submit */}

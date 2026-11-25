@@ -498,6 +498,15 @@ const RAW_DEFAULT_STUDENTS: Student[] = [
     requested_category: 'C',
     total_package_price: 55000,
     amount_paid: 30000,
+    held_licenses: [
+      {
+        category: 'B',
+        license_number: '19/084512',
+        obtained_date: '2022-05-10',
+        expiry_date: '2032-05-10',
+        issuing_authority: 'Wilaya de Sétif',
+      },
+    ],
     exams: [
       {
         id: 'ex-7',
@@ -1187,7 +1196,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       const savedStudents = localStorage.getItem('kreno_students');
       if (savedStudents) {
         const parsed = JSON.parse(savedStudents);
-        if (Array.isArray(parsed) && parsed.length >= 10) {
+        if (Array.isArray(parsed)) {
           // Guarantee all candidate profiles have the complete 30h syllabus
           const populated = parsed.map((st: Student, idx: number) => ({
             ...st,

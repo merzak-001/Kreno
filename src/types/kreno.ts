@@ -106,6 +106,14 @@ export interface ContractDetails {
   guardian_phone?: string;        // Téléphone du tuteur
 }
 
+export interface HeldLicense {
+  category: LicenseCategory;
+  license_number: string;
+  obtained_date: string;          // YYYY-MM-DD
+  expiry_date?: string;           // YYYY-MM-DD
+  issuing_authority?: string;     // ex: Wilaya de Sétif
+}
+
 export interface Student {
   id: string;
   school_id: string;
@@ -144,6 +152,9 @@ export interface Student {
   
   // Contract specific settings
   contract_details?: ContractDetails;
+
+  // Previously held licenses (for C, C1, D, BE, CE, DE, etc.)
+  held_licenses?: HeldLicense[];
 
   // Historique & Progression
   exams: ExamRecord[];

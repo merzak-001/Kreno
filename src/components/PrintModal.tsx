@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, Printer, FileText, CheckCircle2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { X, Printer, ZoomIn, ZoomOut, RotateCcw, Hand } from 'lucide-react';
 import { Student } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { MedicalCertificatePrint } from '@/components/MedicalCertificatePrint';
+import { ProgressCardPrint } from '@/components/ProgressCardPrint';
+import { CandidateFolderPrint } from '@/components/CandidateFolderPrint';
 
 interface PrintModalProps {
   isOpen: boolean;
@@ -13,8 +16,19 @@ interface PrintModalProps {
 }
 
 export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
-  const { school, lang } = useKreno();
+  const { school } = useKreno();
   const [selectedDoc, setSelectedDoc] = useState<'dossier' | 'medical' | 'contract' | 'livret'>('dossier');
+  const [zoom, setZoom] = useState<number>(1);
+  const [isPanMode, setIsPanMode] = useState<boolean>(true);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef<{ startX: number; startY: number; scrollLeft: number; scrollTop: number }>({
+    startX: 0,
+    startY: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+  });
 
   useEscapeKey(isOpen, onClose);
 
@@ -24,15 +38,43 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
     window.print();
   };
 
+  const zoomOut = () => setZoom((z) => Math.max(0.5, Number((z - 0.1).toFixed(2))));
+  const zoomIn = () => setZoom((z) => Math.min(1.6, Number((z + 0.1).toFixed(2))));
+  const resetZoom = () => setZoom(1);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isPanMode || !previewRef.current) return;
+    setIsDragging(true);
+    dragStateRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      scrollLeft: previewRef.current.scrollLeft,
+      scrollTop: previewRef.current.scrollTop,
+    };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isPanMode || !isDragging || !previewRef.current) return;
+    e.preventDefault();
+    const dx = e.clientX - dragStateRef.current.startX;
+    const dy = e.clientY - dragStateRef.current.startY;
+    previewRef.current.scrollLeft = dragStateRef.current.scrollLeft - dx;
+    previewRef.current.scrollTop = dragStateRef.current.scrollTop - dy;
+  };
+
+  const stopDragging = () => {
+    if (isDragging) setIsDragging(false);
+  };
+
   return (
     <>
-      {/* Strict A4 Portrait Print Styles */}
+      {/* Strict Print Styles (A3 Landscape for Dossier Booklet, A4 Portrait for others) */}
       <style dangerouslySetInnerHTML={{
         __html: `
           @media print {
             @page {
-              size: A4 portrait;
-              margin: 8mm 10mm;
+              size: ${selectedDoc === 'dossier' ? 'A3 landscape' : 'A4 portrait'};
+              margin: ${selectedDoc === 'dossier' ? '0' : '8mm 10mm'};
             }
             html, body {
               margin: 0 !important;
@@ -55,11 +97,12 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
               margin: 0 !important;
               padding: 0 !important;
               background: white !important;
+              zoom: 1 !important;
             }
             .a4-page-sheet {
-              width: 190mm !important;
-              min-height: 277mm !important;
-              max-height: 277mm !important;
+              width: ${selectedDoc === 'dossier' ? '420mm' : '190mm'} !important;
+              min-height: ${selectedDoc === 'dossier' ? '297mm' : '277mm'} !important;
+              max-height: ${selectedDoc === 'dossier' ? '297mm' : '277mm'} !important;
               margin: 0 auto !important;
               padding: 0 !important;
               box-shadow: none !important;
@@ -68,7 +111,7 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
               break-after: page !important;
               page-break-inside: avoid !important;
               overflow: hidden !important;
-              display: flex !important;
+              display: ${selectedDoc === 'dossier' ? 'grid' : 'flex'} !important;
               flex-direction: column !important;
               justify-content: space-between !important;
             }
@@ -97,6 +140,56 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Grabbing Hand Pan Toggle */}
+              <button
+                onClick={() => setIsPanMode((p) => !p)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                  isPanMode
+                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800 shadow-2xs'
+                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+                title={isPanMode ? 'Mode Main activé (cliquer-glisser pour déplacer)' : 'Activer le mode Main'}
+              >
+                <Hand className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Main</span>
+              </button>
+
+              {/* Zoom Controls */}
+              <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-1.5 py-1 shadow-2xs">
+                <button
+                  onClick={zoomOut}
+                  disabled={zoom <= 0.5}
+                  className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition cursor-pointer"
+                  title="Zoom arrière"
+                >
+                  <ZoomOut className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={resetZoom}
+                  className="px-2 py-1 text-[11px] font-mono font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition cursor-pointer min-w-[46px] text-center"
+                  title="Réinitialiser le zoom (100%)"
+                >
+                  {Math.round(zoom * 100)}%
+                </button>
+                <button
+                  onClick={zoomIn}
+                  disabled={zoom >= 1.6}
+                  className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition cursor-pointer"
+                  title="Zoom avant"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                </button>
+                {zoom !== 1 && (
+                  <button
+                    onClick={resetZoom}
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                    title="Réinitialiser à 100%"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
               <button
                 onClick={handlePrint}
                 className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-hover active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-primary/20 transition cursor-pointer"
@@ -123,7 +216,7 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700'
               }`}
             >
-              <span>1. Dossier de Candidature (A4)</span>
+              <span>1. Dossier de Candidature (A3 Recto-Verso)</span>
             </button>
 
             <button
@@ -156,150 +249,35 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-700'
               }`}
             >
-              <span>4. Livret Pédagogique d&apos;Apprentissage (A4)</span>
+              <span>4. Carte de Progression (A5 Recto-Verso)</span>
             </button>
           </div>
 
-          {/* Document Preview Canvas with Realistic A4 Sheets */}
-          <div className="p-8 overflow-y-auto flex-1 bg-slate-300/70 dark:bg-slate-950 flex flex-col items-center gap-8">
-            <div id="printable-a4-document" className="flex flex-col items-center gap-8 w-full">
+          {/* Document Preview Canvas with Realistic A4/A5/A3 Sheets & Dual Scrollbars */}
+          <div
+            ref={previewRef}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={stopDragging}
+            onMouseLeave={stopDragging}
+            className={`p-8 overflow-scroll flex-1 bg-slate-300/70 dark:bg-slate-950 ${
+              isPanMode ? (isDragging ? 'cursor-grabbing select-none' : 'cursor-grab select-none') : ''
+            }`}
+          >
+            <div
+              id="printable-a4-document"
+              className="flex flex-col items-center gap-8 w-max min-w-full mx-auto transition-all duration-150"
+              style={{ zoom }}
+            >
               
-              {/* DOCUMENT 1: Demande / Dossier de candidature (1 Feuille A4) */}
+              {/* DOCUMENT 1: Dossier de candidature (4 Pages A4 sur A3 Recto-Verso) */}
               {selectedDoc === 'dossier' && (
-                <div 
-                  className="a4-page-sheet bg-white border border-slate-300 shadow-2xl text-slate-900 font-sans p-8 flex flex-col justify-between"
-                  style={{
-                    width: '210mm',
-                    minHeight: '297mm',
-                    boxSizing: 'border-box',
-                    padding: '12mm 15mm',
-                  }}
-                >
-                  <div className="space-y-6 text-sm">
-                    <div className="text-center border-b-2 border-black pb-4">
-                      <h3 className="font-extrabold text-sm text-black">RÉPUBLIQUE ALGÉRIENNE DÉMOCRATIQUE ET POPULAIRE</h3>
-                      <h4 className="font-bold text-xs text-slate-700">Ministère de l&apos;Intérieur, des Collectivités Locales et de l&apos;Aménagement du Territoire</h4>
-                      <h5 className="font-bold text-xs text-slate-700">Délégation Nationale à la Sécurité Routière</h5>
-                      <p className="text-xs text-slate-600 mt-1 font-semibold">
-                        Wilaya : <span className="font-bold underline">{school.wilaya}</span> • Commune : <span className="font-bold">{school.commune}</span>
-                      </p>
-                      <h2 className="text-base font-black mt-3 text-black">
-                        DOSSIER DE CANDIDATURE AUX EXAMENS DU PERMIS DE CONDUIRE
-                      </h2>
-                      <div className="mt-2 inline-block px-4 py-1 bg-slate-100 border-2 border-black rounded font-bold text-xs">
-                        Catégorie sollicitée : <span className="text-black text-sm font-black">Cat. {student.requested_category}</span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 text-xs border-2 border-black p-4 bg-slate-50/50">
-                      <div>
-                        <span className="text-slate-600">Auto-École :</span> <strong className="text-black">{school.name}</strong>
-                        <p className="text-slate-600 text-[11px] font-mono">Agrément N° : {school.agrement_number}</p>
-                      </div>
-                      <div className="text-right">
-                        <p><span className="text-slate-600">N° Dossier :</span> <strong className="font-mono text-black">{student.dossier_number}</strong></p>
-                        <p><span className="text-slate-600">Date de dépôt :</span> <strong className="font-mono text-black">{student.deposit_date}</strong></p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="font-extrabold border-b-2 border-black pb-1 text-xs text-black uppercase tracking-wider">
-                        Renseignements relatifs au candidat :
-                      </h4>
-                      <div className="grid grid-cols-2 gap-3 text-xs border border-black p-3 bg-white">
-                        <p><span className="text-slate-600">NIN (18 chiffres) :</span> <strong className="font-mono text-sm text-black">{student.nin}</strong></p>
-                        <p><span className="text-slate-600">Groupe Sanguin :</span> <strong className="text-black font-black">{student.blood_type || 'O+'}</strong></p>
-                        <p><span className="text-slate-600">Nom :</span> <strong className="text-sm text-black">{student.last_name} ({student.last_name_ar || ''})</strong></p>
-                        <p><span className="text-slate-600">Prénom :</span> <strong className="text-sm text-black">{student.first_name} ({student.first_name_ar || ''})</strong></p>
-                        <p><span className="text-slate-600">Date et lieu de naissance :</span> <strong className="text-black">{student.birth_date} à {student.birth_commune} ({student.birth_wilaya})</strong></p>
-                        <p><span className="text-slate-600">Situation familiale :</span> <strong className="text-black">{student.marital_status}</strong></p>
-                        <p><span className="text-slate-600">Fils de :</span> <strong className="text-black">{student.father_name || '...'}</strong></p>
-                        <p><span className="text-slate-600">Et de :</span> <strong className="text-black">{student.mother_full_name || '...'}</strong></p>
-                        <p className="col-span-2"><span className="text-slate-600">Adresse de résidence :</span> <strong className="text-black">{student.address_details || student.address_commune} ({student.address_wilaya})</strong></p>
-                        <p><span className="text-slate-600">Téléphone portable :</span> <strong className="font-mono text-black">{student.phone_number}</strong></p>
-                        <p><span className="text-slate-600">Email :</span> <strong className="text-black">{student.email || 'Néant'}</strong></p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t-2 border-black pt-4 grid grid-cols-2 gap-8 text-center text-xs">
-                    <div className="h-28 border-2 border-black p-3 flex flex-col justify-between bg-white">
-                      <span className="font-bold text-black">Signature du Candidat :</span>
-                      <span className="text-[10px] text-slate-500 font-mono">Lu et approuvé</span>
-                    </div>
-                    <div className="h-28 border-2 border-black p-3 flex flex-col justify-between bg-white">
-                      <span className="font-bold text-black">Cachet & Signature de l&apos;Auto-École :</span>
-                      <span className="text-[10px] text-slate-700 font-mono">{school.owner_name} • Agrément {school.agrement_number}</span>
-                    </div>
-                  </div>
-                </div>
+                <CandidateFolderPrint student={student} school={school} />
               )}
 
-              {/* DOCUMENT 2: Certificat Médical d'Aptitude (1 Feuille A4) */}
+              {/* DOCUMENT 2: Certificat Médical d'Aptitude (1 Feuille A4 - Modèle Officiel) */}
               {selectedDoc === 'medical' && (
-                <div 
-                  className="a4-page-sheet bg-white border border-slate-300 shadow-2xl text-slate-900 font-sans p-8 flex flex-col justify-between"
-                  style={{
-                    width: '210mm',
-                    minHeight: '297mm',
-                    boxSizing: 'border-box',
-                    padding: '12mm 15mm',
-                  }}
-                >
-                  <div className="space-y-6 text-sm">
-                    <div className="text-center border-b-2 border-black pb-4">
-                      <h3 className="font-extrabold text-sm text-black">RÉPUBLIQUE ALGÉRIENNE DÉMOCRATIQUE ET POPULAIRE</h3>
-                      <h4 className="font-bold text-xs text-slate-700">Ministère de la Santé, de la Population et de la Réforme Hospitalière</h4>
-                      <h2 className="text-base font-black mt-3 text-black">
-                        CERTIFICAT MÉDICAL D&apos;APTITUDE À LA CONDUITE AUTOMOBILE
-                      </h2>
-                      <p className="text-[11px] text-slate-600 mt-1">
-                        Arrêté interministériel du 15 Novembre 1984 fixant la liste des incapacités physiques incompatibles avec la conduite.
-                      </p>
-                    </div>
-
-                    <div className="space-y-3 text-xs">
-                      <p className="leading-relaxed text-black">
-                        Je soussigné, Docteur en Médecine, certifie avoir examiné ce jour le candidat ci-après désigné :
-                      </p>
-                      <div className="bg-slate-50 p-4 border-2 border-black grid grid-cols-2 gap-3">
-                        <p><span className="text-slate-600">Nom et Prénom :</span> <strong className="text-black">{student.first_name} {student.last_name}</strong></p>
-                        <p><span className="text-slate-600">Date de naissance :</span> <strong className="font-mono text-black">{student.birth_date}</strong></p>
-                        <p><span className="text-slate-600">NIN :</span> <strong className="font-mono text-black">{student.nin}</strong></p>
-                        <p><span className="text-slate-600">Catégorie sollicitée :</span> <strong className="font-black text-black">Catégorie {student.requested_category}</strong></p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 text-xs border-2 border-black p-4 bg-white">
-                      <h4 className="font-extrabold text-black uppercase tracking-wider">Conclusions de l&apos;Examen Médical :</h4>
-                      <div className="space-y-2 pt-1 text-black">
-                        <label className="flex items-center gap-2">
-                          <input type="checkbox" defaultChecked className="rounded text-black" />
-                          <span>Le candidat présente l&apos;aptitude physique et mentale requise pour la conduite automobile.</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input type="checkbox" className="rounded text-black" />
-                          <span>Port de verres correcteurs ou lentilles de contact obligatoire pendant la conduite.</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input type="checkbox" className="rounded text-black" />
-                          <span>Aménagement spécial du véhicule nécessaire (handicap moteur).</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t-2 border-black pt-8 grid grid-cols-2 gap-8 text-center text-xs">
-                    <div>
-                      <p className="text-slate-600 mb-10">Fait à {school.commune}, le {student.deposit_date}</p>
-                      <p className="font-black text-black">Signature du candidat</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-600 mb-4">Cachet et Signature du Médecin Examinateur</p>
-                      <div className="h-20 border-2 border-dashed border-black rounded-lg"></div>
-                    </div>
-                  </div>
-                </div>
+                <MedicalCertificatePrint student={student} school={school} />
               )}
 
               {/* DOCUMENT 3: Contrat d'Enseignement (Exact 1-Page Replica from Photo - Full Page Standard Margin) */}
@@ -886,75 +864,9 @@ export function PrintModal({ isOpen, onClose, student }: PrintModalProps) {
                 </div>
               )}
 
-              {/* DOCUMENT 4: Livret Pédagogique d'Apprentissage (1 Feuille A4) */}
+              {/* DOCUMENT 4: Carte de Progression du Candidat (2 Pages A5 Recto-Verso) */}
               {selectedDoc === 'livret' && (
-                <div 
-                  className="a4-page-sheet bg-white border border-slate-300 shadow-2xl text-slate-900 font-sans p-8 flex flex-col justify-between"
-                  style={{
-                    width: '210mm',
-                    minHeight: '297mm',
-                    boxSizing: 'border-box',
-                    padding: '12mm 15mm',
-                  }}
-                >
-                  <div className="space-y-6 text-xs">
-                    <div className="text-center border-b-2 border-black pb-3">
-                      <h3 className="font-black text-sm text-black">FICHE DE PROGRESSION PÉDAGOGIQUE (FORMAT A4)</h3>
-                      <p className="text-[11px] text-slate-600">Suivi des séances théoriques et pratiques de l&apos;apprenant.</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 border-2 border-black p-3 bg-slate-50 text-[11px]">
-                      <p><span className="text-slate-600">Candidat :</span> <strong className="text-black">{student.first_name} {student.last_name}</strong></p>
-                      <p><span className="text-slate-600">N° Dossier :</span> <strong className="font-mono text-black">{student.dossier_number}</strong></p>
-                      <p><span className="text-slate-600">Catégorie :</span> <strong className="font-black text-black">Cat. {student.requested_category}</strong></p>
-                      <p><span className="text-slate-600">Établissement :</span> <strong className="text-black">{school.name}</strong></p>
-                    </div>
-
-                    <div className="border-2 border-black overflow-hidden text-xs">
-                      <div className="bg-slate-100 font-black p-2 border-b-2 border-black text-black">Relevé des Séances Effectuées :</div>
-                      <table className="w-full text-left text-[11px]">
-                        <thead className="bg-slate-50 border-b border-black">
-                          <tr>
-                            <th className="p-2 border-r border-black font-bold">Date</th>
-                            <th className="p-2 border-r border-black font-bold">Module / Contenu de la séance</th>
-                            <th className="p-2 border-r border-black font-bold">Durée</th>
-                            <th className="p-2 font-bold">Émargement</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-black">
-                          <tr>
-                            <td className="p-2 border-r border-black font-mono">2026-10-15</td>
-                            <td className="p-2 border-r border-black">Module 1 : Signalisation routière & règles de priorité</td>
-                            <td className="p-2 border-r border-black font-mono">1 heure</td>
-                            <td className="p-2 text-black font-black">Validé</td>
-                          </tr>
-                          <tr>
-                            <td className="p-2 border-r border-black font-mono">2026-10-20</td>
-                            <td className="p-2 border-r border-black">Module 2 : Intersections et limitations de vitesse</td>
-                            <td className="p-2 border-r border-black font-mono">1 heure</td>
-                            <td className="p-2 text-black font-black">Validé</td>
-                          </tr>
-                          <tr>
-                            <td className="p-2 border-r border-black font-mono">2026-11-02</td>
-                            <td className="p-2 border-r border-black">Pratique : Manoeuvres de stationnement et créneau</td>
-                            <td className="p-2 border-r border-black font-mono">1 heure</td>
-                            <td className="p-2 text-black font-black">Validé</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="p-3 bg-slate-50 border-2 border-black text-xs flex justify-between">
-                      <span>Total Réglé : <strong className="font-mono text-black">{student.amount_paid.toLocaleString()} DZD</strong></span>
-                      <span>Solde Restant : <strong className="font-mono text-black">{(student.total_package_price - student.amount_paid).toLocaleString()} DZD</strong></span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center text-[10px] text-slate-700 pt-2 border-t border-black font-mono">
-                    <span>{school.name} • Agrément {school.agrement_number}</span>
-                    <span className="font-black border-2 border-black px-2 py-0.5 text-black">1/1</span>
-                  </div>
-                </div>
+                <ProgressCardPrint student={student} />
               )}
 
             </div>
