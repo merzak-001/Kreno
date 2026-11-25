@@ -5,6 +5,7 @@ import { X, Award, CheckCircle, XCircle, AlertCircle, Calendar, MapPin, User, Do
 import { Student, ExamType, ExamResult } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { DateInput } from '@/components/DateInput';
 
 interface ExamModalProps {
   isOpen: boolean;
@@ -181,11 +182,10 @@ export function ExamModal({
                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Date de l&apos;examen:
                 </label>
-                <input
-                  type="date"
+                <DateInput
                   value={examDate}
-                  onChange={(e) => setExamDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-xl font-mono text-xs font-medium text-slate-900 dark:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none"
+                  onChange={setExamDate}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-xl text-xs font-medium text-slate-900 dark:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none"
                   required
                 />
               </div>

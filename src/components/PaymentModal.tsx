@@ -5,6 +5,7 @@ import { X, DollarSign, Calendar, CreditCard, Receipt, FileText, CheckCircle2 } 
 import { Student } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { DateInput } from '@/components/DateInput';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -166,11 +167,10 @@ export function PaymentModal({ isOpen, onClose, student, onSuccess }: PaymentMod
                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Date d&apos;encaissement:
                 </label>
-                <input
-                  type="date"
+                <DateInput
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-xl font-mono text-xs font-medium text-slate-900 dark:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none"
+                  onChange={setDate}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-xl text-xs font-medium text-slate-900 dark:text-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none"
                   required
                 />
               </div>

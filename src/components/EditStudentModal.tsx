@@ -6,6 +6,7 @@ import { Student, LicenseCategory, ContractDetails, HeldLicense } from '@/types/
 import { useKreno } from '@/context/KrenoContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { LICENSE_RULES, checkCirculationEligibility, formatDateFR } from '@/lib/licenseRules';
+import { DateInput } from '@/components/DateInput';
 
 interface EditStudentModalProps {
   isOpen: boolean;
@@ -257,11 +258,10 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Date de Naissance</label>
-              <input
-                type="date"
+              <DateInput
                 required
                 value={formData.birth_date}
-                onChange={e => setFormData({ ...formData, birth_date: e.target.value })}
+                onChange={val => setFormData({ ...formData, birth_date: val })}
                 className="w-full px-3 py-2 rounded-xl border border-border-subtle bg-slate-50 dark:bg-slate-900/50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-slate-200"
               />
             </div>
@@ -279,10 +279,28 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
           </div>
 
           {rule.prerequisite && (
-            <div className="p-3.5 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/60 dark:bg-blue-950/30 space-y-2.5">
+            <div className={`p-3.5 rounded-xl border space-y-2.5 transition-colors ${
+              heldObtainedDate
+                ? eligibility.seniorityMet
+                  ? 'border-emerald-300 dark:border-emerald-800/70 bg-emerald-50/70 dark:bg-emerald-950/30'
+                  : 'border-amber-300 dark:border-amber-800/70 bg-amber-50/70 dark:bg-amber-950/30'
+                : 'border-blue-200 dark:border-blue-800/60 bg-blue-50/60 dark:bg-blue-950/30'
+            }`}>
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-blue-900 dark:text-blue-200">
-                  <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <div className={`flex items-center gap-2 text-xs font-bold ${
+                  heldObtainedDate
+                    ? eligibility.seniorityMet
+                      ? 'text-emerald-900 dark:text-emerald-200'
+                      : 'text-amber-900 dark:text-amber-200'
+                    : 'text-blue-900 dark:text-blue-200'
+                }`}>
+                  <Award className={`w-4 h-4 ${
+                    heldObtainedDate
+                      ? eligibility.seniorityMet
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-amber-600 dark:text-amber-400'
+                      : 'text-blue-600 dark:text-blue-400'
+                  }`} />
                   <span>
                     Permis Prérequis : Catégorie {rule.prerequisite} (+ {rule.minSeniorityYears} ans)
                   </span>
@@ -307,18 +325,16 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                   placeholder={`N° Permis ${rule.prerequisite}`}
                   className="px-2.5 py-1.5 rounded-lg border border-border-subtle bg-white dark:bg-slate-900 text-xs font-mono"
                 />
-                <input
-                  type="date"
+                <DateInput
                   value={heldObtainedDate}
-                  onChange={e => setHeldObtainedDate(e.target.value)}
-                  className="px-2.5 py-1.5 rounded-lg border border-border-subtle bg-white dark:bg-slate-900 text-xs font-mono"
+                  onChange={setHeldObtainedDate}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-white dark:bg-slate-900 text-xs"
                   title="Date d'obtention"
                 />
-                <input
-                  type="date"
+                <DateInput
                   value={heldExpiryDate}
-                  onChange={e => setHeldExpiryDate(e.target.value)}
-                  className="px-2.5 py-1.5 rounded-lg border border-border-subtle bg-white dark:bg-slate-900 text-xs font-mono"
+                  onChange={setHeldExpiryDate}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-border-subtle bg-white dark:bg-slate-900 text-xs"
                   title="Date d'expiration"
                 />
                 <input
@@ -447,11 +463,10 @@ export function EditStudentModal({ isOpen, onClose, student }: EditStudentModalP
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">Date de Signature (بتاريخ)</label>
-                    <input
-                      type="date"
+                    <DateInput
                       value={contractData.contract_date || ''}
-                      onChange={e => setContractData({ ...contractData, contract_date: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-xl border border-border-subtle bg-white dark:bg-slate-900/50 text-xs font-mono"
+                      onChange={val => setContractData({ ...contractData, contract_date: val })}
+                      className="w-full px-3 py-1.5 rounded-xl border border-border-subtle bg-white dark:bg-slate-900/50 text-xs"
                     />
                   </div>
                 </div>

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
 import { DayOfWeek } from '@/types/kreno';
+import { DateInput } from '@/components/DateInput';
 
 export default function SettingsPage() {
   const { 
@@ -136,10 +137,9 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="block text-slate-400 text-[11px] mb-1">Date d&apos;Agrément :</label>
-                <input 
-                  type="date" 
+                <DateInput 
                   value={school.agrement_date || '2021-04-15'}
-                  onChange={(e) => setSchool(prev => ({ ...prev, agrement_date: e.target.value }))}
+                  onChange={(val) => setSchool(prev => ({ ...prev, agrement_date: val }))}
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl font-medium text-slate-900 dark:text-white"
                 />
               </div>
@@ -233,11 +233,10 @@ export default function SettingsPage() {
           <form onSubmit={handleAddUnavailable} className="bg-slate-50/70 dark:bg-surface-elevated/60 p-4 rounded-xl border border-border-subtle grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs items-end">
             <div>
               <label className="block text-slate-500 text-[11px] mb-1 font-medium">Date de fermeture :</label>
-              <input 
-                type="date"
+              <DateInput 
                 required
                 value={unDate}
-                onChange={(e) => setUnDate(e.target.value)}
+                onChange={setUnDate}
                 className="w-full px-2.5 py-1.5 bg-white dark:bg-surface border border-border-subtle rounded-lg font-medium"
               />
             </div>

@@ -6,6 +6,7 @@ import { Student, ExamType, ExamSessionCandidateSelection, LicenseCategory, Exam
 import { useKreno } from '@/context/KrenoContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { checkCirculationEligibility, formatDateFR } from '@/lib/licenseRules';
+import { DateInput } from '@/components/DateInput';
 
 interface NewExamSessionModalProps {
   isOpen: boolean;
@@ -285,11 +286,10 @@ export function NewExamSessionModal({ isOpen, onClose, editSession }: NewExamSes
                 <label className="block text-slate-800 dark:text-slate-200 font-bold mb-1.5">
                   Date de la Session <span className="text-rose-500">*</span> :
                 </label>
-                <input
-                  type="date"
+                <DateInput
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                  onChange={setDate}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
                   required
                 />
               </div>

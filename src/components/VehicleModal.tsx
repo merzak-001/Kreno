@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, Car } from 'lucide-react';
 import { Vehicle, LicenseCategory } from '@/types/kreno';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { DateInput } from '@/components/DateInput';
 
 interface VehicleModalProps {
   isOpen: boolean;
@@ -160,10 +161,9 @@ export function VehicleModal({ isOpen, onClose, onSave, vehicleToEdit }: Vehicle
               <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
                 Validité Assurance :
               </label>
-              <input
-                type="date"
+              <DateInput
                 value={insuranceExpiry}
-                onChange={(e) => setInsuranceExpiry(e.target.value)}
+                onChange={setInsuranceExpiry}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl text-slate-900 dark:text-white font-bold"
               />
             </div>
@@ -172,10 +172,9 @@ export function VehicleModal({ isOpen, onClose, onSave, vehicleToEdit }: Vehicle
               <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
                 Contrôle Technique :
               </label>
-              <input
-                type="date"
+              <DateInput
                 value={technicalControlExpiry}
-                onChange={(e) => setTechnicalControlExpiry(e.target.value)}
+                onChange={setTechnicalControlExpiry}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl text-slate-900 dark:text-white font-bold"
               />
             </div>

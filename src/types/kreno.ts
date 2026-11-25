@@ -66,7 +66,7 @@ export interface ScheduleSlot {
   time_end: string;     // e.g. "09:00" (1-hour unit)
   type: 'code' | 'creneau' | 'circulation';
   instructor_name: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
+  status: 'scheduled' | 'completed' | 'absent' | 'cancelled';
   notes?: string;
 }
 
@@ -155,6 +155,14 @@ export interface Student {
 
   // Previously held licenses (for C, C1, D, BE, CE, DE, etc.)
   held_licenses?: HeldLicense[];
+
+  // Weekly availability preferences for 30h scheduling & reflow
+  availability?: {
+    days: DayOfWeek[];
+    time: 'morning' | 'afternoon' | 'any';
+    start_date?: string;
+    max_per_day?: number;
+  };
 
   // Historique & Progression
   exams: ExamRecord[];

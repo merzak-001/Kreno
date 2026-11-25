@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Check, Sparkles, X, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Clock, Check, Sparkles, X } from 'lucide-react';
 import { Student, DayOfWeek } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { DateInput } from '@/components/DateInput';
 
 interface CandidateAvailabilityModalProps {
   isOpen: boolean;
@@ -30,17 +31,16 @@ export function CandidateAvailabilityModal({
 }: CandidateAvailabilityModalProps) {
   const { settings, generateScheduleForStudent, updateStudent } = useKreno();
 
-  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(['saturday', 'monday', 'wednesday']);
-  const [preferredTime, setPreferredTime] = useState<'morning' | 'afternoon' | 'any'>('morning');
-  const [startDate, setStartDate] = useState('');
-
-  useEffect(() => {
-    if (isOpen && !startDate) {
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      setStartDate(d.toISOString().split('T')[0]);
-    }
-  }, [isOpen, startDate]);
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(
+    () => student?.availability?.days ?? ['saturday', 'monday', 'wednesday']
+  );
+  const [preferredTime, setPreferredTime] = useState<'morning' | 'afternoon' | 'any'>(
+    () => student?.availability?.time ?? 'morning'
+  );
+  const [maxPerDay, setMaxPerDay] = useState<number>(
+    () => student?.availability?.max_per_day ?? 2
+  );
+  const [startDate, setStartDate] = useState(() => student?.availability?.start_date ?? '');
 
   useEscapeKey(isOpen, onClose);
 
@@ -56,9 +56,24 @@ export function CandidateAvailabilityModal({
     e.preventDefault();
     if (selectedDays.length === 0) return;
 
-    // Call 30-hour conflict-free schedule generator
-    const slots = generateScheduleForStudent(student, selectedDays, preferredTime, startDate);
-    updateStudent(student.id, { schedule_slots: slots });
+    let effectiveStartDate = startDate;
+    if (!effectiveStartDate) {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      effectiveStartDate = d.toISOString().split('T')[0];
+    }
+
+    // Generate or reflow remaining scheduled hours into the chosen availability days
+    const slots = generateScheduleForStudent(student, selectedDays, preferredTime, effectiveStartDate, maxPerDay);
+    updateStudent(student.id, {
+      schedule_slots: slots,
+      availability: {
+        days: selectedDays,
+        time: preferredTime,
+        start_date: effectiveStartDate,
+        max_per_day: maxPerDay,
+      },
+    });
 
     if (onConfirmed) onConfirmed();
     onClose();
@@ -156,7 +171,7 @@ export function CandidateAvailabilityModal({
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => setPreferredTime(t.id as any)}
+                  onClick={() => setPreferredTime(t.id as 'morning' | 'afternoon' | 'any')}
                   className={`p-3 rounded-xl border text-left transition cursor-pointer ${
                     preferredTime === t.id
                       ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 ring-2 ring-blue-600/20'
@@ -170,18 +185,33 @@ export function CandidateAvailabilityModal({
             </div>
           </div>
 
-          {/* 3. Start Date */}
-          <div>
-            <label className="block text-slate-800 dark:text-slate-200 font-bold mb-1.5">
-              Date de début du programme de formation :
-            </label>
-            <input
-              type="date"
-              required
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl text-slate-900 dark:text-white font-bold"
-            />
+          {/* 3. Max Hours Per Day & Start Date */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-slate-800 dark:text-slate-200 font-bold mb-1.5">
+                Séances max par jour :
+              </label>
+              <select
+                value={maxPerDay}
+                onChange={(e) => setMaxPerDay(Number(e.target.value))}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl text-slate-900 dark:text-white font-bold"
+              >
+                <option value={1}>1 heure / jour</option>
+                <option value={2}>2 heures / jour (Recommandé)</option>
+                <option value={3}>3 heures / jour</option>
+                <option value={8}>Remplir la journée</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-slate-800 dark:text-slate-200 font-bold mb-1.5">
+                Date de début :
+              </label>
+              <DateInput
+                value={startDate}
+                onChange={setStartDate}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl text-slate-900 dark:text-white font-bold"
+              />
+            </div>
           </div>
 
           {/* Actions */}

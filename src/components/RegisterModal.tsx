@@ -5,6 +5,7 @@ import { X, CheckCircle, AlertTriangle, UserPlus, Award } from 'lucide-react';
 import { Student, LicenseCategory, HeldLicense } from '@/types/kreno';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { LICENSE_RULES, checkCirculationEligibility, formatDateFR } from '@/lib/licenseRules';
+import { DateInput } from '@/components/DateInput';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -141,8 +142,8 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Regulatory Eligibility Banner (Code & Créneau always allowed; Circulation locked if under age/seniority) */}
-          {(!eligibility.circulationEligible || eligibility.isMinor) && (
+          {/* Regulatory Eligibility Banner */}
+          {(!eligibility.circulationEligible || eligibility.isMinor) ? (
             <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 rounded-xl text-xs space-y-1">
               <div className="flex items-center gap-2 font-bold">
                 <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -156,7 +157,14 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
                 <p key={i} className="text-[11px] pr-6">• {r}</p>
               ))}
             </div>
-          )}
+          ) : rule.prerequisite && heldObtainedDate ? (
+            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-300 rounded-xl text-xs flex items-center gap-2 font-bold">
+              <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>
+                Conditions légales validées ({candidateAge} ans + {rule.minSeniorityYears} ans d&apos;ancienneté en {rule.prerequisite}) — Éligible Code, Créneau et Circulation.
+              </span>
+            </div>
+          ) : null}
 
           {/* Section 1: Identification */}
           <div>
@@ -225,11 +233,10 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
               {/* Date de naissance */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Date de Naissance *</label>
-                <input
-                  type="date"
+                <DateInput
                   value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
+                  onChange={setBirthDate}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-lg text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   required
                 />
                 <span className="text-[10px] text-slate-500">Âge calculé: {candidateAge} ans</span>
@@ -359,10 +366,28 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
 
             {/* Dynamic Prerequisite License Box */}
             {rule.prerequisite && (
-              <div className="mt-4 p-4 rounded-xl border border-blue-200 dark:border-blue-800/60 bg-blue-50/60 dark:bg-blue-950/30 space-y-3">
+              <div className={`mt-4 p-4 rounded-xl border space-y-3 transition-colors ${
+                heldObtainedDate
+                  ? eligibility.seniorityMet
+                    ? 'border-emerald-300 dark:border-emerald-800/70 bg-emerald-50/70 dark:bg-emerald-950/30'
+                    : 'border-amber-300 dark:border-amber-800/70 bg-amber-50/70 dark:bg-amber-950/30'
+                  : 'border-blue-200 dark:border-blue-800/60 bg-blue-50/60 dark:bg-blue-950/30'
+              }`}>
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-blue-900 dark:text-blue-200">
-                    <Award className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <div className={`flex items-center gap-2 text-xs font-bold ${
+                    heldObtainedDate
+                      ? eligibility.seniorityMet
+                        ? 'text-emerald-900 dark:text-emerald-200'
+                        : 'text-amber-900 dark:text-amber-200'
+                      : 'text-blue-900 dark:text-blue-200'
+                  }`}>
+                    <Award className={`w-4 h-4 ${
+                      heldObtainedDate
+                        ? eligibility.seniorityMet
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-amber-600 dark:text-amber-400'
+                        : 'text-blue-600 dark:text-blue-400'
+                    }`} />
                     <span>
                       Permis Prérequis Obligatoire : Catégorie {rule.prerequisite} (+ {rule.minSeniorityYears} ans d&apos;ancienneté)
                     </span>
@@ -397,22 +422,20 @@ export function RegisterModal({ isOpen, onClose, onSaveStudent }: RegisterModalP
                     <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       Date d&apos;obtention *
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       value={heldObtainedDate}
-                      onChange={(e) => setHeldObtainedDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-border-subtle rounded-lg text-xs font-mono"
+                      onChange={setHeldObtainedDate}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-border-subtle rounded-lg text-xs"
                     />
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       Date d&apos;expiration
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       value={heldExpiryDate}
-                      onChange={(e) => setHeldExpiryDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-border-subtle rounded-lg text-xs font-mono"
+                      onChange={setHeldExpiryDate}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-border-subtle rounded-lg text-xs"
                     />
                   </div>
                   <div>

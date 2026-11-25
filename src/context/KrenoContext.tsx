@@ -96,7 +96,8 @@ interface KrenoContextType {
     student: Student, 
     preferredDays?: DayOfWeek[], 
     preferredTime?: 'morning' | 'afternoon' | 'any',
-    startDate?: string
+    startDate?: string,
+    maxPerDay?: number
   ) => ScheduleSlot[];
   searchQuery: string;
   setSearchQuery: (q: string) => void;
@@ -208,8 +209,16 @@ const DEFAULT_VEHICLES: Vehicle[] = [
   },
 ];
 
-// Helper to auto-generate the 30-hour regulatory training syllabus for Algerian Driving Schools
-function ensureFull30HourSlots(student: Student, offset: number = 2): ScheduleSlot[] {
+const SAMPLE_AVAILABILITIES: Array<{ days: DayOfWeek[]; time: 'morning' | 'afternoon' | 'any'; max_per_day: number }> = [
+  { days: ['saturday', 'monday', 'wednesday'], time: 'morning', max_per_day: 2 },
+  { days: ['sunday', 'tuesday', 'thursday'], time: 'afternoon', max_per_day: 2 },
+  { days: ['saturday', 'tuesday'], time: 'any', max_per_day: 3 },
+  { days: ['sunday', 'wednesday'], time: 'morning', max_per_day: 2 },
+  { days: ['monday', 'thursday'], time: 'afternoon', max_per_day: 2 },
+];
+
+// Helper to auto-generate the 30-hour regulatory training syllabus aligned with the new availability & agenda system
+function ensureFull30HourSlots(student: Student, offset: number = 0): ScheduleSlot[] {
   if (student.schedule_slots && student.schedule_slots.length >= 30) {
     return student.schedule_slots;
   }
@@ -217,8 +226,16 @@ function ensureFull30HourSlots(student: Student, offset: number = 2): ScheduleSl
   const dayMap: Record<number, DayOfWeek> = {
     0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday', 4: 'thursday', 5: 'friday', 6: 'saturday'
   };
-  const workingDays: DayOfWeek[] = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday'];
-  const possibleHours = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
+
+  const avail = student.availability || SAMPLE_AVAILABILITIES[offset % SAMPLE_AVAILABILITIES.length];
+  const allowedDays = avail.days;
+  const maxPerDay = avail.max_per_day || 2;
+  const allHours = avail.time === 'morning'
+    ? ['08:00', '09:00', '10:00', '11:00']
+    : avail.time === 'afternoon'
+    ? ['14:00', '15:00', '16:00']
+    : ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
+
   const sessionTypes: Array<'code' | 'creneau' | 'circulation'> = [
     ...Array(10).fill('code'),
     ...Array(10).fill('creneau'),
@@ -229,46 +246,62 @@ function ensureFull30HourSlots(student: Student, offset: number = 2): ScheduleSl
   const creneauPassed = (student.exams || []).some(e => e.exam_type === 'creneau' && e.result === 'passed');
   const circulationPassed = (student.exams || []).some(e => e.exam_type === 'circulation' && e.result === 'passed');
 
-  const startBase = student.deposit_date ? new Date(student.deposit_date) : new Date('2026-10-01');
-  startBase.setDate(startBase.getDate() + offset);
+  let startBase: Date;
+  if (student.deposit_date && /^\d{4}-\d{2}-\d{2}$/.test(student.deposit_date)) {
+    const [sy, sm, sd] = student.deposit_date.split('-').map(Number);
+    startBase = new Date(sy, sm - 1, sd);
+  } else {
+    startBase = new Date(2026, 9, 1);
+  }
+  startBase.setDate(startBase.getDate() + 1);
 
-  let current = new Date(startBase);
+  const current = new Date(startBase);
+  const todayRef = new Date();
+  todayRef.setHours(0, 0, 0, 0);
+
   let sessionIdx = 0;
   let safety = 0;
 
-  while (sessionIdx < sessionTypes.length && safety < 140) {
+  while (sessionIdx < sessionTypes.length && safety < 360) {
     safety++;
     const dayName = dayMap[current.getDay()];
-    if (workingDays.includes(dayName)) {
-      const type = sessionTypes[sessionIdx];
-      const timeStart = possibleHours[sessionIdx % possibleHours.length];
-      const [startHourNum] = timeStart.split(':').map(Number);
-      const timeEnd = (startHourNum + 1 < 10 ? '0' : '') + (startHourNum + 1) + ':00';
-      const dateIso = current.toISOString().split('T')[0];
+    if (allowedDays.includes(dayName)) {
+      const yy = current.getFullYear();
+      const mm = String(current.getMonth() + 1).padStart(2, '0');
+      const dd = String(current.getDate()).padStart(2, '0');
+      const dateIso = `${yy}-${mm}-${dd}`;
 
-      let status: 'completed' | 'scheduled' = 'scheduled';
-      if (type === 'code' && codePassed) status = 'completed';
-      else if (type === 'creneau' && creneauPassed) status = 'completed';
-      else if (type === 'circulation' && circulationPassed) status = 'completed';
-      else if (current < new Date('2026-11-23')) {
-        if (sessionIdx < 16) status = 'completed';
+      for (let slotOnDay = 0; slotOnDay < maxPerDay && sessionIdx < sessionTypes.length; slotOnDay++) {
+        const hourIdx = (offset + slotOnDay) % allHours.length;
+        const timeStart = allHours[hourIdx];
+        const [startHourNum] = timeStart.split(':').map(Number);
+        const timeEnd = `${startHourNum + 1 < 10 ? '0' : ''}${startHourNum + 1}:00`;
+        const type = sessionTypes[sessionIdx];
+
+        let status: ScheduleSlot['status'] = 'scheduled';
+        if (type === 'code' && codePassed) status = 'completed';
+        else if (type === 'creneau' && creneauPassed) status = 'completed';
+        else if (type === 'circulation' && circulationPassed) status = 'completed';
+        else if (current < todayRef && sessionIdx < 14) {
+          status = offset % 3 === 1 && sessionIdx === 7 ? 'absent' : 'completed';
+        }
+
+        const typeLabel = type === 'code' ? 'Code théorique' : type === 'creneau' ? 'Créneau sur piste' : 'Circulation';
+        slots.push({
+          id: `sc-${student.id}-${sessionIdx + 1}`,
+          student_id: student.id,
+          student_name: `${student.first_name} ${student.last_name}`,
+          category: student.requested_category,
+          date: dateIso,
+          time_start: timeStart,
+          time_end: timeEnd,
+          type,
+          instructor_name: type === 'code' ? 'M. Amine' : type === 'creneau' ? 'M. Khaled' : 'M. Toufik',
+          status,
+          notes: `Séance N° ${sessionIdx + 1} / 30 (${typeLabel})`,
+        });
+        sessionIdx++;
       }
-
-      const typeLabel = type === 'code' ? 'Code théorique' : type === 'creneau' ? 'Créneau sur piste' : 'Circulation';
-      slots.push({
-        id: 'sc-' + student.id + '-' + (sessionIdx + 1),
-        student_id: student.id,
-        student_name: student.first_name + ' ' + student.last_name,
-        category: student.requested_category,
-        date: dateIso,
-        time_start: timeStart,
-        time_end: timeEnd,
-        type: type,
-        instructor_name: type === 'code' ? 'M. Amine' : type === 'creneau' ? 'M. Khaled' : 'M. Toufik',
-        status: status,
-        notes: 'Séance N° ' + (sessionIdx + 1) + ' / 30 (' + typeLabel + ')',
-      });
-      sessionIdx++;
     }
     current.setDate(current.getDate() + 1);
   }
@@ -1197,10 +1230,11 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       if (savedStudents) {
         const parsed = JSON.parse(savedStudents);
         if (Array.isArray(parsed)) {
-          // Guarantee all candidate profiles have the complete 30h syllabus
+          // Guarantee all candidate profiles have availability & complete 30h syllabus
           const populated = parsed.map((st: Student, idx: number) => ({
             ...st,
-            schedule_slots: ensureFull30HourSlots(st, (idx % 4) + 1),
+            availability: st.availability || SAMPLE_AVAILABILITIES[idx % SAMPLE_AVAILABILITIES.length],
+            schedule_slots: ensureFull30HourSlots(st, idx),
           }));
           setStudents(populated);
           localStorage.setItem('kreno_students', JSON.stringify(populated));
@@ -1400,14 +1434,44 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // Automatic 30-Hour Conflict-Free Schedule Generator
+  // Automatic 30-Hour Conflict-Free Schedule Generator & Reflow
+  // Preserves finalized slots (completed/absent/cancelled) and reflows only remaining 'scheduled' slots
   const generateScheduleForStudent = (
     student: Student,
     preferredDays?: DayOfWeek[],
     preferredTime?: 'morning' | 'afternoon' | 'any',
-    startDateStr?: string
+    startDateStr?: string,
+    maxPerDay: number = 2
   ): ScheduleSlot[] => {
-    const slots: ScheduleSlot[] = [];
+    const existingSlots = student.schedule_slots || [];
+    const preservedSlots = existingSlots.filter(
+      (s) => s.status === 'completed' || s.status === 'absent' || s.status === 'cancelled'
+    );
+    const existingScheduled = existingSlots.filter((s) => s.status === 'scheduled');
+
+    // Determine remaining session types to schedule
+    let sessionTypesToSchedule: Array<{ type: 'code' | 'creneau' | 'circulation'; existingId?: string; instructor?: string; notes?: string }>;
+    if (existingSlots.length > 0 && existingScheduled.length > 0) {
+      sessionTypesToSchedule = existingScheduled.map((s) => ({
+        type: s.type,
+        existingId: s.id,
+        instructor: s.instructor_name,
+        notes: s.notes,
+      }));
+    } else if (preservedSlots.length >= 30) {
+      return preservedSlots;
+    } else {
+      const doneCode = preservedSlots.filter((s) => s.type === 'code').length;
+      const doneCreneau = preservedSlots.filter((s) => s.type === 'creneau').length;
+      const doneCirc = preservedSlots.filter((s) => s.type === 'circulation').length;
+      sessionTypesToSchedule = [
+        ...Array(Math.max(0, 10 - doneCode)).fill({ type: 'code' as const }),
+        ...Array(Math.max(0, 10 - doneCreneau)).fill({ type: 'creneau' as const }),
+        ...Array(Math.max(0, 10 - doneCirc)).fill({ type: 'circulation' as const }),
+      ];
+    }
+
+    const newScheduledSlots: ScheduleSlot[] = [];
     const dayMap: Record<number, DayOfWeek> = {
       0: 'sunday',
       1: 'monday',
@@ -1418,68 +1482,106 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       6: 'saturday',
     };
 
-    // Collect all already booked slots across all existing students to avoid conflicts
-    const bookedSlotMap = new Set<string>();
+    // Separate conflict tracking:
+    // - Practical lessons (creneau/circulation) cannot double-book the car/instructor at the same hour.
+    // - Code lessons (group classroom) only avoid overlapping this student's own slots.
+    const bookedPracticalMap = new Set<string>();
     students.forEach(st => {
-      if (st.id === student.id) return; // ignore current student if regenerating
+      if (st.id === student.id) return;
       (st.schedule_slots || []).forEach(slot => {
-        if (slot.status !== 'cancelled') {
-          bookedSlotMap.add(`${slot.date}_${slot.time_start}`);
+        if (slot.type !== 'code' && slot.status !== 'cancelled' && slot.status !== 'absent') {
+          bookedPracticalMap.add(`${slot.date}_${slot.time_start}`);
         }
       });
     });
 
-    let currentDate = startDateStr ? new Date(startDateStr) : new Date();
-    currentDate.setDate(currentDate.getDate() + 1);
+    const studentOwnSlots = new Set<string>();
+    preservedSlots.forEach((slot) => {
+      studentOwnSlots.add(`${slot.date}_${slot.time_start}`);
+    });
 
-    // Working days filtering with preferred days
-    const allowedDays = preferredDays && preferredDays.length > 0 
+    // Local date parsing (avoids UTC midnight off-by-one day shift)
+    let currentDate: Date;
+    if (startDateStr && /^\d{4}-\d{2}-\d{2}$/.test(startDateStr)) {
+      const [sy, sm, sd] = startDateStr.split('-').map(Number);
+      currentDate = new Date(sy, sm - 1, sd);
+    } else {
+      currentDate = new Date();
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    currentDate.setHours(0, 0, 0, 0);
+
+    const allowedDays = preferredDays && preferredDays.length > 0
       ? preferredDays.filter(d => settings.working_days.includes(d))
       : settings.working_days;
 
-    // Time ranges based on preference
-    let possibleHours = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
-    if (preferredTime === 'morning') {
-      possibleHours = ['08:00', '09:00', '10:00', '11:00'];
-    } else if (preferredTime === 'afternoon') {
-      possibleHours = ['14:00', '15:00', '16:00'];
+    // Build working hours from school settings, excluding lunch break
+    const startH = parseInt((settings.start_hour || '08:00').split(':')[0], 10);
+    const endH = parseInt((settings.end_hour || '17:00').split(':')[0], 10);
+    const lunchStart = settings.lunch_break_start || '12:00';
+    const lunchEnd = settings.lunch_break_end || '13:00';
+
+    const allHours: string[] = [];
+    for (let h = startH; h < endH; h++) {
+      const t = `${String(h).padStart(2, '0')}:00`;
+      if (t >= lunchStart && t < lunchEnd) continue;
+      allHours.push(t);
     }
 
-    // Official Algerian 30-Hour Dispatch:
-    // 10 hours Code Theorique, 10 hours Creneau/Manoeuvres, 10 hours Circulation
-    const sessionTypes: Array<'code' | 'creneau' | 'circulation'> = [
-      ...Array(10).fill('code'),
-      ...Array(10).fill('creneau'),
-      ...Array(10).fill('circulation'),
-    ];
+    const morningHours = allHours.filter(t => t < lunchStart);
+    const afternoonHours = allHours.filter(t => t >= lunchEnd);
+
+    const possibleHours =
+      preferredTime === 'morning' && morningHours.length > 0
+        ? morningHours
+        : preferredTime === 'afternoon' && afternoonHours.length > 0
+        ? afternoonHours
+        : allHours;
 
     let sessionIdx = 0;
     let dayScanCount = 0;
 
-    // Scan days and find empty conflict-free slots (max 1 or 2 slots per day)
-    while (sessionIdx < sessionTypes.length && dayScanCount < 120) {
+    // Scan up to 420 days (~60 weeks) so even 1 day/week schedules all 30 hours completely
+    while (sessionIdx < sessionTypesToSchedule.length && dayScanCount < 420 && allowedDays.length > 0) {
       dayScanCount++;
       const dayOfWeek = dayMap[currentDate.getDay()];
-      const dateIso = currentDate.toISOString().split('T')[0];
+      const yy = currentDate.getFullYear();
+      const mm = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(currentDate.getDate()).padStart(2, '0');
+      const dateIso = `${yy}-${mm}-${dd}`;
 
       const isWorkingDay = allowedDays.includes(dayOfWeek);
-      const isUnavailable = settings.unavailable_periods.some(
+      const isFullDayClosed = settings.unavailable_periods.some(
         p => p.date === dateIso && p.period === 'full_day'
       );
+      const isMorningClosed = settings.unavailable_periods.some(
+        p => p.date === dateIso && p.period === 'morning'
+      );
+      const isAfternoonClosed = settings.unavailable_periods.some(
+        p => p.date === dateIso && p.period === 'afternoon'
+      );
 
-      if (isWorkingDay && !isUnavailable) {
-        // Find first free hour slot on this day
-        let bookedOnDay = false;
+      if (isWorkingDay && !isFullDayClosed) {
+        let bookedToday = 0;
+
         for (const timeStart of possibleHours) {
+          if (sessionIdx >= sessionTypesToSchedule.length || bookedToday >= maxPerDay) break;
+          if (isMorningClosed && timeStart < lunchStart) continue;
+          if (isAfternoonClosed && timeStart >= lunchEnd) continue;
+
+          const item = sessionTypesToSchedule[sessionIdx];
+          const currentType = item.type;
           const key = `${dateIso}_${timeStart}`;
-          if (!bookedSlotMap.has(key)) {
+          const isTakenByStudent = studentOwnSlots.has(key);
+          const isTakenPractical = currentType !== 'code' && bookedPracticalMap.has(key);
+
+          if (!isTakenByStudent && !isTakenPractical) {
             const [startHourNum] = timeStart.split(':').map(Number);
             const endHourNum = startHourNum + 1;
             const timeEnd = `${endHourNum < 10 ? '0' : ''}${endHourNum}:00`;
-            const currentType = sessionTypes[sessionIdx];
 
-            slots.push({
-              id: `sc-auto-${Date.now()}-${sessionIdx}`,
+            newScheduledSlots.push({
+              id: item.existingId || `sc-auto-${Date.now()}-${sessionIdx}`,
               student_id: student.id,
               student_name: `${student.first_name} ${student.last_name}`,
               category: student.requested_category,
@@ -1487,15 +1589,15 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
               time_start: timeStart,
               time_end: timeEnd,
               type: currentType,
-              instructor_name: currentType === 'code' ? 'M. Amine' : currentType === 'creneau' ? 'M. Khaled' : 'M. Toufik',
+              instructor_name: item.instructor || (currentType === 'code' ? 'M. Amine' : currentType === 'creneau' ? 'M. Khaled' : 'M. Toufik'),
               status: 'scheduled',
-              notes: `Séance N° ${sessionIdx + 1} / 30 (${currentType === 'code' ? 'Code théorique' : currentType === 'creneau' ? 'Créneau sur piste' : 'Circulation'})`,
+              notes: item.notes || `Séance N° ${preservedSlots.length + sessionIdx + 1} / 30 (${currentType === 'code' ? 'Code théorique' : currentType === 'creneau' ? 'Créneau sur piste' : 'Circulation'})`,
             });
 
-            bookedSlotMap.add(key); // reserve this slot
+            studentOwnSlots.add(key);
+            if (currentType !== 'code') bookedPracticalMap.add(key);
             sessionIdx++;
-            bookedOnDay = true;
-            break; // Move to next day (1 hour per day for optimal progressive training)
+            bookedToday++;
           }
         }
       }
@@ -1503,7 +1605,9 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    return slots;
+    return [...preservedSlots, ...newScheduledSlots].sort(
+      (a, b) => a.date.localeCompare(b.date) || a.time_start.localeCompare(b.time_start)
+    );
   };
 
   // Add new Student with optional availability preferences

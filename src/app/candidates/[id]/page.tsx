@@ -3,6 +3,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { DateInput } from '@/components/DateInput';
+import { StudentAgendaView } from '@/components/StudentAgendaView';
 import { 
   ArrowLeft, 
   User, 
@@ -569,7 +571,7 @@ function CandidateProfileContent() {
               className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Régénérer 30h Auto</span>
+              <span>Modifier Disponibilités (Reflow 30h)</span>
             </button>
             <button
               onClick={() => setShowAddSessionForm(!showAddSessionForm)}
@@ -580,6 +582,9 @@ function CandidateProfileContent() {
             </button>
           </div>
         </div>
+
+        {/* Wide Weekly Agenda for this Candidate */}
+        <StudentAgendaView student={candidate} slots={displayedSlots} />
 
         {/* 4 Summary Mini Cards / Filters */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
@@ -639,11 +644,10 @@ function CandidateProfileContent() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-slate-500 text-[11px] mb-1 font-medium">Date :</label>
-                <input
-                  type="date"
+                <DateInput
                   required
                   value={newSessionDate}
-                  onChange={(e) => setNewSessionDate(e.target.value)}
+                  onChange={setNewSessionDate}
                   className="w-full px-2.5 py-1.5 bg-white dark:bg-surface border border-border-subtle rounded-lg font-medium"
                 />
               </div>
