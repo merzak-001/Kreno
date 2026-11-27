@@ -62,7 +62,7 @@ function getStartOfAlgerianWeek(ref: Date): Date {
  * and visual markers for the candidate's preferred available days.
  */
 export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
-  const { settings, updateScheduleSlot } = useKreno();
+  const { settings, updateScheduleSlot, resolveScheduleSlot } = useKreno();
   const todayIso = useMemo(() => toIsoDate(new Date()), []);
 
   // Anchor to the first scheduled slot's date if available, otherwise today
@@ -74,6 +74,7 @@ export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
   const [anchorDate, setAnchorDate] = useState<string>(initialAnchor);
   const [draggedSlot, setDraggedSlot] = useState<ScheduleSlot | null>(null);
   const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
+  const [dropError, setDropError] = useState<string | null>(null);
 
   const availableDays = useMemo(
     () => student.availability?.days || [],
@@ -104,20 +105,23 @@ export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
     });
   }, [settings.working_days, anchorDate, todayIso, availableDays]);
 
+  const libreHour = settings.libre_hour || '';
   const hourRows = useMemo(() => {
     const startH = parseInt((settings.start_hour || '08:00').split(':')[0], 10);
-    const endH = parseInt((settings.end_hour || '17:00').split(':')[0], 10);
+    const endH = parseInt((settings.end_hour || '16:00').split(':')[0], 10);
     const lunchStart = settings.lunch_break_start || '12:00';
-    const lunchEnd = settings.lunch_break_end || '13:00';
+    const lunchEnd = settings.lunch_break_end || '14:00';
 
-    const rows: { time: string; endTime: string; isLunch: boolean }[] = [];
+    const rows: { time: string; endTime: string; isLunch: boolean; isLibre: boolean }[] = [];
     for (let h = startH; h < endH; h++) {
       const time = `${String(h).padStart(2, '0')}:00`;
       const endTime = `${String(h + 1).padStart(2, '0')}:00`;
-      rows.push({ time, endTime, isLunch: time >= lunchStart && time < lunchEnd });
+      const isLunch = time >= lunchStart && time < lunchEnd;
+      const isLibre = Boolean(libreHour && !isLunch && time === libreHour);
+      rows.push({ time, endTime, isLunch, isLibre });
     }
     return rows;
-  }, [settings.start_hour, settings.end_hour, settings.lunch_break_start, settings.lunch_break_end]);
+  }, [settings.start_hour, settings.end_hour, settings.lunch_break_start, settings.lunch_break_end, libreHour]);
 
   const slotsByCell = useMemo(() => {
     const map = new Map<string, ScheduleSlot[]>();
@@ -149,6 +153,21 @@ export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
   const handleDropOnCell = (targetIso: string, targetTime: string, targetEndTime: string) => {
     if (!draggedSlot) return;
     if (draggedSlot.date !== targetIso || draggedSlot.time_start !== targetTime) {
+      const samePersonAlreadyInHour = slots.some(
+        (s) =>
+          s.id !== draggedSlot.id &&
+          s.status !== 'cancelled' &&
+          s.status !== 'absent' &&
+          s.date === targetIso &&
+          s.time_start === targetTime
+      );
+      if (samePersonAlreadyInHour) {
+        setDropError(`Impossible : ce candidat a déjà une séance à ${targetTime} le ${targetIso}.`);
+        setDraggedSlot(null);
+        setDropTargetKey(null);
+        return;
+      }
+      setDropError(null);
       updateScheduleSlot(student.id, draggedSlot.id, {
         date: targetIso,
         time_start: targetTime,
@@ -225,6 +244,13 @@ export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
         </div>
       </div>
 
+      {dropError && (
+        <div className="p-2.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 text-xs flex items-center justify-between">
+          <span>{dropError}</span>
+          <button type="button" onClick={() => setDropError(null)} className="font-semibold px-2 cursor-pointer">✕</button>
+        </div>
+      )}
+
       {/* Wide Weekly Grid */}
       <div className="border border-border-subtle rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -256,10 +282,15 @@ export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {hourRows.map((row) => (
-                <tr key={row.time} className={row.isLunch ? 'bg-slate-100/70 dark:bg-slate-900/40' : ''}>
+                <tr key={row.time} className={row.isLunch ? 'bg-slate-100/70 dark:bg-slate-900/40' : row.isLibre ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''}>
                   <td className="p-2 font-mono text-[11px] font-semibold text-slate-500 border-r border-border-subtle align-top">
                     <div>{row.time}</div>
                     <div className="text-[10px] text-slate-400 font-normal">{row.endTime}</div>
+                    {row.isLibre && (
+                      <span className="mt-1 inline-block px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-sans text-[9px] font-semibold">
+                        Libre
+                      </span>
+                    )}
                   </td>
 
                   {row.isLunch ? (
@@ -310,22 +341,46 @@ export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
                                   setDraggedSlot(null);
                                   setDropTargetKey(null);
                                 }}
-                                className={`p-2 rounded-lg border text-[11px] space-y-1 transition cursor-grab active:cursor-grabbing ${
-                                  slot.status === 'completed'
-                                    ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60'
-                                    : slot.status === 'absent'
-                                    ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/60'
+                                className={`p-2 rounded-lg border border-l-4 text-[11px] space-y-1 transition cursor-grab active:cursor-grabbing ${
+                                  slot.type === 'code'
+                                    ? 'border-l-blue-500'
+                                    : slot.type === 'creneau'
+                                    ? 'border-l-purple-500'
+                                    : 'border-l-emerald-500'
+                                } ${
+                                  slot.status === 'absent'
+                                    ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/60'
                                     : slot.status === 'cancelled'
-                                    ? 'bg-slate-100/70 dark:bg-surface-elevated border-border-subtle opacity-60'
-                                    : 'bg-surface border-border-subtle shadow-2xs hover:border-blue-400/60'
+                                    ? 'bg-slate-100/80 dark:bg-surface-elevated border-border-subtle opacity-60'
+                                    : slot.type === 'code'
+                                    ? 'bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/60 hover:border-blue-400'
+                                    : slot.type === 'creneau'
+                                    ? 'bg-purple-50/70 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800/60 hover:border-purple-400'
+                                    : 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 hover:border-emerald-400'
                                 }`}
                               >
                                 <div className="flex items-center justify-between gap-1">
                                   <div className="flex items-center gap-1 font-semibold text-slate-900 dark:text-white">
                                     <GripVertical className="w-3 h-3 text-slate-300 shrink-0" />
-                                    <span>
+                                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
+                                      slot.type === 'code'
+                                        ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
+                                        : slot.type === 'creneau'
+                                        ? 'bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300'
+                                        : 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300'
+                                    }`}>
                                       {slot.type === 'code' ? 'Code' : slot.type === 'creneau' ? 'Créneau' : 'Route'}
                                     </span>
+                                    {slot.billing_type === 'free_makeup' && (
+                                      <span className="px-1 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[9px]">
+                                        Offerte
+                                      </span>
+                                    )}
+                                    {slot.billing_type === 'paid_extra' && (
+                                      <span className="px-1 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-[9px]">
+                                        Payante
+                                      </span>
+                                    )}
                                   </div>
                                   <span className="text-[10px] font-mono text-slate-400">1h</span>
                                 </div>
@@ -335,7 +390,7 @@ export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
                                     <>
                                       <button
                                         type="button"
-                                        onClick={() => updateScheduleSlot(student.id, slot.id, { status: 'completed' })}
+                                        onClick={() => resolveScheduleSlot(student.id, slot.id, 'completed')}
                                         className="px-1.5 py-0.5 rounded bg-emerald-100/80 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-semibold hover:bg-emerald-200 cursor-pointer text-[10px]"
                                         title="Marquer Effectuée"
                                       >
@@ -343,31 +398,31 @@ export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => updateScheduleSlot(student.id, slot.id, { status: 'absent' })}
+                                        onClick={() => resolveScheduleSlot(student.id, slot.id, 'absent_student')}
                                         className="px-1.5 py-0.5 rounded bg-amber-100/80 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-semibold hover:bg-amber-200 cursor-pointer text-[10px]"
-                                        title="Marquer Absent"
+                                        title="Absent candidat : compté sur lui + 1h payante ajoutée"
                                       >
                                         Abs
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => updateScheduleSlot(student.id, slot.id, { status: 'cancelled' })}
-                                        className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-rose-100 hover:text-rose-600 cursor-pointer text-[10px]"
-                                        title="Annuler"
+                                        onClick={() => resolveScheduleSlot(student.id, slot.id, 'cancelled_school')}
+                                        className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer text-[10px]"
+                                        title="Annulée par l'école : +1h gratuite offerte automatiquement"
                                       >
-                                        ✕
+                                        École
                                       </button>
                                     </>
                                   ) : (
                                     <button
                                       type="button"
-                                      onClick={() => updateScheduleSlot(student.id, slot.id, { status: 'scheduled' })}
+                                      onClick={() => resolveScheduleSlot(student.id, slot.id, 'scheduled')}
                                       className="text-[10px] font-semibold text-slate-500 hover:text-blue-600 inline-flex items-center gap-0.5 cursor-pointer"
                                       title="Remettre en Planifiée"
                                     >
                                       <RotateCcw className="w-2.5 h-2.5" />
                                       <span>
-                                        {slot.status === 'completed' ? 'Fait' : slot.status === 'absent' ? 'Absent' : 'Annulée'}
+                                        {slot.status === 'completed' ? 'Fait' : slot.status === 'absent' ? 'Absent' : 'École'}
                                       </span>
                                     </button>
                                   )}

@@ -50,7 +50,7 @@ import { ExamType, ExamResult, getCategoryBadgeClass } from '@/types/kreno';
 function CandidateProfileContent() {
   const params = useParams();
   const router = useRouter();
-  const { students, school, updateStudent, deleteStudent, deletePayment, deleteScheduleSlot, userRole } = useKreno();
+  const { students, school, updateStudent, deleteStudent, deletePayment, deleteScheduleSlot, resolveScheduleSlot, userRole } = useKreno();
   const isOwner = userRole === 'owner';
 
   const candidateId = params.id as string;
@@ -135,6 +135,18 @@ function CandidateProfileContent() {
   // Handle add custom 1h session
   const handleAddSession = (e: React.FormEvent) => {
     e.preventDefault();
+    const alreadyBookedSameHour = allSlots.some(
+      (s) =>
+        s.status !== 'cancelled' &&
+        s.status !== 'absent' &&
+        s.date === newSessionDate &&
+        s.time_start === newSessionHour
+    );
+    if (alreadyBookedSameHour) {
+      alert(`Impossible : ce candidat a déjà une séance programmée le ${newSessionDate} à ${newSessionHour}.`);
+      return;
+    }
+
     const [startH] = newSessionHour.split(':').map(Number);
     const endH = startH + 1;
     const timeEnd = `${endH < 10 ? '0' : ''}${endH}:00`;
@@ -664,7 +676,6 @@ function CandidateProfileContent() {
                   <option value="11:00">11:00 - 12:00 (1h)</option>
                   <option value="14:00">14:00 - 15:00 (1h)</option>
                   <option value="15:00">15:00 - 16:00 (1h)</option>
-                  <option value="16:00">16:00 - 17:00 (1h)</option>
                 </select>
               </div>
               <div>
@@ -711,13 +722,23 @@ function CandidateProfileContent() {
                     #{idx + 1}
                   </span>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <strong className="text-slate-900 dark:text-white font-medium capitalize">
                         {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Conduite en circulation'}
                       </strong>
                       <span className="font-mono text-blue-600 dark:text-blue-400 text-xs font-medium">
                         {slot.time_start} - {slot.time_end} (1h)
                       </span>
+                      {slot.billing_type === 'free_makeup' && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold border border-emerald-200 dark:border-emerald-800">
+                          Offerte (École)
+                        </span>
+                      )}
+                      {slot.billing_type === 'paid_extra' && (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-[10px] font-semibold border border-rose-200 dark:border-rose-800">
+                          Payante (+{slot.extra_fee || 0} DZD)
+                        </span>
+                      )}
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
                       Date : <span className="font-mono">{slot.date}</span> • Moniteur : <strong className="text-slate-700 dark:text-slate-300 font-medium">{slot.instructor_name}</strong>
@@ -725,14 +746,52 @@ function CandidateProfileContent() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {slot.status === 'scheduled' && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => resolveScheduleSlot(candidate.id, slot.id, 'completed')}
+                        className="px-2 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-semibold cursor-pointer"
+                        title="Marquer Effectuée"
+                      >
+                        ✓ Fait
+                      </button>
+                      <button
+                        onClick={() => resolveScheduleSlot(candidate.id, slot.id, 'absent_student')}
+                        className="px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-semibold cursor-pointer"
+                        title="Absent candidat : compté sur lui + 1h payante ajoutée"
+                      >
+                        Absent
+                      </button>
+                      <button
+                        onClick={() => resolveScheduleSlot(candidate.id, slot.id, 'cancelled_school')}
+                        className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-border-subtle text-[10px] font-semibold cursor-pointer"
+                        title="Annulée par l'école : +1h gratuite offerte"
+                      >
+                        École
+                      </button>
+                    </div>
+                  )}
                   <span className={`px-2.5 py-0.5 rounded-full font-medium text-[10px] border ${
                     slot.status === 'completed'
                       ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
+                      : slot.status === 'absent'
+                      ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
+                      : slot.status === 'cancelled'
+                      ? 'bg-slate-100 dark:bg-surface-elevated text-slate-500 border-border-subtle'
                       : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60'
                   }`}>
-                    {slot.status === 'completed' ? 'Effectuée' : 'Programmée'}
+                    {slot.status === 'completed' ? 'Effectuée' : slot.status === 'absent' ? 'Absent (Candidat)' : slot.status === 'cancelled' ? 'Annulée (École)' : 'Programmée'}
                   </span>
+                  {slot.status !== 'scheduled' && (
+                    <button
+                      onClick={() => resolveScheduleSlot(candidate.id, slot.id, 'scheduled')}
+                      className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-border-subtle text-[10px] font-medium cursor-pointer"
+                      title="Remettre en Programmée"
+                    >
+                      ↺
+                    </button>
+                  )}
                   <button
                     onClick={() => deleteScheduleSlot(candidate.id, slot.id)}
                     className="p-1 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 rounded transition cursor-pointer"

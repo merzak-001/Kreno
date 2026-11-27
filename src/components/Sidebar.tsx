@@ -53,6 +53,12 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       ownerOnly: false 
     },
     { 
+      path: '/mentors', 
+      label: 'Moniteurs', 
+      icon: UserCheck, 
+      ownerOnly: false 
+    },
+    { 
       path: '/vehicles', 
       label: 'Parc véhicules', 
       icon: Car, 

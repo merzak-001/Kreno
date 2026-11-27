@@ -7,7 +7,25 @@ export type LicenseCategory =
   | 'D' | 'DE' | 'F';
 
 export type ExamType = 'code' | 'creneau' | 'circulation';
+export type SessionDiscipline = 'code' | 'creneau' | 'circulation';
 export type ExamResult = 'pending' | 'passed' | 'failed' | 'absent_excused' | 'absent_unexcused';
+
+export interface Mentor {
+  id: string;
+  name: string;
+  phone?: string;
+  specialties: SessionDiscipline[];
+  license_categories: LicenseCategory[];
+  is_active: boolean;
+}
+
+export interface DisciplineCapacity {
+  code: number;
+  creneau: number;
+  circulation: number;
+}
+
+export type LicenseCapacityRules = Partial<Record<LicenseCategory, DisciplineCapacity>>;
 
 export interface Ingenieur {
   id: string;
@@ -67,6 +85,11 @@ export interface ScheduleSlot {
   type: 'code' | 'creneau' | 'circulation';
   instructor_name: string;
   status: 'scheduled' | 'completed' | 'absent' | 'cancelled';
+  fault?: 'student' | 'school';
+  billing_type?: 'package' | 'free_makeup' | 'paid_extra';
+  extra_fee?: number;
+  compensation_for_slot_id?: string;
+  compensated_by_slot_id?: string;
   notes?: string;
 }
 
@@ -85,7 +108,13 @@ export interface SchoolSettings {
   end_hour: string;                   // Par défaut: "17:00"
   slot_duration_hours: number;        // Par défaut: 1 (unité de 1 heure)
   lunch_break_start: string;          // Par défaut: "12:00"
-  lunch_break_end: string;            // Par défaut: "13:00"
+  lunch_break_end: string;            // Par défaut: "14:00"
+  libre_hour?: string;                // Heure libre réservée (ex: "16:00" sur 7h)
+  max_hours_per_day?: number;         // Max heures utilisées par jour (défaut: 6)
+  candidates_per_vehicle?: number;    // Max candidats simultanés par véhicule en pratique (défaut: 3)
+  capacity_rules?: LicenseCapacityRules; // Limites horaires par type (code/creneau/circulation) et par permis
+  extra_theory_hour_fee?: number;     // Tarif heure supplémentaire code (défaut: 800 DZD)
+  extra_practical_hour_fee?: number;  // Tarif heure supplémentaire pratique (défaut: 1500 DZD)
   standard_exam_fee: number;          // Par défaut: 2000 DZD
   category_exam_fees?: Partial<Record<LicenseCategory, number>>; // Frais d'examen par catégorie
   unavailable_periods: UnavailablePeriod[];

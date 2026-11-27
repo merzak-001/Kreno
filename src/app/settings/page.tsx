@@ -217,6 +217,79 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* 2.5 Daily Planning Capacity (6h + 1h Libre) & Extra Hour Fees */}
+        <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4 lg:col-span-2">
+          <div className="flex items-center gap-2.5 border-b border-border-subtle pb-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-medium">
+              <Clock className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-white">Planning Quotidien (6h / Jour : 08h–12h • 14h–16h) &amp; Heures Supplémentaires</h3>
+              <p className="text-[11px] text-slate-400">Planning réduit à 6 heures par jour ; option de créneau libre et tarification automatique des absences candidat</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 text-xs">
+            <div>
+              <label className="block text-slate-400 text-[11px] mb-1">Heure Libre Quotidienne :</label>
+              <select
+                value={settings.libre_hour || ''}
+                onChange={(e) => updateSettings({ libre_hour: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl font-mono font-medium text-slate-900 dark:text-white"
+              >
+                <option value="">Aucune (6h complètes)</option>
+                {['08:00', '09:00', '10:00', '11:00', '14:00', '15:00'].map((h) => (
+                  <option key={h} value={h}>{h} (Libre)</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-slate-400 text-[11px] mb-1">Max Heures / Jour :</label>
+              <input
+                type="number"
+                min={1}
+                max={6}
+                value={settings.max_hours_per_day ?? 6}
+                onChange={(e) => updateSettings({ max_hours_per_day: Math.max(1, Math.min(6, Number(e.target.value) || 6)) })}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl font-mono font-medium text-slate-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-400 text-[11px] mb-1">Candidats / Voiture :</label>
+              <input
+                type="number"
+                min={1}
+                max={5}
+                value={settings.candidates_per_vehicle ?? 3}
+                onChange={(e) => updateSettings({ candidates_per_vehicle: Math.max(1, Math.min(5, Number(e.target.value) || 3)) })}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl font-mono font-medium text-slate-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-400 text-[11px] mb-1">Tarif Heure Supp. Code (DZD) :</label>
+              <input
+                type="number"
+                min={0}
+                step={100}
+                value={settings.extra_theory_hour_fee ?? 800}
+                onChange={(e) => updateSettings({ extra_theory_hour_fee: Number(e.target.value) || 0 })}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl font-mono font-medium text-slate-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-400 text-[11px] mb-1">Tarif Heure Supp. Pratique (DZD) :</label>
+              <input
+                type="number"
+                min={0}
+                step={100}
+                value={settings.extra_practical_hour_fee ?? 1500}
+                onChange={(e) => updateSettings({ extra_practical_hour_fee: Number(e.target.value) || 0 })}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl font-mono font-medium text-slate-900 dark:text-white"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* 3. Exceptional Closures & Unavailable Days */}
         <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4 lg:col-span-2">
           <div className="flex items-center gap-2.5 border-b border-border-subtle pb-3">
