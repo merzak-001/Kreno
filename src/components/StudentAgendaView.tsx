@@ -7,7 +7,7 @@ import {
   GripVertical,
   RotateCcw,
 } from 'lucide-react';
-import { DayOfWeek, ScheduleSlot, Student } from '@/types/kreno';
+import { DayOfWeek, ScheduleSlot, Student, getCategoryBadgeClass, getCategoryDotClass, getDisciplineMeta } from '@/types/kreno';
 import { useKreno } from '@/context/KrenoContext';
 import { DateInput } from '@/components/DateInput';
 
@@ -62,7 +62,7 @@ function getStartOfAlgerianWeek(ref: Date): Date {
  * and visual markers for the candidate's preferred available days.
  */
 export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
-  const { settings, updateScheduleSlot, resolveScheduleSlot } = useKreno();
+  const { students, settings, updateScheduleSlot, resolveScheduleSlot, getSlotCapacityLimit } = useKreno();
   const todayIso = useMemo(() => toIsoDate(new Date()), []);
 
   // Anchor to the first scheduled slot's date if available, otherwise today
@@ -167,6 +167,41 @@ export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
         setDropTargetKey(null);
         return;
       }
+
+      // Check mentor physical exclusivity & capacity at target hour
+      const mentorSlotsAtTarget = students.flatMap((st) =>
+        (st.schedule_slots || []).filter(
+          (s) =>
+            s.id !== draggedSlot.id &&
+            s.instructor_name === draggedSlot.instructor_name &&
+            s.status !== 'cancelled' &&
+            s.status !== 'absent' &&
+            s.date === targetIso &&
+            s.time_start === targetTime
+        )
+      );
+      const hasIncompatible =
+        draggedSlot.type === 'code'
+          ? mentorSlotsAtTarget.some((s) => s.type !== 'code')
+          : mentorSlotsAtTarget.some((s) => s.type !== draggedSlot.type || s.category !== draggedSlot.category);
+      if (hasIncompatible) {
+        setDropError(
+          `Impossible : ${draggedSlot.instructor_name} encadre déjà une autre catégorie de permis ou discipline à ${targetTime} le ${targetIso}.`
+        );
+        setDraggedSlot(null);
+        setDropTargetKey(null);
+        return;
+      }
+      const targetCap = getSlotCapacityLimit(draggedSlot.type, draggedSlot.category);
+      if (mentorSlotsAtTarget.length >= targetCap) {
+        setDropError(
+          `Impossible : ${draggedSlot.instructor_name} a déjà atteint sa capacité (${mentorSlotsAtTarget.length}/${targetCap}) à ${targetTime} le ${targetIso}.`
+        );
+        setDraggedSlot(null);
+        setDropTargetKey(null);
+        return;
+      }
+
       setDropError(null);
       updateScheduleSlot(student.id, draggedSlot.id, {
         date: targetIso,
@@ -342,34 +377,27 @@ export function StudentAgendaView({ student, slots }: StudentAgendaViewProps) {
                                   setDropTargetKey(null);
                                 }}
                                 className={`p-2 rounded-lg border border-l-4 text-[11px] space-y-1 transition cursor-grab active:cursor-grabbing ${
-                                  slot.type === 'code'
-                                    ? 'border-l-blue-500'
-                                    : slot.type === 'creneau'
-                                    ? 'border-l-purple-500'
-                                    : 'border-l-emerald-500'
+                                  getDisciplineMeta(slot.type).borderLeftClass
                                 } ${
                                   slot.status === 'absent'
                                     ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/60'
                                     : slot.status === 'cancelled'
                                     ? 'bg-slate-100/80 dark:bg-surface-elevated border-border-subtle opacity-60'
-                                    : slot.type === 'code'
-                                    ? 'bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/60 hover:border-blue-400'
-                                    : slot.type === 'creneau'
-                                    ? 'bg-purple-50/70 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800/60 hover:border-purple-400'
-                                    : 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 hover:border-emerald-400'
+                                    : getDisciplineMeta(slot.type).cardClass
                                 }`}
                               >
                                 <div className="flex items-center justify-between gap-1">
-                                  <div className="flex items-center gap-1 font-semibold text-slate-900 dark:text-white">
+                                  <div className="flex items-center gap-1 font-semibold text-slate-900 dark:text-white flex-wrap">
                                     <GripVertical className="w-3 h-3 text-slate-300 shrink-0" />
-                                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
-                                      slot.type === 'code'
-                                        ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
-                                        : slot.type === 'creneau'
-                                        ? 'bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300'
-                                        : 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300'
-                                    }`}>
-                                      {slot.type === 'code' ? 'Code' : slot.type === 'creneau' ? 'Créneau' : 'Route'}
+                                    <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${getDisciplineMeta(slot.type).pillClass}`}>
+                                      {getDisciplineMeta(slot.type).label}
+                                    </span>
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] border shrink-0 shadow-2xs ${getCategoryBadgeClass(slot.category)}`}
+                                      title={`Permis catégorie ${slot.category}`}
+                                    >
+                                      <span className={`w-1.5 h-1.5 rounded-full ${getCategoryDotClass(slot.category)}`} />
+                                      <span>{slot.category}</span>
                                     </span>
                                     {slot.billing_type === 'free_makeup' && (
                                       <span className="px-1 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[9px]">

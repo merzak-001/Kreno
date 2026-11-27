@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
+import { usePathname } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { RegisterModal } from '@/components/RegisterModal';
@@ -9,11 +10,16 @@ import { useKreno } from '@/context/KrenoContext';
 import { Student } from '@/types/kreno';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [newlyCreatedStudent, setNewlyCreatedStudent] = useState<Student | null>(null);
   const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
   const { addStudent } = useKreno();
+
+  if (pathname === '/' || pathname === '/login' || pathname === '/admin') {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-sans flex antialiased transition-colors">

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search, UserPlus, Sun, Moon, History, Menu } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, UserPlus, Sun, Moon, History, Menu, RefreshCw } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
 import { AuditLogModal } from '@/components/AuditLogModal';
 
@@ -11,8 +11,14 @@ interface HeaderProps {
 }
 
 export function Header({ onOpenRegister, onOpenSidebar }: HeaderProps) {
-  const { searchQuery, setSearchQuery, theme, setTheme } = useKreno();
+  const { searchQuery, setSearchQuery, theme, setTheme, userRole, syncStatus, refreshFromSupabase } = useKreno();
+  const isOwner = userRole === 'owner';
   const [isAuditOpen, setIsAuditOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -48,24 +54,51 @@ export function Header({ onOpenRegister, onOpenSidebar }: HeaderProps) {
 
         {/* Action Buttons & Theme Switcher */}
         <div className="flex items-center gap-2.5 shrink-0">
-          
-          {/* Audit Log Button */}
+          {/* Live Sync Status Pill */}
           <button
-            onClick={() => setIsAuditOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border-subtle bg-surface hover:bg-slate-100 dark:hover:bg-surface-hover text-slate-700 dark:text-slate-300 transition cursor-pointer text-xs font-medium"
-            title="Consulter le journal d'audit des modifications"
+            onClick={() => refreshFromSupabase()}
+            title="État de synchronisation Supabase (cliquer pour actualiser)"
+            className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold transition cursor-pointer ${
+              syncStatus === 'synced'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                : syncStatus === 'syncing'
+                ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800'
+                : syncStatus === 'error'
+                ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                : 'bg-slate-100 dark:bg-surface-elevated text-slate-500 border-border-subtle'
+            }`}
           >
-            <History className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-            <span className="hidden sm:inline">Journal d&apos;Audit</span>
+            <RefreshCw className={`w-3 h-3 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
+            <span>
+              {syncStatus === 'synced'
+                ? 'Synchronisé'
+                : syncStatus === 'syncing'
+                ? 'Synchro...'
+                : syncStatus === 'error'
+                ? 'Erreur synchro'
+                : 'Mode local'}
+            </span>
           </button>
+          
+          {/* Audit Log Button (Owner only) */}
+          {isOwner && (
+            <button
+              onClick={() => setIsAuditOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border-subtle bg-surface hover:bg-slate-100 dark:hover:bg-surface-hover text-slate-700 dark:text-slate-300 transition cursor-pointer text-xs font-medium"
+              title="Consulter le journal d'audit des modifications"
+            >
+              <History className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              <span className="hidden sm:inline">Journal d&apos;Audit</span>
+            </button>
+          )}
 
           {/* Dark / Light Mode Toggle Button */}
           <button
             onClick={toggleTheme}
             className="p-2 rounded-xl border border-border-subtle bg-surface hover:bg-slate-100 dark:hover:bg-surface-hover text-slate-600 dark:text-slate-300 transition cursor-pointer"
-            title={theme === 'dark' ? 'Basculer en Mode Clair' : 'Basculer en Mode Sombre'}
+            title={mounted && theme === 'dark' ? 'Basculer en Mode Clair' : 'Basculer en Mode Sombre'}
           >
-            {theme === 'dark' ? (
+            {mounted && theme === 'dark' ? (
               <Sun className="w-4 h-4 text-amber-400" />
             ) : (
               <Moon className="w-4 h-4 text-slate-600" />
@@ -84,10 +117,12 @@ export function Header({ onOpenRegister, onOpenSidebar }: HeaderProps) {
       </header>
 
       {/* Audit Log Modal */}
-      <AuditLogModal 
-        isOpen={isAuditOpen} 
-        onClose={() => setIsAuditOpen(false)} 
-      />
+      {isOwner && (
+        <AuditLogModal 
+          isOpen={isAuditOpen} 
+          onClose={() => setIsAuditOpen(false)} 
+        />
+      )}
     </>
   );
 }

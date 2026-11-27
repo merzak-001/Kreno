@@ -1,215 +1,335 @@
--- ================================================================
--- KRENO - Auto-École Management System
--- Database Schema for Supabase (PostgreSQL with Row Level Security)
--- ================================================================
+-- ============================================================================
+-- Kreno Auto-École — Multi-Tenant Supabase Schema & Row Level Security (RLS)
+-- ============================================================================
+-- Each auto-école has its own `schools` row (`school_id`), its own users in
+-- `profiles`, and isolated business tables protected by Postgres RLS.
+-- ============================================================================
 
--- 1. Enable required extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 2. SCHOOLS (Tenants)
+-- 1. Schools (Auto-Écoles)
 CREATE TABLE IF NOT EXISTS public.schools (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
-    agrement_number VARCHAR(100), -- رقم الاعتماد
-    agrement_date DATE,           -- تاريخ الاعتماد
-    owner_name VARCHAR(255),       -- اسم المالك
-    commercial_name VARCHAR(255),  -- اسم الشركة / التسمية التجارية
-    wilaya VARCHAR(100) NOT NULL DEFAULT 'سطيف',
-    daira VARCHAR(100),
-    commune VARCHAR(100),
-    address TEXT,
-    phone VARCHAR(50),
-    email VARCHAR(100),
-    insurance_policy_number VARCHAR(100), -- رقم التأمين على الحوادث للمترشحين
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  agrement_number text,
+  agrement_date date,
+  owner_name text,
+  commercial_name text,
+  wilaya text,
+  daira text,
+  commune text,
+  address text,
+  phone text,
+  email text,
+  insurance_policy_number text,
+  settings jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 3. PROFILES (Users & Roles linked to Supabase Auth)
-CREATE TYPE user_role AS ENUM ('owner', 'secretary');
-
+-- 2. User Profiles (Links Supabase Auth users to a specific school + role)
 CREATE TABLE IF NOT EXISTS public.profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    school_id UUID REFERENCES public.schools(id) ON DELETE CASCADE,
-    full_name VARCHAR(255) NOT NULL,
-    role user_role NOT NULL DEFAULT 'secretary',
-    phone VARCHAR(50),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  role text NOT NULL CHECK (role IN ('owner', 'secretary')) DEFAULT 'secretary',
+  full_name text,
+  email text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 4. VEHICLES (Fleet)
+CREATE INDEX IF NOT EXISTS idx_profiles_school_id ON public.profiles(school_id);
+
+-- 3. Mentors (Instructors)
+CREATE TABLE IF NOT EXISTS public.mentors (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  phone text,
+  specialties text[] NOT NULL DEFAULT ARRAY['creneau', 'circulation'],
+  license_categories text[] NOT NULL DEFAULT ARRAY['B'],
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mentors_school_id ON public.mentors(school_id);
+
+-- 4. Vehicles
 CREATE TABLE IF NOT EXISTS public.vehicles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    school_id UUID NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-    brand VARCHAR(100) NOT NULL,          -- ماركة (e.g., Renault, Peugeot)
-    model VARCHAR(100) NOT NULL,          -- موديل (e.g., Clio, 208)
-    plate_number VARCHAR(100) NOT NULL,   -- رقم التسجيل / الترقيم
-    category VARCHAR(20) NOT NULL DEFAULT 'B', -- الصنف
-    technical_control_expiry DATE,        -- تاريخ انتهاء المراقبة التقنية
-    insurance_expiry DATE,                -- تاريخ انتهاء التأمين
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  brand text NOT NULL,
+  model text NOT NULL,
+  plate_number text NOT NULL,
+  category text NOT NULL,
+  technical_control_expiry date,
+  insurance_expiry date,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 5. INSTRUCTORS (الممرنين)
-CREATE TABLE IF NOT EXISTS public.instructors (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    school_id UUID NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-    full_name VARCHAR(255) NOT NULL,
-    phone VARCHAR(50),
-    license_number VARCHAR(100),
-    categories_qualified VARCHAR(100) DEFAULT 'B',
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
+CREATE INDEX IF NOT EXISTS idx_vehicles_school_id ON public.vehicles(school_id);
 
--- 6. CANDIDATES / STUDENTS (المترشحين)
-CREATE TYPE license_category AS ENUM ('A1', 'A', 'B', 'BE', 'C1', 'C1E', 'C', 'CE', 'D', 'DE', 'F');
-CREATE TYPE marital_status_type AS ENUM ('single', 'married', 'divorced', 'widowed');
-CREATE TYPE candidate_status AS ENUM ('registered', 'in_training', 'exam_ready', 'graduated', 'archived');
-
+-- 5. Students (Candidates)
 CREATE TABLE IF NOT EXISTS public.students (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    school_id UUID NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-    dossier_number VARCHAR(50),           -- رقم الملف
-    registration_number VARCHAR(50),      -- رقم التسجيل بالمندوبية
-    deposit_date DATE DEFAULT CURRENT_DATE,-- تاريخ إيداع الملف
-    
-    -- Identification
-    nin VARCHAR(18) NOT NULL,             -- رقم التعريف الوطني (18 رقم)
-    blood_type VARCHAR(10),               -- فصيلة الدم (A+, O+, B-, ...)
-    first_name_ar VARCHAR(100) NOT NULL,  -- الاسم بالعربية
-    last_name_ar VARCHAR(100) NOT NULL,   -- اللقب بالعربية
-    first_name_fr VARCHAR(100),           -- Prénom
-    last_name_fr VARCHAR(100),            -- Nom
-    gender VARCHAR(10) NOT NULL,          -- ذكر / أنثى
-    birth_date DATE NOT NULL,             -- تاريخ الميلاد
-    birth_commune VARCHAR(100),           -- بلدية الميلاد
-    birth_wilaya VARCHAR(100),            -- ولاية الميلاد
-    
-    -- Family info
-    father_name VARCHAR(100),             -- اسم الأب
-    mother_full_name VARCHAR(150),        -- اسم ولقب الأم
-    marital_status marital_status_type DEFAULT 'single', -- الحالة العائلية
-    
-    -- Contact & Address
-    address_wilaya VARCHAR(100),
-    address_commune VARCHAR(100),
-    address_details TEXT,
-    phone_number VARCHAR(50) NOT NULL,
-    email VARCHAR(100),
-    
-    -- License Target & Package
-    requested_category license_category NOT NULL DEFAULT 'B',
-    total_package_price NUMERIC(10, 2) NOT NULL DEFAULT 40000.00,
-    amount_paid NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
-    status candidate_status DEFAULT 'registered',
-    
-    -- Minor Guardian Info (for A1 or under legal age)
-    guardian_name VARCHAR(150),
-    guardian_relationship VARCHAR(100),
-    guardian_phone VARCHAR(50),
-    
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  dossier_number text NOT NULL,
+  registration_number text,
+  deposit_date date NOT NULL,
+  nin text NOT NULL,
+  blood_type text,
+  first_name text NOT NULL,
+  last_name text NOT NULL,
+  first_name_ar text,
+  last_name_ar text,
+  gender text NOT NULL CHECK (gender IN ('Homme', 'Femme')),
+  birth_date date NOT NULL,
+  birth_commune text,
+  birth_wilaya text,
+  father_name text,
+  mother_full_name text,
+  marital_status text NOT NULL DEFAULT 'Celibataire',
+  address_wilaya text,
+  address_commune text,
+  address_details text,
+  phone_number text NOT NULL,
+  email text,
+  requested_category text NOT NULL,
+  total_package_price numeric(12, 2) NOT NULL DEFAULT 0,
+  amount_paid numeric(12, 2) NOT NULL DEFAULT 0,
+  contract_details jsonb DEFAULT '{}'::jsonb,
+  held_licenses jsonb DEFAULT '[]'::jsonb,
+  availability jsonb DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 7. EXAMS (3-Step Pipeline: Code -> Creneau -> Circulation)
-CREATE TYPE exam_type AS ENUM ('code', 'creneau', 'circulation');
-CREATE TYPE exam_result AS ENUM ('pending', 'passed', 'failed', 'absent_excused', 'absent_unexcused');
+CREATE INDEX IF NOT EXISTS idx_students_school_id ON public.students(school_id);
+CREATE INDEX IF NOT EXISTS idx_students_nin ON public.students(school_id, nin);
 
-CREATE TABLE IF NOT EXISTS public.student_exams (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
-    school_id UUID NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-    exam_type exam_type NOT NULL,         -- code (قانون المرور), creneau (المناورات), circulation (السياقة)
-    attempt_number INT NOT NULL DEFAULT 1,-- محاولة 1 إلى 15
-    exam_date DATE,
-    exam_center VARCHAR(150),             -- مركز الامتحان
-    examiner_name VARCHAR(150),           -- اسم المفتش / الممتحن
-    result exam_result NOT NULL DEFAULT 'pending',
-    notes TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+-- 6. Schedule Slots (30h training + makeup sessions)
+CREATE TABLE IF NOT EXISTS public.schedule_slots (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  student_id uuid NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
+  student_name text NOT NULL,
+  category text NOT NULL,
+  date date NOT NULL,
+  time_start text NOT NULL,
+  time_end text NOT NULL,
+  type text NOT NULL CHECK (type IN ('code', 'creneau', 'circulation')),
+  instructor_name text NOT NULL,
+  status text NOT NULL CHECK (status IN ('scheduled', 'completed', 'absent', 'cancelled')) DEFAULT 'scheduled',
+  fault text CHECK (fault IN ('student', 'school')),
+  billing_type text CHECK (billing_type IN ('package', 'free_makeup', 'paid_extra')),
+  extra_fee numeric(10, 2) DEFAULT 0,
+  compensation_for_slot_id uuid,
+  compensated_by_slot_id uuid,
+  notes text,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 8. PAYMENTS (مستحقات الملف والدفعات)
+CREATE INDEX IF NOT EXISTS idx_schedule_school_date ON public.schedule_slots(school_id, date);
+CREATE INDEX IF NOT EXISTS idx_schedule_student ON public.schedule_slots(student_id);
+
+-- 7. Exam Records
+CREATE TABLE IF NOT EXISTS public.exams (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  student_id uuid NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
+  exam_type text NOT NULL CHECK (exam_type IN ('code', 'creneau', 'circulation')),
+  attempt_number int NOT NULL DEFAULT 1,
+  exam_date date,
+  examiner_name text,
+  exam_center text,
+  result text NOT NULL CHECK (result IN ('pending', 'passed', 'failed', 'absent_excused', 'absent_unexcused')) DEFAULT 'pending',
+  fee_amount numeric(10, 2) NOT NULL DEFAULT 2000,
+  fee_paid boolean NOT NULL DEFAULT false,
+  notes text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_exams_school_date ON public.exams(school_id, exam_date);
+
+-- 8. Payments
 CREATE TABLE IF NOT EXISTS public.payments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
-    school_id UUID NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-    amount NUMERIC(10, 2) NOT NULL,
-    payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    payment_method VARCHAR(50) DEFAULT 'cash', -- كاش / شيك / تحويل
-    receipt_number VARCHAR(50),
-    notes TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  student_id uuid NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
+  amount numeric(12, 2) NOT NULL,
+  date date NOT NULL,
+  type text NOT NULL CHECK (type IN ('initial_deposit', 'installment', 'exam_fee')),
+  method text NOT NULL CHECK (method IN ('especes', 'virement', 'cheque')),
+  receipt_number text,
+  notes text,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- ================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
--- Multi-tenancy: Isolate schools completely
--- ================================================================
+CREATE INDEX IF NOT EXISTS idx_payments_school_id ON public.payments(school_id);
+
+-- 9. Engineers (Examens / Inspecteurs d'État)
+CREATE TABLE IF NOT EXISTS public.engineers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  title text,
+  phone text,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_engineers_school_id ON public.engineers(school_id);
+
+-- 10. Audit Logs (Owner-only visibility)
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  user_role text NOT NULL CHECK (user_role IN ('owner', 'secretary')),
+  action text NOT NULL,
+  target_type text NOT NULL,
+  target_id text NOT NULL,
+  target_name text NOT NULL,
+  details text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_school_id ON public.audit_logs(school_id, created_at DESC);
+
+-- ============================================================================
+-- Helper Functions for RLS
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.get_my_school_id()
+RETURNS uuid
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT school_id FROM public.profiles WHERE id = auth.uid() LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_my_role()
+RETURNS text
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT role FROM public.profiles WHERE id = auth.uid() LIMIT 1;
+$$;
+
+-- ============================================================================
+-- Enable Row Level Security (RLS) on ALL tables
+-- ============================================================================
 
 ALTER TABLE public.schools ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mentors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.instructors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.student_exams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.schedule_slots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.engineers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Helper function to get current user's school_id
-CREATE OR REPLACE FUNCTION public.get_current_school_id()
-RETURNS UUID AS $$
-    SELECT school_id FROM public.profiles WHERE id = auth.uid();
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+-- Schools: members can read their own school; ONLY owner can update it
+CREATE POLICY "schools_select_own" ON public.schools
+  FOR SELECT USING (id = public.get_my_school_id());
 
--- Helper function to check if current user is owner
-CREATE OR REPLACE FUNCTION public.is_school_owner()
-RETURNS BOOLEAN AS $$
-    SELECT EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() AND role = 'owner'
-    );
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+CREATE POLICY "schools_update_owner" ON public.schools
+  FOR UPDATE USING (id = public.get_my_school_id() AND public.get_my_role() = 'owner')
+  WITH CHECK (id = public.get_my_school_id() AND public.get_my_role() = 'owner');
 
--- 1. Schools Policy: users can view only their own school
-CREATE POLICY "Users can view their own school" ON public.schools
-    FOR SELECT USING (id = public.get_current_school_id());
+-- Profiles: users can view profiles in their school; ONLY owner can manage profiles
+CREATE POLICY "profiles_select_school" ON public.profiles
+  FOR SELECT USING (school_id = public.get_my_school_id());
 
-CREATE POLICY "Owners can update their own school" ON public.schools
-    FOR UPDATE USING (id = public.get_current_school_id() AND public.is_school_owner());
+CREATE POLICY "profiles_manage_owner" ON public.profiles
+  FOR ALL USING (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner')
+  WITH CHECK (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner');
 
--- 2. Students Policy: staff from same school can read and write
-CREATE POLICY "Staff can view students from their school" ON public.students
-    FOR SELECT USING (school_id = public.get_current_school_id());
+-- Mentors: school members can read; ONLY owner can insert/update/delete
+CREATE POLICY "mentors_select_school" ON public.mentors
+  FOR SELECT USING (school_id = public.get_my_school_id());
 
-CREATE POLICY "Staff can insert students for their school" ON public.students
-    FOR INSERT WITH CHECK (school_id = public.get_current_school_id());
+CREATE POLICY "mentors_write_owner" ON public.mentors
+  FOR ALL USING (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner')
+  WITH CHECK (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner');
 
-CREATE POLICY "Staff can update students for their school" ON public.students
-    FOR UPDATE USING (school_id = public.get_current_school_id());
+-- Vehicles: school members can read; ONLY owner can insert/update/delete
+CREATE POLICY "vehicles_select_school" ON public.vehicles
+  FOR SELECT USING (school_id = public.get_my_school_id());
 
--- Only Owner can delete students
-CREATE POLICY "Only owners can delete students" ON public.students
-    FOR DELETE USING (school_id = public.get_current_school_id() AND public.is_school_owner());
+CREATE POLICY "vehicles_write_owner" ON public.vehicles
+  FOR ALL USING (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner')
+  WITH CHECK (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner');
 
--- 3. Exams Policy
-CREATE POLICY "Staff can view exams" ON public.student_exams
-    FOR SELECT USING (school_id = public.get_current_school_id());
+-- Students: school members can read/insert/update; ONLY owner can delete
+CREATE POLICY "students_select_school" ON public.students
+  FOR SELECT USING (school_id = public.get_my_school_id());
 
-CREATE POLICY "Staff can manage exams" ON public.student_exams
-    FOR ALL USING (school_id = public.get_current_school_id());
+CREATE POLICY "students_insert_school" ON public.students
+  FOR INSERT WITH CHECK (school_id = public.get_my_school_id());
 
--- 4. Payments Policy: Staff can view, but only Owners can see all detailed financial profit reports
-CREATE POLICY "Staff can view payments" ON public.payments
-    FOR SELECT USING (school_id = public.get_current_school_id());
+CREATE POLICY "students_update_school" ON public.students
+  FOR UPDATE USING (school_id = public.get_my_school_id())
+  WITH CHECK (school_id = public.get_my_school_id());
 
-CREATE POLICY "Staff can insert payments" ON public.payments
-    FOR INSERT WITH CHECK (school_id = public.get_current_school_id());
+CREATE POLICY "students_delete_owner" ON public.students
+  FOR DELETE USING (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner');
 
-CREATE POLICY "Only owners can modify payments" ON public.payments
-    FOR UPDATE USING (school_id = public.get_current_school_id() AND public.is_school_owner());
+-- Schedule Slots: school members can read/insert/update; ONLY owner can delete
+CREATE POLICY "schedule_select_school" ON public.schedule_slots
+  FOR SELECT USING (school_id = public.get_my_school_id());
 
-CREATE POLICY "Only owners can delete payments" ON public.payments
-    FOR DELETE USING (school_id = public.get_current_school_id() AND public.is_school_owner());
+CREATE POLICY "schedule_insert_school" ON public.schedule_slots
+  FOR INSERT WITH CHECK (school_id = public.get_my_school_id());
+
+CREATE POLICY "schedule_update_school" ON public.schedule_slots
+  FOR UPDATE USING (school_id = public.get_my_school_id())
+  WITH CHECK (school_id = public.get_my_school_id());
+
+CREATE POLICY "schedule_delete_owner" ON public.schedule_slots
+  FOR DELETE USING (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner');
+
+-- Exams: school members can read/insert/update; ONLY owner can delete
+CREATE POLICY "exams_select_school" ON public.exams
+  FOR SELECT USING (school_id = public.get_my_school_id());
+
+CREATE POLICY "exams_insert_school" ON public.exams
+  FOR INSERT WITH CHECK (school_id = public.get_my_school_id());
+
+CREATE POLICY "exams_update_school" ON public.exams
+  FOR UPDATE USING (school_id = public.get_my_school_id())
+  WITH CHECK (school_id = public.get_my_school_id());
+
+CREATE POLICY "exams_delete_owner" ON public.exams
+  FOR DELETE USING (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner');
+
+-- Payments: school members can insert/select; ONLY owner can update/delete
+CREATE POLICY "payments_select_school" ON public.payments
+  FOR SELECT USING (school_id = public.get_my_school_id());
+
+CREATE POLICY "payments_insert_school" ON public.payments
+  FOR INSERT WITH CHECK (school_id = public.get_my_school_id());
+
+CREATE POLICY "payments_modify_owner" ON public.payments
+  FOR UPDATE USING (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner')
+  WITH CHECK (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner');
+
+CREATE POLICY "payments_delete_owner" ON public.payments
+  FOR DELETE USING (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner');
+
+-- Engineers: school members can read; ONLY owner can insert/update/delete
+CREATE POLICY "engineers_select_school" ON public.engineers
+  FOR SELECT USING (school_id = public.get_my_school_id());
+
+CREATE POLICY "engineers_write_owner" ON public.engineers
+  FOR ALL USING (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner')
+  WITH CHECK (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner');
+
+-- Audit Logs: school members can insert; ONLY owner can read
+CREATE POLICY "audit_insert_school" ON public.audit_logs
+  FOR INSERT WITH CHECK (school_id = public.get_my_school_id());
+
+CREATE POLICY "audit_select_owner" ON public.audit_logs
+  FOR SELECT USING (school_id = public.get_my_school_id() AND public.get_my_role() = 'owner');

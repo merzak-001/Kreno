@@ -1,6 +1,20 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import {
+  fetchSchoolBundle,
+  isUuid,
+  dbSaveSchoolAndSettings,
+  dbUpsertMentor,
+  dbDeleteMentor,
+  dbUpsertVehicle,
+  dbDeleteVehicle,
+  dbUpsertEngineer,
+  dbUpsertStudentFull,
+  dbDeleteStudent,
+  dbInsertAuditLog,
+} from '@/lib/supabase/krenoDb';
 import { 
   Student, 
   School, 
@@ -35,6 +49,10 @@ interface KrenoContextType {
   lang: 'fr' | 'ar';
   setLang: (lang: 'fr' | 'ar') => void;
   userRole: UserRole;
+  accountRole: UserRole;
+  authEmail: string | null;
+  syncStatus: 'local' | 'syncing' | 'synced' | 'error';
+  refreshFromSupabase: () => Promise<void>;
   setUserRole: (role: UserRole) => void;
   school: School;
   setSchool: React.Dispatch<React.SetStateAction<School>>;
@@ -59,6 +77,14 @@ interface KrenoContextType {
   deletePayment: (studentId: string, paymentId: string) => void;
   deleteExamRecord: (studentId: string, examId: string) => void;
   deleteExamSession: (sessionDate: string) => void;
+  addScheduleSlot: (
+    studentId: string,
+    date: string,
+    timeStart: string,
+    timeEnd: string,
+    type: SessionDiscipline,
+    instructorName: string
+  ) => { ok: boolean; error?: string };
   deleteScheduleSlot: (studentId: string, slotId: string) => void;
   updateScheduleSlot: (studentId: string, slotId: string, updated: Partial<ScheduleSlot>) => void;
   resolveScheduleSlot: (
@@ -185,6 +211,7 @@ const DEFAULT_SETTINGS: SchoolSettings = {
   extra_theory_hour_fee: 800,
   extra_practical_hour_fee: 1500,
   standard_exam_fee: 2000, // 2000 DZD par défaut
+  owner_pin: '1234',
   category_exam_fees: {
     'A1': 1500,
     'A': 1500,
@@ -906,6 +933,47 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
   const [palette, setPaletteState] = useState<ColorPalette>('ocean');
   const [lang, setLangState] = useState<'fr' | 'ar'>('fr');
   const [userRole, setUserRoleState] = useState<UserRole>('owner');
+  const [accountRole, setAccountRole] = useState<UserRole>('owner');
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'local' | 'syncing' | 'synced' | 'error'>('local');
+  const dbHydratedRef = useRef(false);
+  const skipNextSchoolSyncRef = useRef(true);
+  const prevStudentsRef = useRef<Map<string, Student>>(new Map());
+  const activeSchoolIdRef = useRef<string | null>(null);
+  const realtimeChannelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null);
+  const realtimeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loadBundleForSchool = async (sid: string) => {
+    setSyncStatus('syncing');
+    try {
+      const bundle = await fetchSchoolBundle(sid);
+      if (bundle) {
+        skipNextSchoolSyncRef.current = true;
+        if (bundle.school) {
+          setSchool(prev => ({ ...prev, ...bundle.school, id: sid }));
+        }
+        if (bundle.settings && Object.keys(bundle.settings).length > 0) {
+          setSettings(prev => ({ ...prev, ...bundle.settings }));
+        }
+        setMentors(bundle.mentors);
+        setVehicles(bundle.vehicles);
+        setEngineers(bundle.engineers);
+        setStudents(bundle.students);
+        setAuditLogs(bundle.auditLogs);
+        prevStudentsRef.current = new Map(bundle.students.map(s => [s.id, s]));
+        dbHydratedRef.current = true;
+        setSyncStatus('synced');
+      }
+    } catch {
+      setSyncStatus('error');
+    }
+  };
+
+  const refreshFromSupabase = async () => {
+    if (activeSchoolIdRef.current && isUuid(activeSchoolIdRef.current)) {
+      await loadBundleForSchool(activeSchoolIdRef.current);
+    }
+  };
   const [school, setSchool] = useState<School>(DEFAULT_SCHOOL);
   const [students, setStudents] = useState<Student[]>(DEFAULT_STUDENTS);
   const [vehicles, setVehicles] = useState<Vehicle[]>(DEFAULT_VEHICLES);
@@ -942,6 +1010,55 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
 
       const savedRole = localStorage.getItem('kreno_role') as UserRole | null;
       if (savedRole) setUserRoleState(savedRole);
+
+      // Sync authenticated Supabase user, role, school_id & Postgres bundle
+      const supabase = createClient();
+      supabase.auth.getUser().then(async ({ data }) => {
+        if (data.user) {
+          setAuthEmail(data.user.email || null);
+          const metaRole = data.user.app_metadata?.role || data.user.user_metadata?.role;
+          const resolvedRole: UserRole = metaRole === 'secretary' ? 'secretary' : 'owner';
+          setAccountRole(resolvedRole);
+          if (resolvedRole === 'secretary') {
+            setUserRoleState('secretary');
+          }
+          const metaSchoolId =
+            data.user.app_metadata?.school_id || data.user.user_metadata?.school_id;
+          if (typeof metaSchoolId === 'string' && isUuid(metaSchoolId.trim())) {
+            const sid = metaSchoolId.trim();
+            activeSchoolIdRef.current = sid;
+            await loadBundleForSchool(sid);
+
+            // Remove any prior channel instance (prevents StrictMode double-mount error)
+            const channelName = `school-sync-${sid}`;
+            const existingChannels = supabase.getChannels().filter(c => c.topic === `realtime:${channelName}`);
+            for (const ch of existingChannels) {
+              await supabase.removeChannel(ch);
+            }
+
+            // Live Realtime sync across Owner & Secretary PCs
+            const scheduleRefresh = () => {
+              if (realtimeTimerRef.current) clearTimeout(realtimeTimerRef.current);
+              realtimeTimerRef.current = setTimeout(() => {
+                loadBundleForSchool(sid);
+              }, 500);
+            };
+
+            const ch = supabase
+              .channel(`${channelName}-${Date.now()}`)
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'students', filter: `school_id=eq.${sid}` }, scheduleRefresh)
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'schedule_slots', filter: `school_id=eq.${sid}` }, scheduleRefresh)
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'exams', filter: `school_id=eq.${sid}` }, scheduleRefresh)
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'payments', filter: `school_id=eq.${sid}` }, scheduleRefresh)
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'mentors', filter: `school_id=eq.${sid}` }, scheduleRefresh)
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'vehicles', filter: `school_id=eq.${sid}` }, scheduleRefresh)
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'engineers', filter: `school_id=eq.${sid}` }, scheduleRefresh)
+              .on('postgres_changes', { event: '*', schema: 'public', table: 'schools', filter: `id=eq.${sid}` }, scheduleRefresh)
+              .subscribe();
+            realtimeChannelRef.current = ch;
+          }
+        }
+      });
 
       const DATA_VERSION = 'v3_3per_car_6h_2026_11_26';
       if (localStorage.getItem('kreno_data_version') !== DATA_VERSION) {
@@ -1029,11 +1146,40 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.warn('Failed to load local storage state:', err);
     }
+    return () => {
+      if (realtimeTimerRef.current) clearTimeout(realtimeTimerRef.current);
+      if (realtimeChannelRef.current) {
+        const supabase = createClient();
+        supabase.removeChannel(realtimeChannelRef.current);
+        realtimeChannelRef.current = null;
+      }
+    };
   }, []);
+
+  // Auto-sync changed students to Supabase Postgres
+  useEffect(() => {
+    if (!dbHydratedRef.current || !isUuid(school.id)) return;
+    students.forEach(st => {
+      if (prevStudentsRef.current.get(st.id) !== st) {
+        dbUpsertStudentFull(school.id, st);
+      }
+    });
+    prevStudentsRef.current = new Map(students.map(s => [s.id, s]));
+  }, [students, school.id]);
+
+  // Auto-sync school profile & settings to Supabase Postgres
+  useEffect(() => {
+    if (!dbHydratedRef.current || !isUuid(school.id)) return;
+    if (skipNextSchoolSyncRef.current) {
+      skipNextSchoolSyncRef.current = false;
+      return;
+    }
+    dbSaveSchoolAndSettings(school, settings);
+  }, [school, settings]);
 
   const addEngineer = (name: string, title?: string, phone?: string): Ingenieur => {
     const newEng: Ingenieur = {
-      id: `eng-${Date.now()}`,
+      id: crypto.randomUUID(),
       name: name.trim(),
       title: title?.trim() || 'Ingénieur d\'État',
       phone: phone?.trim(),
@@ -1044,6 +1190,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('kreno_engineers', JSON.stringify(updated));
       return updated;
     });
+    dbUpsertEngineer(school.id, newEng);
     logAction('create', 'settings', newEng.id, newEng.name, `Ajout de l'ingénieur examinateur ${newEng.name}`);
     return newEng;
   };
@@ -1086,6 +1233,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('kreno_audit_logs', JSON.stringify(updated));
       return updated;
     });
+    dbInsertAuditLog(school.id, entry);
   };
 
   const setTheme = (newTheme: ThemeMode) => {
@@ -1110,6 +1258,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setUserRole = (newRole: UserRole) => {
+    if (accountRole === 'secretary' && newRole === 'owner') return;
     setUserRoleState(newRole);
     localStorage.setItem('kreno_role', newRole);
   };
@@ -1125,24 +1274,41 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
   const addMentor = (mentorData: Omit<Mentor, 'id'>): Mentor => {
     const newMentor: Mentor = {
       ...mentorData,
-      id: `m-${Date.now()}`,
+      id: crypto.randomUUID(),
     };
     setMentors(prev => {
       const updated = [...prev, newMentor];
       localStorage.setItem('kreno_mentors', JSON.stringify(updated));
       return updated;
     });
+    dbUpsertMentor(school.id, newMentor);
     logAction('create', 'settings', newMentor.id, newMentor.name, `Ajout du moniteur ${newMentor.name}`);
     return newMentor;
   };
 
   const updateMentor = (id: string, updated: Partial<Mentor>) => {
+    const oldMentor = mentors.find(m => m.id === id);
     setMentors(prev => {
       const updatedList = prev.map(m => m.id === id ? { ...m, ...updated } : m);
       localStorage.setItem('kreno_mentors', JSON.stringify(updatedList));
+      const next = updatedList.find(m => m.id === id);
+      if (next) dbUpsertMentor(school.id, next);
       return updatedList;
     });
-    logAction('update', 'settings', id, updated.name || 'Moniteur', 'Mise à jour du profil moniteur');
+    if (oldMentor && updated.name && updated.name.trim() && updated.name.trim() !== oldMentor.name) {
+      const newName = updated.name.trim();
+      setStudents(prev => {
+        const updatedStudents = prev.map(st => ({
+          ...st,
+          schedule_slots: (st.schedule_slots || []).map(sc =>
+            sc.instructor_name === oldMentor.name ? { ...sc, instructor_name: newName } : sc
+          ),
+        }));
+        localStorage.setItem('kreno_students', JSON.stringify(updatedStudents));
+        return updatedStudents;
+      });
+    }
+    logAction('update', 'settings', id, updated.name || oldMentor?.name || 'Moniteur', 'Mise à jour du profil moniteur');
   };
 
   const deleteMentor = (id: string) => {
@@ -1152,6 +1318,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('kreno_mentors', JSON.stringify(updatedList));
       return updatedList;
     });
+    dbDeleteMentor(school.id, id);
     logAction('delete', 'settings', id, target?.name || 'Moniteur', 'Suppression du moniteur');
   };
 
@@ -1182,13 +1349,14 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
   const addVehicle = (vehicleData: Omit<Vehicle, 'id'>): Vehicle => {
     const newVehicle: Vehicle = {
       ...vehicleData,
-      id: `v-${Date.now()}`,
+      id: crypto.randomUUID(),
     };
     setVehicles(prev => {
       const updated = [...prev, newVehicle];
       localStorage.setItem('kreno_vehicles', JSON.stringify(updated));
       return updated;
     });
+    dbUpsertVehicle(school.id, newVehicle);
     logAction('create', 'settings', newVehicle.id, `${newVehicle.brand} ${newVehicle.model}`, `Ajout du véhicule matriculé ${newVehicle.plate_number}`);
     return newVehicle;
   };
@@ -1197,6 +1365,8 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     setVehicles(prev => {
       const updatedList = prev.map(v => v.id === id ? { ...v, ...updated } : v);
       localStorage.setItem('kreno_vehicles', JSON.stringify(updatedList));
+      const next = updatedList.find(v => v.id === id);
+      if (next) dbUpsertVehicle(school.id, next);
       return updatedList;
     });
     logAction('update', 'settings', id, updated.plate_number || 'Véhicule', 'Mise à jour des informations du véhicule');
@@ -1209,6 +1379,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('kreno_vehicles', JSON.stringify(updatedList));
       return updatedList;
     });
+    dbDeleteVehicle(school.id, id);
     logAction('delete', 'settings', id, target?.plate_number || 'Véhicule', 'Suppression du véhicule du parc automobile');
   };
 
@@ -1276,7 +1447,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     //   so they CANNOT teach 2 Cat.B + 1 Cat.C at the same hour, nor mix creneau & circulation.
     // - For Code, a mentor can teach a classroom group across categories up to the code limit.
     const slotMentorEntriesMap = new Map<string, Array<{ type: SessionDiscipline; category: LicenseCategory }>>();
-    const schoolDayHoursMap = new Map<string, Set<string>>();
+    const mentorDayHoursMap = new Map<string, Set<string>>();
     students.forEach(st => {
       (st.schedule_slots || []).forEach(slot => {
         if (slot.status !== 'cancelled' && slot.status !== 'absent') {
@@ -1285,9 +1456,10 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
             const arr = slotMentorEntriesMap.get(mKey) || [];
             arr.push({ type: slot.type, category: slot.category });
             slotMentorEntriesMap.set(mKey, arr);
+            const mdKey = `${slot.date}_${slot.instructor_name}`;
+            if (!mentorDayHoursMap.has(mdKey)) mentorDayHoursMap.set(mdKey, new Set());
+            mentorDayHoursMap.get(mdKey)!.add(slot.time_start);
           }
-          if (!schoolDayHoursMap.has(slot.date)) schoolDayHoursMap.set(slot.date, new Set());
-          schoolDayHoursMap.get(slot.date)!.add(slot.time_start);
         }
       });
     });
@@ -1385,12 +1557,9 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
 
       if (isWorkingDay && !isFullDayClosed) {
         let bookedToday = 0;
-        const usedHoursOnDate = schoolDayHoursMap.get(dateIso) || new Set<string>();
 
         for (const timeStart of possibleHours) {
           if (sessionIdx >= sessionTypesToSchedule.length || bookedToday >= maxPerDay) break;
-          // Enforce daily school cap (6 out of 7 hours max, leaving 1h libre)
-          if (!usedHoursOnDate.has(timeStart) && usedHoursOnDate.size >= maxHoursPerDay) continue;
           if (isMorningClosed && timeStart < lunchStart) continue;
           if (isAfternoonClosed && timeStart >= lunchEnd) continue;
 
@@ -1400,11 +1569,21 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
           const isTakenByStudent = studentOwnSlots.has(key);
           const capLimit = getSlotCapacityLimit(currentType, student.requested_category);
           const eligible = getEligibleMentors(currentType, student.requested_category);
+          const orderedEligible = item.instructor
+            ? [
+                ...eligible.filter(m => m.name === item.instructor),
+                ...eligible.filter(m => m.name !== item.instructor),
+              ]
+            : eligible;
 
-          // Find an eligible mentor who still has room and has no conflicting category/type at this hour
+          // Find an eligible mentor who still has room, has not hit their daily hour cap, and has no conflicting category/type at this hour
           let chosenMentorName: string | null = null;
           if (!isTakenByStudent) {
-            for (const m of eligible) {
+            for (const m of orderedEligible) {
+              const mdKey = `${dateIso}_${m.name}`;
+              const mentorHours = mentorDayHoursMap.get(mdKey) || new Set<string>();
+              if (!mentorHours.has(timeStart) && mentorHours.size >= maxHoursPerDay) continue;
+
               const mKey = `${dateIso}_${timeStart}_${m.name}`;
               const existingAtHour = slotMentorEntriesMap.get(mKey) || [];
               if (canMentorTake(existingAtHour, currentType, student.requested_category, capLimit)) {
@@ -1420,7 +1599,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
             const timeEnd = `${endHourNum < 10 ? '0' : ''}${endHourNum}:00`;
 
             newScheduledSlots.push({
-              id: item.existingId || `sc-auto-${Date.now()}-${sessionIdx}`,
+              id: item.existingId || crypto.randomUUID(),
               student_id: student.id,
               student_name: `${student.first_name} ${student.last_name}`,
               category: student.requested_category,
@@ -1428,14 +1607,15 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
               time_start: timeStart,
               time_end: timeEnd,
               type: currentType,
-              instructor_name: item.instructor || chosenMentorName,
+              instructor_name: chosenMentorName,
               status: 'scheduled',
               notes: item.notes || `Séance N° ${preservedSlots.length + sessionIdx + 1} / 30 (${currentType === 'code' ? 'Code théorique' : currentType === 'creneau' ? 'Créneau sur piste' : 'Circulation'})`,
             });
 
             studentOwnSlots.add(key);
-            usedHoursOnDate.add(timeStart);
-            schoolDayHoursMap.set(dateIso, usedHoursOnDate);
+            const mdKey = `${dateIso}_${chosenMentorName}`;
+            if (!mentorDayHoursMap.has(mdKey)) mentorDayHoursMap.set(mdKey, new Set());
+            mentorDayHoursMap.get(mdKey)!.add(timeStart);
             const mKey = `${dateIso}_${timeStart}_${chosenMentorName}`;
             const arr = slotMentorEntriesMap.get(mKey) || [];
             arr.push({ type: currentType, category: student.requested_category });
@@ -1456,10 +1636,10 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
 
   // Add new Student with optional availability preferences
   const addStudent = (studentData: Omit<Student, 'id' | 'exams' | 'schedule_slots' | 'payments'>): Student => {
-    const studentId = `st-${Date.now()}`;
+    const studentId = crypto.randomUUID();
     const initialPayment: PaymentRecord[] = studentData.amount_paid > 0 ? [
       {
-        id: `p-${Date.now()}`,
+        id: crypto.randomUUID(),
         student_id: studentId,
         amount: studentData.amount_paid,
         date: studentData.deposit_date || '2026-11-21',
@@ -1475,7 +1655,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       id: studentId,
       exams: [
         {
-          id: `ex-${Date.now()}`,
+          id: crypto.randomUUID(),
           student_id: studentId,
           exam_type: 'code',
           attempt_number: 1,
@@ -1543,6 +1723,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('kreno_students', JSON.stringify(updated));
       return updated;
     });
+    dbDeleteStudent(school.id, id);
     logAction(
       'delete',
       'candidate',
@@ -1556,7 +1737,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
   const addPayment = (studentId: string, payment: Omit<PaymentRecord, 'id'>) => {
     const newRecord: PaymentRecord = {
       ...payment,
-      id: `p-${Date.now()}`,
+      id: crypto.randomUUID(),
     };
 
     let studentName = 'Candidat';
@@ -1671,6 +1852,93 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const addScheduleSlot = (
+    studentId: string,
+    date: string,
+    timeStart: string,
+    timeEnd: string,
+    type: SessionDiscipline,
+    instructorName: string
+  ): { ok: boolean; error?: string } => {
+    const targetStudent = students.find(s => s.id === studentId);
+    if (!targetStudent) return { ok: false, error: 'Candidat introuvable.' };
+
+    const mentor = mentors.find(m => m.name === instructorName);
+    if (
+      !mentor ||
+      !mentor.is_active ||
+      !mentor.specialties.includes(type) ||
+      !mentor.license_categories.includes(targetStudent.requested_category)
+    ) {
+      return { ok: false, error: `${instructorName} n'est pas habilité pour cette discipline/catégorie.` };
+    }
+
+    const studentBusy = (targetStudent.schedule_slots || []).some(
+      sc => sc.status !== 'cancelled' && sc.status !== 'absent' && sc.date === date && sc.time_start === timeStart
+    );
+    if (studentBusy) {
+      return { ok: false, error: `${targetStudent.first_name} ${targetStudent.last_name} a déjà une séance à ${timeStart}.` };
+    }
+
+    const mentorSlotsAtTarget = students.flatMap(st =>
+      (st.schedule_slots || []).filter(
+        sc =>
+          sc.instructor_name === instructorName &&
+          sc.status !== 'cancelled' &&
+          sc.status !== 'absent' &&
+          sc.date === date &&
+          sc.time_start === timeStart
+      )
+    );
+    const hasIncompatible =
+      type === 'code'
+        ? mentorSlotsAtTarget.some(sc => sc.type !== 'code')
+        : mentorSlotsAtTarget.some(sc => sc.type !== type || sc.category !== targetStudent.requested_category);
+    if (hasIncompatible) {
+      return { ok: false, error: `${instructorName} encadre déjà une autre discipline ou catégorie à ${timeStart}.` };
+    }
+
+    const capLimit = getSlotCapacityLimit(type, targetStudent.requested_category);
+    if (mentorSlotsAtTarget.length >= capLimit) {
+      return { ok: false, error: `${instructorName} est complet (${mentorSlotsAtTarget.length}/${capLimit}) à ${timeStart}.` };
+    }
+
+    const newSlot: ScheduleSlot = {
+      id: crypto.randomUUID(),
+      student_id: targetStudent.id,
+      student_name: `${targetStudent.first_name} ${targetStudent.last_name}`,
+      category: targetStudent.requested_category,
+      date,
+      time_start: timeStart,
+      time_end: timeEnd,
+      type,
+      instructor_name: instructorName,
+      status: 'scheduled',
+      notes: 'Séance ajoutée manuellement',
+    };
+
+    setStudents(prev => {
+      const updated = prev.map(s => {
+        if (s.id !== studentId) return s;
+        const updatedSlots = [...(s.schedule_slots || []), newSlot].sort(
+          (a, b) => a.date.localeCompare(b.date) || a.time_start.localeCompare(b.time_start)
+        );
+        return { ...s, schedule_slots: updatedSlots };
+      });
+      localStorage.setItem('kreno_students', JSON.stringify(updated));
+      return updated;
+    });
+
+    logAction(
+      'create',
+      'schedule',
+      newSlot.id,
+      `${targetStudent.first_name} ${targetStudent.last_name}`,
+      `Ajout manuel d'une séance (${type}) le ${date} à ${timeStart} avec ${instructorName}`
+    );
+    return { ok: true };
+  };
+
   const deleteScheduleSlot = (studentId: string, slotId: string) => {
     setStudents(prev => {
       const updated = prev.map(s => {
@@ -1690,43 +1958,79 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
 
   const updateScheduleSlot = (studentId: string, slotId: string, updatedSlot: Partial<ScheduleSlot>) => {
     setStudents(prev => {
+      const targetStudent = prev.find(s => s.id === studentId);
+      const currentSlot = targetStudent?.schedule_slots.find(sc => sc.id === slotId);
+      if (!targetStudent || !currentSlot) return prev;
+
+      const targetDate = updatedSlot.date ?? currentSlot.date;
+      const targetTime = updatedSlot.time_start ?? currentSlot.time_start;
+      const targetStatus = updatedSlot.status ?? currentSlot.status;
+      const targetInstructor = updatedSlot.instructor_name ?? currentSlot.instructor_name;
+      const targetType = updatedSlot.type ?? currentSlot.type;
+      const targetCategory = updatedSlot.category ?? currentSlot.category;
+
+      // Enforce: if changing mentor, target mentor must be active and qualified for (type, category)
+      if (updatedSlot.instructor_name && updatedSlot.instructor_name !== currentSlot.instructor_name) {
+        const targetMentor = mentors.find(m => m.name === updatedSlot.instructor_name);
+        if (
+          !targetMentor ||
+          !targetMentor.is_active ||
+          !targetMentor.specialties.includes(targetType) ||
+          !targetMentor.license_categories.includes(targetCategory)
+        ) {
+          return prev;
+        }
+      }
+
+      if (targetStatus !== 'cancelled' && targetStatus !== 'absent') {
+        // Enforce: the same candidate can NEVER be placed twice in the same (date, time_start) hour
+        const hasSamePersonAtHour = targetStudent.schedule_slots.some(
+          sc =>
+            sc.id !== slotId &&
+            sc.status !== 'cancelled' &&
+            sc.status !== 'absent' &&
+            sc.date === targetDate &&
+            sc.time_start === targetTime
+        );
+        if (hasSamePersonAtHour) {
+          return prev;
+        }
+
+        // Enforce: mentor physical exclusivity & capacity at target (date, time_start)
+        const isReschedulingOrReassigning =
+          targetDate !== currentSlot.date ||
+          targetTime !== currentSlot.time_start ||
+          targetInstructor !== currentSlot.instructor_name ||
+          (currentSlot.status === 'cancelled' || currentSlot.status === 'absent');
+
+        if (isReschedulingOrReassigning) {
+          const mentorSlotsAtTarget = prev.flatMap(st =>
+            (st.schedule_slots || []).filter(
+              sc =>
+                sc.id !== slotId &&
+                sc.instructor_name === targetInstructor &&
+                sc.status !== 'cancelled' &&
+                sc.status !== 'absent' &&
+                sc.date === targetDate &&
+                sc.time_start === targetTime
+            )
+          );
+          const hasIncompatible =
+            targetType === 'code'
+              ? mentorSlotsAtTarget.some(sc => sc.type !== 'code')
+              : mentorSlotsAtTarget.some(sc => sc.type !== targetType || sc.category !== targetCategory);
+          if (hasIncompatible) {
+            return prev;
+          }
+          const capLimit = getSlotCapacityLimit(targetType, targetCategory);
+          if (mentorSlotsAtTarget.length >= capLimit) {
+            return prev;
+          }
+        }
+      }
+
       const updated = prev.map(s => {
         if (s.id !== studentId) return s;
-        const currentSlot = s.schedule_slots.find(sc => sc.id === slotId);
-        if (!currentSlot) return s;
-
-        const targetDate = updatedSlot.date ?? currentSlot.date;
-        const targetTime = updatedSlot.time_start ?? currentSlot.time_start;
-        const targetStatus = updatedSlot.status ?? currentSlot.status;
-
-        // Enforce: if changing mentor, target mentor must be active and qualified for (type, category)
-        if (updatedSlot.instructor_name && updatedSlot.instructor_name !== currentSlot.instructor_name) {
-          const targetMentor = mentors.find(m => m.name === updatedSlot.instructor_name);
-          if (
-            !targetMentor ||
-            !targetMentor.is_active ||
-            !targetMentor.specialties.includes(currentSlot.type) ||
-            !targetMentor.license_categories.includes(currentSlot.category)
-          ) {
-            return s;
-          }
-        }
-
-        // Enforce: the same candidate can NEVER be placed twice in the same (date, time_start) hour
-        if (targetStatus !== 'cancelled' && targetStatus !== 'absent') {
-          const hasSamePersonAtHour = s.schedule_slots.some(
-            sc =>
-              sc.id !== slotId &&
-              sc.status !== 'cancelled' &&
-              sc.status !== 'absent' &&
-              sc.date === targetDate &&
-              sc.time_start === targetTime
-          );
-          if (hasSamePersonAtHour) {
-            return s;
-          }
-        }
-
         return {
           ...s,
           schedule_slots: s.schedule_slots.map(sc => sc.id === slotId ? { ...sc, ...updatedSlot } : sc),
@@ -1742,8 +2046,9 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     allStudents: Student[],
     targetStudent: Student,
     sessionType: 'code' | 'creneau' | 'circulation',
-    afterDateIso: string
-  ): { date: string; time_start: string; time_end: string } | null => {
+    afterDateIso: string,
+    preferredInstructor?: string
+  ): { date: string; time_start: string; time_end: string; instructor_name: string } | null => {
     const dayMap: Record<number, DayOfWeek> = {
       0: 'sunday',
       1: 'monday',
@@ -1755,7 +2060,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     };
 
     const capLimit = getSlotCapacityLimit(sessionType, targetStudent.requested_category);
-    const eligibleMentors = (() => {
+    const baseEligibleMentors = (() => {
       const exact = mentors.filter(
         m => m.is_active && m.specialties.includes(sessionType) && m.license_categories.includes(targetStudent.requested_category)
       );
@@ -1764,9 +2069,15 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
       if (bySpec.length > 0) return bySpec;
       return mentors.filter(m => m.is_active);
     })();
+    const eligibleMentors = preferredInstructor
+      ? [
+          ...baseEligibleMentors.filter(m => m.name === preferredInstructor),
+          ...baseEligibleMentors.filter(m => m.name !== preferredInstructor),
+        ]
+      : baseEligibleMentors;
 
     const slotMentorEntriesMap = new Map<string, Array<{ type: SessionDiscipline; category: LicenseCategory }>>();
-    const schoolDayHoursMap = new Map<string, Set<string>>();
+    const mentorDayHoursMap = new Map<string, Set<string>>();
     const studentOwnSlots = new Set<string>();
 
     allStudents.forEach(st => {
@@ -1779,9 +2090,10 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
             const arr = slotMentorEntriesMap.get(mKey) || [];
             arr.push({ type: slot.type, category: slot.category });
             slotMentorEntriesMap.set(mKey, arr);
+            const mdKey = `${slot.date}_${slot.instructor_name}`;
+            if (!mentorDayHoursMap.has(mdKey)) mentorDayHoursMap.set(mdKey, new Set());
+            mentorDayHoursMap.get(mdKey)!.add(slot.time_start);
           }
-          if (!schoolDayHoursMap.has(slot.date)) schoolDayHoursMap.set(slot.date, new Set());
-          schoolDayHoursMap.get(slot.date)!.add(slot.time_start);
         }
       });
     });
@@ -1843,27 +2155,29 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         const isAfternoonClosed = settings.unavailable_periods.some(p => p.date === dateIso && p.period === 'afternoon');
 
         if (daysToUse.includes(dayOfWeek) && !isFullDayClosed) {
-          const usedHoursOnDate = schoolDayHoursMap.get(dateIso) || new Set<string>();
           for (const timeStart of orderedHours) {
-            if (!usedHoursOnDate.has(timeStart) && usedHoursOnDate.size >= maxHoursPerDay) continue;
             if (isMorningClosed && timeStart < lunchStart) continue;
             if (isAfternoonClosed && timeStart >= lunchEnd) continue;
 
             const key = `${dateIso}_${timeStart}`;
             const isTakenByStudent = studentOwnSlots.has(key);
             if (!isTakenByStudent) {
-              const hasRoom = eligibleMentors.some(m => {
+              const availableMentor = eligibleMentors.find(m => {
+                const mdKey = `${dateIso}_${m.name}`;
+                const mentorHours = mentorDayHoursMap.get(mdKey) || new Set<string>();
+                if (!mentorHours.has(timeStart) && mentorHours.size >= maxHoursPerDay) return false;
+
                 const existing = slotMentorEntriesMap.get(`${dateIso}_${timeStart}_${m.name}`) || [];
                 if (existing.length >= capLimit) return false;
                 if (existing.length === 0) return true;
                 if (sessionType === 'code') return existing.every(s => s.type === 'code');
                 return existing.every(s => s.type === sessionType && s.category === targetStudent.requested_category);
               });
-              if (hasRoom) {
+              if (availableMentor) {
                 const [startHourNum] = timeStart.split(':').map(Number);
                 const endHourNum = startHourNum + 1;
                 const timeEnd = `${endHourNum < 10 ? '0' : ''}${endHourNum}:00`;
-                return { date: dateIso, time_start: timeStart, time_end: timeEnd };
+                return { date: dateIso, time_start: timeStart, time_end: timeEnd, instructor_name: availableMentor.name };
               }
             }
           }
@@ -1933,7 +2247,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
     let extraFee = 0;
 
     if (!alreadyCompensated) {
-      const nextPos = findNextAvailableSlot(students, targetStudent, targetSlot.type, targetSlot.date);
+      const nextPos = findNextAvailableSlot(students, targetStudent, targetSlot.type, targetSlot.date, targetSlot.instructor_name);
       if (nextPos) {
         if (!isSchoolFault) {
           extraFee =
@@ -1942,7 +2256,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
               : targetStudent.contract_details?.practical_hour_rate ?? settings.extra_practical_hour_fee ?? 1500;
         }
         newSlot = {
-          id: `sc-${isSchoolFault ? 'free' : 'paid'}-${Date.now()}`,
+          id: crypto.randomUUID(),
           student_id: targetStudent.id,
           student_name: `${targetStudent.first_name} ${targetStudent.last_name}`,
           category: targetStudent.requested_category,
@@ -1950,7 +2264,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
           time_start: nextPos.time_start,
           time_end: nextPos.time_end,
           type: targetSlot.type,
-          instructor_name: targetSlot.instructor_name,
+          instructor_name: nextPos.instructor_name,
           status: 'scheduled',
           billing_type: isSchoolFault ? 'free_makeup' : 'paid_extra',
           extra_fee: extraFee,
@@ -2021,7 +2335,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         const attemptNum = previousAttempts.length + 1;
 
         const newExam: ExamRecord = {
-          id: `ex-${Date.now()}`,
+          id: crypto.randomUUID(),
           student_id: studentId,
           exam_type: examType,
           attempt_number: attemptNum,
@@ -2039,7 +2353,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         // If exam fee is paid right now, record payment entry
         if (feePaid) {
           updatedPayments.push({
-            id: `p-${Date.now()}`,
+            id: crypto.randomUUID(),
             student_id: studentId,
             amount: feeAmount,
             date: examDate,
@@ -2097,7 +2411,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
           const previousAttempts = st.exams.filter(e => e.exam_type === examType);
           const attemptNum = previousAttempts.length + 1;
           const newExam: ExamRecord = {
-            id: `ex-${Date.now()}`,
+            id: crypto.randomUUID(),
             student_id: studentId,
             exam_type: examType,
             attempt_number: attemptNum,
@@ -2115,7 +2429,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         if (result === 'passed') {
           if (examType === 'code' && !updatedExams.some(e => e.exam_type === 'creneau')) {
             updatedExams.push({
-              id: `ex-${Date.now()}-c`,
+              id: crypto.randomUUID(),
               student_id: studentId,
               exam_type: 'creneau',
               attempt_number: 1,
@@ -2125,7 +2439,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
             });
           } else if (examType === 'creneau' && !updatedExams.some(e => e.exam_type === 'circulation')) {
             updatedExams.push({
-              id: `ex-${Date.now()}-cir`,
+              id: crypto.randomUUID(),
               student_id: studentId,
               exam_type: 'circulation',
               attempt_number: 1,
@@ -2161,7 +2475,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         if (result === 'passed') {
           if (examTarget.exam_type === 'code' && !updatedExams.some(e => e.exam_type === 'creneau')) {
             updatedExams.push({
-              id: `ex-${Date.now()}-c`,
+              id: crypto.randomUUID(),
               student_id: studentId,
               exam_type: 'creneau',
               attempt_number: 1,
@@ -2171,7 +2485,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
             });
           } else if (examTarget.exam_type === 'creneau' && !updatedExams.some(e => e.exam_type === 'circulation')) {
             updatedExams.push({
-              id: `ex-${Date.now()}-cir`,
+              id: crypto.randomUUID(),
               student_id: studentId,
               exam_type: 'circulation',
               attempt_number: 1,
@@ -2203,11 +2517,13 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
 
         if (feePaid && !examTarget.fee_paid) {
           const fee = examTarget.fee_amount || settings.standard_exam_fee || 2000;
+          const nowLocal = new Date();
+          const localIso = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
           updatedPayments.push({
-            id: `p-${Date.now()}`,
+            id: crypto.randomUUID(),
             student_id: studentId,
             amount: fee,
-            date: new Date().toISOString().split('T')[0],
+            date: localIso,
             type: 'exam_fee',
             method: 'especes',
             receipt_number: `REC-EX-${Math.floor(100 + Math.random() * 900)}`,
@@ -2244,7 +2560,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         const attemptNum = previousAttempts.length + 1;
 
         const newExam: ExamRecord = {
-          id: `ex-${Date.now()}-${st.id}`,
+          id: crypto.randomUUID(),
           student_id: st.id,
           exam_type: selection.exam_type,
           attempt_number: attemptNum,
@@ -2261,7 +2577,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
 
         if (selection.fee_paid) {
           updatedPayments.push({
-            id: `p-${Date.now()}-${st.id}`,
+            id: crypto.randomUUID(),
             student_id: st.id,
             amount: selection.fee_amount,
             date,
@@ -2328,7 +2644,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
           const previousAttempts = st.exams.filter(e => e.exam_type === isSelected.exam_type);
           const attemptNum = previousAttempts.length + 1;
           const newExam: ExamRecord = {
-            id: `ex-${Date.now()}-${st.id}`,
+            id: crypto.randomUUID(),
             student_id: st.id,
             exam_type: isSelected.exam_type,
             attempt_number: attemptNum,
@@ -2368,6 +2684,10 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         lang,
         setLang,
         userRole,
+        accountRole,
+        authEmail,
+        syncStatus,
+        refreshFromSupabase,
         setUserRole,
         school,
         setSchool,
@@ -2392,6 +2712,7 @@ export function KrenoProvider({ children }: { children: React.ReactNode }) {
         deletePayment,
         deleteExamRecord,
         deleteExamSession,
+        addScheduleSlot,
         deleteScheduleSlot,
         updateScheduleSlot,
         resolveScheduleSlot,

@@ -12,7 +12,8 @@ import {
   Building,
   ShieldCheck,
   Languages,
-  DollarSign
+  DollarSign,
+  UserPlus,
 } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
 import { DayOfWeek } from '@/types/kreno';
@@ -36,6 +37,46 @@ export default function SettingsPage() {
   const [unDate, setUnDate] = useState('2026-12-01');
   const [unPeriod, setUnPeriod] = useState<'full_day' | 'morning' | 'afternoon'>('full_day');
   const [unReason, setUnReason] = useState('Fermeture exceptionnelle');
+
+  // State for creating a Secretary account linked to this school
+  const [secName, setSecName] = useState('');
+  const [secEmail, setSecEmail] = useState('');
+  const [secPassword, setSecPassword] = useState('');
+  const [secLoading, setSecLoading] = useState(false);
+  const [secFeedback, setSecFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const handleCreateSecretary = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSecFeedback(null);
+    setSecLoading(true);
+    try {
+      const res = await fetch('/api/auth/create-secretary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: secName,
+          email: secEmail,
+          password: secPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSecFeedback({ ok: false, text: data.error || 'Erreur lors de la création.' });
+      } else {
+        setSecFeedback({
+          ok: true,
+          text: `Compte Secrétaire créé pour ${data.secretary.email}.`,
+        });
+        setSecName('');
+        setSecEmail('');
+        setSecPassword('');
+      }
+    } catch {
+      setSecFeedback({ ok: false, text: 'Impossible de contacter le serveur.' });
+    } finally {
+      setSecLoading(false);
+    }
+  };
 
   const daysList: { id: DayOfWeek; label: string }[] = [
     { id: 'saturday', label: 'Samedi' },
@@ -175,7 +216,97 @@ export default function SettingsPage() {
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl font-medium text-slate-900 dark:text-white"
               />
             </div>
+
+            <div>
+              <label className="block text-slate-400 text-[11px] mb-1">
+                Code PIN Gérant (pour quitter le mode Secrétaire) :
+              </label>
+              <input
+                type="password"
+                maxLength={12}
+                value={settings.owner_pin ?? '1234'}
+                onChange={(e) => updateSettings({ owner_pin: e.target.value })}
+                placeholder="1234"
+                className="w-48 px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl font-mono font-bold text-slate-900 dark:text-white"
+              />
+            </div>
           </div>
+        </div>
+
+        {/* 1b. Create Secretary Account (Owner Only) */}
+        <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4">
+          <div className="flex items-center gap-2.5 border-b border-border-subtle pb-3">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-medium">
+              <UserPlus className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-white">
+                Créer un Compte Secrétaire
+              </h3>
+              <p className="text-[11px] text-slate-400">
+                Le secrétaire créé sera lié automatiquement à votre auto-école sans accès aux finances ni aux paramètres.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleCreateSecretary} className="space-y-3 text-xs">
+            <div>
+              <label className="block text-slate-400 text-[11px] mb-1">Nom complet :</label>
+              <input
+                type="text"
+                value={secName}
+                onChange={(e) => setSecName(e.target.value)}
+                placeholder="Ex: Nadia Mansouri"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl font-medium text-slate-900 dark:text-white"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-400 text-[11px] mb-1">Email de connexion :</label>
+                <input
+                  type="email"
+                  required
+                  value={secEmail}
+                  onChange={(e) => setSecEmail(e.target.value)}
+                  placeholder="secretaire@autoecole.dz"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl font-medium text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 text-[11px] mb-1">Mot de passe (min. 6) :</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={secPassword}
+                  onChange={(e) => setSecPassword(e.target.value)}
+                  placeholder="••••••"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-xl font-medium text-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            {secFeedback && (
+              <div
+                className={`p-2.5 rounded-xl border text-[11px] font-semibold ${
+                  secFeedback.ok
+                    ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200'
+                }`}
+              >
+                {secFeedback.text}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={secLoading}
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold transition cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>{secLoading ? 'Création...' : 'Créer le compte Secrétaire'}</span>
+            </button>
+          </form>
         </div>
 
         {/* 2. Working Days Schedule */}

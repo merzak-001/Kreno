@@ -39,7 +39,7 @@ export default function FinancesPage() {
       dossierNumber: s.dossier_number,
       category: s.requested_category,
     }))
-  ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  ).sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <div className="space-y-6 w-full">

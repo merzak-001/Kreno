@@ -20,6 +20,7 @@ import {
   Mentor,
   SessionDiscipline,
   getCategoryBadgeClass,
+  getDisciplineMeta,
 } from '@/types/kreno';
 
 const ALL_CATEGORIES: LicenseCategory[] = [
@@ -40,17 +41,17 @@ const DISCIPLINES: { id: SessionDiscipline; label: string; badgeClass: string }[
   {
     id: 'code',
     label: '1. Code théorique',
-    badgeClass: 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+    badgeClass: getDisciplineMeta('code').badgeClass,
   },
   {
     id: 'creneau',
     label: '2. Créneau / Piste',
-    badgeClass: 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+    badgeClass: getDisciplineMeta('creneau').badgeClass,
   },
   {
     id: 'circulation',
     label: '3. Circulation / Route',
-    badgeClass: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    badgeClass: getDisciplineMeta('circulation').badgeClass,
   },
 ];
 
@@ -64,7 +65,9 @@ export default function MentorsPage() {
     settings,
     updateSettings,
     getSlotCapacityLimit,
+    userRole,
   } = useKreno();
+  const isOwner = userRole === 'owner';
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMentor, setEditingMentor] = useState<Mentor | null>(null);
@@ -188,13 +191,19 @@ export default function MentorsPage() {
           </p>
         </div>
 
-        <button
-          onClick={openAddModal}
-          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Ajouter un moniteur</span>
-        </button>
+        {isOwner ? (
+          <button
+            onClick={openAddModal}
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Ajouter un moniteur</span>
+          </button>
+        ) : (
+          <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-surface-elevated border border-border-subtle text-[11px] font-semibold text-slate-500">
+            Lecture seule (Gérant requis pour modifier)
+          </span>
+        )}
       </div>
 
       {/* Mentors Grid */}
@@ -286,20 +295,24 @@ export default function MentorsPage() {
                   <CalendarDays className="w-3.5 h-3.5" />
                   <span>Voir son planning</span>
                 </Link>
-                <button
-                  onClick={() => openEditModal(mentor)}
-                  className="p-2 rounded-xl border border-border-subtle hover:bg-slate-100 dark:hover:bg-surface-elevated text-slate-600 dark:text-slate-300 transition cursor-pointer"
-                  title="Modifier"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => deleteMentor(mentor.id)}
-                  className="p-2 rounded-xl border border-border-subtle hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition cursor-pointer"
-                  title="Supprimer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {isOwner && (
+                  <>
+                    <button
+                      onClick={() => openEditModal(mentor)}
+                      className="p-2 rounded-xl border border-border-subtle hover:bg-slate-100 dark:hover:bg-surface-elevated text-slate-600 dark:text-slate-300 transition cursor-pointer"
+                      title="Modifier"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => deleteMentor(mentor.id)}
+                      className="p-2 rounded-xl border border-border-subtle hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           );
@@ -333,8 +346,8 @@ export default function MentorsPage() {
             <thead className="bg-slate-50 dark:bg-surface-elevated/70 text-slate-500 dark:text-slate-400 border-b border-border-subtle text-[10px] uppercase font-semibold tracking-wider">
               <tr>
                 <th className="py-2.5 px-4">Catégorie de Permis</th>
-                <th className="py-2.5 px-4 text-blue-600 dark:text-blue-400">1. Code (candidats / h)</th>
-                <th className="py-2.5 px-4 text-purple-600 dark:text-purple-400">2. Créneau (candidats / h)</th>
+                <th className="py-2.5 px-4 text-sky-600 dark:text-sky-400">1. Code (candidats / h)</th>
+                <th className="py-2.5 px-4 text-orange-600 dark:text-orange-400">2. Créneau (candidats / h)</th>
                 <th className="py-2.5 px-4 text-emerald-600 dark:text-emerald-400">3. Circulation (candidats / h)</th>
               </tr>
             </thead>
@@ -352,9 +365,10 @@ export default function MentorsPage() {
                         type="number"
                         min={1}
                         max={30}
+                        disabled={!isOwner}
                         value={getSlotCapacityLimit(disc, cat)}
                         onChange={(e) => handleCapacityChange(cat, disc, Number(e.target.value))}
-                        className="w-24 px-2.5 py-1.5 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-lg font-mono font-semibold text-slate-900 dark:text-white"
+                        className="w-24 px-2.5 py-1.5 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-lg font-mono font-semibold text-slate-900 dark:text-white disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     </td>
                   ))}

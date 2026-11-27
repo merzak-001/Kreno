@@ -118,6 +118,7 @@ export interface SchoolSettings {
   standard_exam_fee: number;          // Par défaut: 2000 DZD
   category_exam_fees?: Partial<Record<LicenseCategory, number>>; // Frais d'examen par catégorie
   unavailable_periods: UnavailablePeriod[];
+  owner_pin?: string;                 // Code PIN pour déverrouiller le mode Gérant (défaut: "1234")
 }
 
 export interface ContractDetails {
@@ -286,5 +287,40 @@ export function getCategoryDotClass(category: LicenseCategory | string): string 
       return 'bg-rose-500';
     default:
       return 'bg-slate-500';
+  }
+}
+
+export function getDisciplineMeta(type: SessionDiscipline) {
+  switch (type) {
+    case 'code':
+      return {
+        label: 'Code',
+        fullLabel: 'Code théorique',
+        dotClass: 'bg-sky-500',
+        borderLeftClass: 'border-l-sky-600',
+        cardClass: 'bg-sky-50/95 dark:bg-sky-950/40 border-sky-300 dark:border-sky-700/70 hover:border-sky-500',
+        pillClass: 'bg-sky-600 text-white shadow-2xs',
+        badgeClass: 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800',
+      };
+    case 'creneau':
+      return {
+        label: 'Créneau',
+        fullLabel: 'Créneau sur piste',
+        dotClass: 'bg-orange-500',
+        borderLeftClass: 'border-l-orange-500',
+        cardClass: 'bg-orange-50/95 dark:bg-orange-950/40 border-orange-300 dark:border-orange-700/70 hover:border-orange-500',
+        pillClass: 'bg-orange-500 text-white shadow-2xs',
+        badgeClass: 'bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800',
+      };
+    case 'circulation':
+      return {
+        label: 'Route',
+        fullLabel: 'Circulation routière',
+        dotClass: 'bg-emerald-500',
+        borderLeftClass: 'border-l-emerald-600',
+        cardClass: 'bg-emerald-50/95 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/70 hover:border-emerald-500',
+        pillClass: 'bg-emerald-600 text-white shadow-2xs',
+        badgeClass: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+      };
   }
 }

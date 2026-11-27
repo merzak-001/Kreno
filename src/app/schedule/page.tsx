@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   Calendar as CalendarIcon,
   CalendarDays,
-  List,
   CheckCircle2,
   XCircle,
   Trash2,
@@ -17,11 +16,20 @@ import {
   History,
   UserX,
   RotateCcw,
-  GripVertical,
-  UserCheck,
+  Plus,
+  X,
+  Users,
 } from 'lucide-react';
 import { useKreno } from '@/context/KrenoContext';
-import { DayOfWeek, Mentor, ScheduleSlot, getCategoryBadgeClass } from '@/types/kreno';
+import {
+  DayOfWeek,
+  Mentor,
+  ScheduleSlot,
+  SessionDiscipline,
+  getCategoryBadgeClass,
+  getCategoryDotClass,
+  getDisciplineMeta,
+} from '@/types/kreno';
 import { DateInput } from '@/components/DateInput';
 
 type SlotWithStudent = ScheduleSlot & { studentId: string };
@@ -53,6 +61,12 @@ function toIsoDate(d: Date): string {
   return `${yy}-${mm}-${dd}`;
 }
 
+function parseLocalIso(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return new Date();
+  return new Date(y, m - 1, d);
+}
+
 function formatShortFR(iso: string): string {
   const parts = iso.split('-');
   return parts.length === 3 ? `${parts[2]}/${parts[1]}` : iso;
@@ -68,136 +82,84 @@ function getStartOfAlgerianWeek(ref: Date): Date {
 
 function SchedulePageContent() {
   const searchParams = useSearchParams();
-  const { students, mentors, settings, updateScheduleSlot, resolveScheduleSlot, deleteScheduleSlot, getSlotCapacityLimit } = useKreno();
+  const {
+    students,
+    mentors,
+    settings,
+    userRole,
+    addScheduleSlot,
+    updateScheduleSlot,
+    resolveScheduleSlot,
+    deleteScheduleSlot,
+    getSlotCapacityLimit,
+  } = useKreno();
+  const isOwner = userRole === 'owner';
 
   const todayIso = useMemo(() => toIsoDate(new Date()), []);
 
-  const [viewMode, setViewMode] = useState<'agenda' | 'day' | 'history' | 'table'>('agenda');
-  const [selectedMentor, setSelectedMentor] = useState<string>('all');
-  const [filterType, setFilterType] = useState<'all' | 'code' | 'creneau' | 'circulation'>('all');
+  const [viewMode, setViewMode] = useState<'day' | 'agenda' | 'history'>('day');
+  const [selectedMentor, setSelectedMentor] = useState<string>(
+    () => searchParams.get('mentor') || 'all'
+  );
+  const [filterType, setFilterType] = useState<'all' | SessionDiscipline>('all');
   const [historyFilter, setHistoryFilter] = useState<'all' | 'completed' | 'absent' | 'cancelled'>('all');
-  const [selectedDate, setSelectedDate] = useState<string>('all');
   const [agendaAnchorDate, setAgendaAnchorDate] = useState<string>(todayIso);
   const [dayViewDate, setDayViewDate] = useState<string>(todayIso);
-  const [resolutionNotice, setResolutionNotice] = useState<{ type: 'free' | 'paid'; text: string } | null>(null);
-
-  useEffect(() => {
-    const mentorParam = searchParams.get('mentor');
-    if (mentorParam) {
-      setSelectedMentor(mentorParam);
-    }
-  }, [searchParams]);
+  const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Drag & Drop state
   const [draggedSlot, setDraggedSlot] = useState<SlotWithStudent | null>(null);
   const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
-  const [dropMentorTarget, setDropMentorTarget] = useState<string | null>(null);
 
-  const isMentorEligibleForSlot = (m: Mentor, slot: SlotWithStudent) =>
+  // Simple modals: Session details/actions, Confirmation for Absent/Cancelled, Quick Add
+  const [activeSlotId, setActiveSlotId] = useState<string | null>(null);
+  const [pendingResolution, setPendingResolution] = useState<{
+    slot: SlotWithStudent;
+    action: 'absent' | 'cancelled';
+  } | null>(null);
+  const [quickAddCell, setQuickAddCell] = useState<{
+    date: string;
+    timeStart: string;
+    timeEnd: string;
+  } | null>(null);
+  const [quickAddStudentId, setQuickAddStudentId] = useState<string>('');
+  const [quickAddType, setQuickAddType] = useState<SessionDiscipline>('code');
+  const [quickAddMentor, setQuickAddMentor] = useState<string>('');
+
+  const allSlotsWithStudent: SlotWithStudent[] = students.flatMap((s) =>
+    (s.schedule_slots || []).map((slot) => ({
+      ...slot,
+      studentId: s.id,
+    }))
+  );
+
+  const activeSlot = activeSlotId
+    ? allSlotsWithStudent.find((s) => s.id === activeSlotId) || null
+    : null;
+
+  const isMentorEligibleForSlot = (m: Mentor, type: SessionDiscipline, category: string) =>
     m.is_active &&
-    m.specialties.includes(slot.type) &&
-    m.license_categories.includes(slot.category);
+    m.specialties.includes(type) &&
+    m.license_categories.includes(category as ScheduleSlot['category']);
 
-  const handleAssignMentor = (slot: SlotWithStudent, newMentorName: string) => {
-    if (!newMentorName || newMentorName === slot.instructor_name) return;
+  const filteredSlots = allSlotsWithStudent
+    .filter((slot) => {
+      const matchesMentor = selectedMentor === 'all' || slot.instructor_name === selectedMentor;
+      const matchesType = filterType === 'all' || slot.type === filterType;
+      return matchesMentor && matchesType;
+    })
+    .sort((a, b) => a.date.localeCompare(b.date) || a.time_start.localeCompare(b.time_start));
 
-    const targetMentor = mentors.find((m) => m.name === newMentorName);
-    if (!targetMentor || !isMentorEligibleForSlot(targetMentor, slot)) {
-      const discLabel = slot.type === 'code' ? 'Code' : slot.type === 'creneau' ? 'Créneau' : 'Circulation';
-      setResolutionNotice({
-        type: 'paid',
-        text: `Impossible : ${newMentorName} n'est pas actif ou n'est pas habilité pour ${discLabel} (Permis ${slot.category}).`,
-      });
-      return;
+  const mentorCounts = new Map<string, number>();
+  allSlotsWithStudent.forEach((s) => {
+    if (s.status !== 'cancelled' && s.status !== 'absent') {
+      mentorCounts.set(s.instructor_name, (mentorCounts.get(s.instructor_name) || 0) + 1);
     }
+  });
 
-    const targetLimit = getSlotCapacityLimit(slot.type, slot.category);
-    const existingWithTarget = allSlotsWithStudent.filter(
-      (s) =>
-        s.id !== slot.id &&
-        s.date === slot.date &&
-        s.time_start === slot.time_start &&
-        s.instructor_name === newMentorName &&
-        s.status !== 'cancelled' &&
-        s.status !== 'absent'
-    );
-
-    // Physical vehicle/room lock:
-    // - Practical (creneau/circulation) cannot mix different categories (e.g. Cat B + Cat C) or mix creneau & circulation with the same mentor.
-    // - Code cannot mix with practical lessons for the same mentor.
-    const hasIncompatibleActivity =
-      slot.type === 'code'
-        ? existingWithTarget.some((s) => s.type !== 'code')
-        : existingWithTarget.some((s) => s.type !== slot.type || s.category !== slot.category);
-
-    if (hasIncompatibleActivity) {
-      setResolutionNotice({
-        type: 'paid',
-        text: `Impossible : ${newMentorName} encadre déjà une autre catégorie ou discipline à ${slot.time_start} le ${slot.date} (impossible de mélanger deux véhicules/permis différents).`,
-      });
-      return;
-    }
-
-    const currentCount = existingWithTarget.length;
-    if (currentCount >= targetLimit) {
-      setResolutionNotice({
-        type: 'paid',
-        text: `Impossible : ${newMentorName} a déjà atteint sa capacité maximale (${currentCount}/${targetLimit}) le ${slot.date} à ${slot.time_start}.`,
-      });
-      return;
-    }
-
-    updateScheduleSlot(slot.studentId, slot.id, { instructor_name: newMentorName });
-    setResolutionNotice({
-      type: 'free',
-      text: `Séance de ${slot.student_name} (${slot.date} à ${slot.time_start}) transférée à ${newMentorName}.`,
-    });
-  };
-
-  // Flatten all student schedule slots
-  const allSlotsWithStudent: SlotWithStudent[] = useMemo(() => {
-    return students.flatMap((s) =>
-      (s.schedule_slots || []).map((slot) => ({
-        ...slot,
-        studentId: s.id,
-      }))
-    );
-  }, [students]);
-
-  const uniqueDates = useMemo(() => {
-    return Array.from(new Set(allSlotsWithStudent.map((s) => s.date))).sort();
-  }, [allSlotsWithStudent]);
-
-  const filteredSlots = useMemo(() => {
-    return allSlotsWithStudent
-      .filter((slot) => {
-        const matchesMentor = selectedMentor === 'all' || slot.instructor_name === selectedMentor;
-        const matchesType = filterType === 'all' || slot.type === filterType;
-        const matchesDate = viewMode !== 'table' || selectedDate === 'all' || slot.date === selectedDate;
-        return matchesMentor && matchesType && matchesDate;
-      })
-      .sort((a, b) => {
-        const dateDiff = a.date.localeCompare(b.date);
-        if (dateDiff !== 0) return dateDiff;
-        return a.time_start.localeCompare(b.time_start);
-      });
-  }, [allSlotsWithStudent, selectedMentor, filterType, selectedDate, viewMode]);
-
-  const mentorCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    allSlotsWithStudent.forEach((s) => {
-      if (s.status !== 'cancelled' && s.status !== 'absent') {
-        map.set(s.instructor_name, (map.get(s.instructor_name) || 0) + 1);
-      }
-    });
-    return map;
-  }, [allSlotsWithStudent]);
-
-  // Working days for the week containing agendaAnchorDate
+  // Working days for the selected week
   const weekDays = useMemo(() => {
-    const anchor = agendaAnchorDate ? new Date(agendaAnchorDate) : new Date();
-    const startSat = getStartOfAlgerianWeek(Number.isNaN(anchor.getTime()) ? new Date() : anchor);
-
+    const startSat = getStartOfAlgerianWeek(parseLocalIso(agendaAnchorDate));
     const activeDays =
       settings.working_days.length > 0
         ? settings.working_days
@@ -219,12 +181,18 @@ function SchedulePageContent() {
   }, [settings.working_days, agendaAnchorDate, todayIso]);
 
   const shiftWeek = (deltaWeeks: number) => {
-    const anchor = agendaAnchorDate ? new Date(agendaAnchorDate) : new Date();
-    anchor.setDate(anchor.getDate() + deltaWeeks * 7);
-    setAgendaAnchorDate(toIsoDate(anchor));
+    const d = parseLocalIso(agendaAnchorDate);
+    d.setDate(d.getDate() + deltaWeeks * 7);
+    setAgendaAnchorDate(toIsoDate(d));
   };
 
-  // Hourly rows (6h/day: 08h-12h + 14h-16h)
+  const shiftDay = (deltaDays: number) => {
+    const d = parseLocalIso(dayViewDate);
+    d.setDate(d.getDate() + deltaDays);
+    setDayViewDate(toIsoDate(d));
+  };
+
+  // Hourly rows
   const libreHour = settings.libre_hour || '';
   const hourRows = useMemo(() => {
     const startH = parseInt((settings.start_hour || '08:00').split(':')[0], 10);
@@ -243,72 +211,114 @@ function SchedulePageContent() {
     return rows;
   }, [settings.start_hour, settings.end_hour, settings.lunch_break_start, settings.lunch_break_end, libreHour]);
 
-  // Index slots by `${date}_${time_start}`
-  const slotsByCell = useMemo(() => {
-    const map = new Map<string, SlotWithStudent[]>();
-    filteredSlots.forEach((slot) => {
-      const key = `${slot.date}_${slot.time_start}`;
-      const list = map.get(key) || [];
-      list.push(slot);
-      map.set(key, list);
-    });
-    return map;
-  }, [filteredSlots]);
+  const slotsByCell = new Map<string, SlotWithStudent[]>();
+  filteredSlots.forEach((slot) => {
+    const key = `${slot.date}_${slot.time_start}`;
+    const list = slotsByCell.get(key) || [];
+    list.push(slot);
+    slotsByCell.set(key, list);
+  });
 
-  // Day view slots
-  const dayViewSlots = useMemo(() => {
-    return filteredSlots.filter((s) => s.date === dayViewDate);
-  }, [filteredSlots, dayViewDate]);
+  const dayViewSlots = filteredSlots.filter((s) => s.date === dayViewDate);
 
-  // History slots (completed, absent, cancelled), newest first
-  const historySlots = useMemo(() => {
-    return filteredSlots
-      .filter((s) => {
-        const isFinalized = s.status === 'completed' || s.status === 'absent' || s.status === 'cancelled';
-        if (!isFinalized) return false;
-        if (historyFilter !== 'all' && s.status !== historyFilter) return false;
-        return true;
-      })
-      .sort((a, b) => b.date.localeCompare(a.date) || b.time_start.localeCompare(a.time_start));
-  }, [filteredSlots, historyFilter]);
+  const historySlots = filteredSlots
+    .filter((s) => {
+      const isFinalized = s.status === 'completed' || s.status === 'absent' || s.status === 'cancelled';
+      if (!isFinalized) return false;
+      if (historyFilter !== 'all' && s.status !== historyFilter) return false;
+      return true;
+    })
+    .sort((a, b) => b.date.localeCompare(a.date) || b.time_start.localeCompare(a.time_start));
 
-  const handleStatusChange = (slot: SlotWithStudent, newStatus: ScheduleSlot['status']) => {
+  const executeStatusChange = (slot: SlotWithStudent, newStatus: ScheduleSlot['status']) => {
     if (newStatus === 'completed') {
       resolveScheduleSlot(slot.studentId, slot.id, 'completed');
-      setResolutionNotice(null);
+      setNotice({ type: 'success', text: `Séance de ${slot.student_name} marquée Effectuée.` });
     } else if (newStatus === 'absent') {
       const res = resolveScheduleSlot(slot.studentId, slot.id, 'absent_student');
-      if (res?.addedSlot) {
-        setResolutionNotice({
-          type: 'paid',
-          text: `Absence candidat (${slot.student_name}) : comptée sur le candidat + 1h payante (+${res.extraFee} DZD) programmée le ${res.addedSlot.date} à ${res.addedSlot.time_start}.`,
-        });
-      }
+      setNotice({
+        type: 'error',
+        text: res?.addedSlot
+          ? `Absence enregistrée (${slot.student_name}) : +1h payante (+${res.extraFee} DZD) programmée le ${res.addedSlot.date} à ${res.addedSlot.time_start}.`
+          : `Absence enregistrée pour ${slot.student_name}.`,
+      });
     } else if (newStatus === 'cancelled') {
       const res = resolveScheduleSlot(slot.studentId, slot.id, 'cancelled_school');
-      if (res?.addedSlot) {
-        setResolutionNotice({
-          type: 'free',
-          text: `Annulation auto-école (${slot.student_name}) : comptée sur l'école + 1h gratuite offerte le ${res.addedSlot.date} à ${res.addedSlot.time_start}.`,
-        });
-      }
+      setNotice({
+        type: 'success',
+        text: res?.addedSlot
+          ? `Annulation école (${slot.student_name}) : +1h gratuite ajoutée le ${res.addedSlot.date} à ${res.addedSlot.time_start}.`
+          : `Séance annulée pour ${slot.student_name}.`,
+      });
     } else {
       resolveScheduleSlot(slot.studentId, slot.id, 'scheduled');
-      setResolutionNotice(null);
+      setNotice({ type: 'success', text: `Séance de ${slot.student_name} remise en Planifiée.` });
     }
   };
 
-  // Drag & Drop Handlers
-  const handleDragStart = (e: React.DragEvent, slot: SlotWithStudent) => {
-    setDraggedSlot(slot);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', slot.id);
+  const requestStatusChange = (slot: SlotWithStudent, newStatus: ScheduleSlot['status']) => {
+    if (newStatus === 'absent' || newStatus === 'cancelled') {
+      setPendingResolution({ slot, action: newStatus });
+      return;
+    }
+    executeStatusChange(slot, newStatus);
+  };
+
+  const handleAssignMentor = (slot: SlotWithStudent, newMentorName: string) => {
+    if (!newMentorName || newMentorName === slot.instructor_name) return;
+
+    const targetMentor = mentors.find((m) => m.name === newMentorName);
+    if (!targetMentor || !isMentorEligibleForSlot(targetMentor, slot.type, slot.category)) {
+      setNotice({
+        type: 'error',
+        text: `${newMentorName} n'est pas habilité pour ${getDisciplineMeta(slot.type).fullLabel} (Permis ${slot.category}).`,
+      });
+      return;
+    }
+
+    const targetLimit = getSlotCapacityLimit(slot.type, slot.category);
+    const existingWithTarget = allSlotsWithStudent.filter(
+      (s) =>
+        s.id !== slot.id &&
+        s.date === slot.date &&
+        s.time_start === slot.time_start &&
+        s.instructor_name === newMentorName &&
+        s.status !== 'cancelled' &&
+        s.status !== 'absent'
+    );
+
+    const hasIncompatibleActivity =
+      slot.type === 'code'
+        ? existingWithTarget.some((s) => s.type !== 'code')
+        : existingWithTarget.some((s) => s.type !== slot.type || s.category !== slot.category);
+
+    if (hasIncompatibleActivity) {
+      setNotice({
+        type: 'error',
+        text: `${newMentorName} encadre déjà une autre catégorie ou discipline à ${slot.time_start} le ${slot.date}.`,
+      });
+      return;
+    }
+
+    if (existingWithTarget.length >= targetLimit) {
+      setNotice({
+        type: 'error',
+        text: `${newMentorName} est complet (${existingWithTarget.length}/${targetLimit}) le ${slot.date} à ${slot.time_start}.`,
+      });
+      return;
+    }
+
+    updateScheduleSlot(slot.studentId, slot.id, { instructor_name: newMentorName });
+    setNotice({
+      type: 'success',
+      text: `Séance de ${slot.student_name} transférée à ${newMentorName}.`,
+    });
   };
 
   const handleDropOnCell = (targetIso: string, targetTime: string, targetEndTime: string) => {
     if (!draggedSlot) return;
     if (draggedSlot.date !== targetIso || draggedSlot.time_start !== targetTime) {
-      const samePersonAlreadyInHour = allSlotsWithStudent.some(
+      const samePersonBusy = allSlotsWithStudent.some(
         (s) =>
           s.id !== draggedSlot.id &&
           s.studentId === draggedSlot.studentId &&
@@ -317,17 +327,16 @@ function SchedulePageContent() {
           s.date === targetIso &&
           s.time_start === targetTime
       );
-      if (samePersonAlreadyInHour) {
-        setResolutionNotice({
-          type: 'paid',
-          text: `Action impossible : ${draggedSlot.student_name} a déjà une séance à ${targetTime} le ${targetIso}. Un candidat ne peut pas être programmé deux fois sur la même heure.`,
+      if (samePersonBusy) {
+        setNotice({
+          type: 'error',
+          text: `${draggedSlot.student_name} a déjà une séance à ${targetTime} le ${targetIso}.`,
         });
         setDraggedSlot(null);
         setDropTargetKey(null);
         return;
       }
 
-      // Check mentor physical exclusivity & capacity at target hour
       const mentorSlotsAtTarget = allSlotsWithStudent.filter(
         (s) =>
           s.id !== draggedSlot.id &&
@@ -342,19 +351,20 @@ function SchedulePageContent() {
           ? mentorSlotsAtTarget.some((s) => s.type !== 'code')
           : mentorSlotsAtTarget.some((s) => s.type !== draggedSlot.type || s.category !== draggedSlot.category);
       if (hasIncompatible) {
-        setResolutionNotice({
-          type: 'paid',
-          text: `Impossible : ${draggedSlot.instructor_name} encadre déjà une autre catégorie de permis ou discipline à ${targetTime} le ${targetIso}.`,
+        setNotice({
+          type: 'error',
+          text: `${draggedSlot.instructor_name} encadre déjà une autre discipline ou catégorie à ${targetTime} le ${targetIso}.`,
         });
         setDraggedSlot(null);
         setDropTargetKey(null);
         return;
       }
+
       const targetCap = getSlotCapacityLimit(draggedSlot.type, draggedSlot.category);
       if (mentorSlotsAtTarget.length >= targetCap) {
-        setResolutionNotice({
-          type: 'paid',
-          text: `Impossible : ${draggedSlot.instructor_name} a déjà atteint sa capacité (${mentorSlotsAtTarget.length}/${targetCap}) à ${targetTime} le ${targetIso}.`,
+        setNotice({
+          type: 'error',
+          text: `${draggedSlot.instructor_name} est complet (${mentorSlotsAtTarget.length}/${targetCap}) à ${targetTime} le ${targetIso}.`,
         });
         setDraggedSlot(null);
         setDropTargetKey(null);
@@ -366,263 +376,209 @@ function SchedulePageContent() {
         time_start: targetTime,
         time_end: targetEndTime,
       });
+      setNotice({
+        type: 'success',
+        text: `Séance de ${draggedSlot.student_name} déplacée au ${formatShortFR(targetIso)} à ${targetTime}.`,
+      });
     }
     setDraggedSlot(null);
     setDropTargetKey(null);
   };
 
+  const openQuickAdd = (date: string, timeStart: string, timeEnd: string) => {
+    const defaultStudent = students[0]?.id || '';
+    setQuickAddStudentId(defaultStudent);
+    setQuickAddType('code');
+    const st = students.find((s) => s.id === defaultStudent);
+    const eligible = st
+      ? mentors.filter((m) => isMentorEligibleForSlot(m, 'code', st.requested_category))
+      : mentors.filter((m) => m.is_active);
+    setQuickAddMentor(eligible[0]?.name || '');
+    setQuickAddCell({ date, timeStart, timeEnd });
+  };
+
+  const handleQuickAddSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickAddCell || !quickAddStudentId || !quickAddMentor) return;
+    const res = addScheduleSlot(
+      quickAddStudentId,
+      quickAddCell.date,
+      quickAddCell.timeStart,
+      quickAddCell.timeEnd,
+      quickAddType,
+      quickAddMentor
+    );
+    if (!res.ok) {
+      setNotice({ type: 'error', text: res.error || 'Impossible d’ajouter la séance.' });
+      return;
+    }
+    setNotice({
+      type: 'success',
+      text: `Séance ajoutée le ${formatShortFR(quickAddCell.date)} à ${quickAddCell.timeStart}.`,
+    });
+    setQuickAddCell(null);
+  };
+
   const statusBadge = (status: ScheduleSlot['status']) => {
     if (status === 'completed') {
       return (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
           Effectuée
         </span>
       );
     }
     if (status === 'absent') {
       return (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800">
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800">
           Absent
         </span>
       );
     }
     if (status === 'cancelled') {
       return (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border bg-slate-100 dark:bg-surface-elevated text-slate-500 border-border-subtle">
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-slate-100 dark:bg-surface-elevated text-slate-500 border-border-subtle">
           Annulée
         </span>
       );
     }
     return (
-      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium border bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800">
         Planifiée
       </span>
     );
   };
 
+  const quickAddSelectedStudent = students.find((s) => s.id === quickAddStudentId);
+  const quickAddEligibleMentors = quickAddSelectedStudent
+    ? mentors.filter((m) => isMentorEligibleForSlot(m, quickAddType, quickAddSelectedStudent.requested_category))
+    : mentors.filter((m) => m.is_active);
+
   return (
-    <div className="space-y-6 w-full">
-      {/* Top Banner */}
-      <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-4 transition-colors">
+    <div className="space-y-4 w-full">
+      {/* Clean Header & 3 Simple Views */}
+      <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
-              Unité Légale 1 Heure
-            </span>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900">
-              Planning 6h / Jour (08h–12h • 14h–16h){libreHour ? ` • Libre ${libreHour}` : ''} • Max {settings.candidates_per_vehicle ?? 3} / voiture
-            </span>
-            <span className="text-xs text-slate-400 font-medium font-mono">• Glisser-déposer actif</span>
-          </div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
-            Agenda &amp; Planning des Séances
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <CalendarDays className="w-5 h-5 text-blue-600" />
+            <span>Planning des Séances</span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Déplacez les séances par glisser-déposer, validez les présences/absences en 1 clic et consultez l&apos;historique.
+            Pointez les présences du jour ou organisez la semaine simplement.
           </p>
         </div>
 
-        {/* View Switcher */}
-        <div className="flex items-center bg-slate-100 dark:bg-surface-elevated p-1 rounded-xl border border-border-subtle text-xs flex-wrap">
-          <button
-            onClick={() => setViewMode('agenda')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer font-medium ${
-              viewMode === 'agenda'
-                ? 'bg-surface text-blue-600 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-            }`}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center bg-slate-100 dark:bg-surface-elevated p-1 rounded-xl border border-border-subtle text-xs">
+            <button
+              onClick={() => setViewMode('day')}
+              className={`px-3.5 py-1.5 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                viewMode === 'day'
+                  ? 'bg-surface text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Aujourd&apos;hui</span>
+            </button>
+            <button
+              onClick={() => setViewMode('agenda')}
+              className={`px-3.5 py-1.5 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                viewMode === 'agenda'
+                  ? 'bg-surface text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <CalendarIcon className="w-3.5 h-3.5" />
+              <span>Semaine</span>
+            </button>
+            <button
+              onClick={() => setViewMode('history')}
+              className={`px-3.5 py-1.5 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                viewMode === 'history'
+                  ? 'bg-surface text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Historique</span>
+            </button>
+          </div>
+
+          <Link
+            href="/mentors"
+            className="px-3 py-2 rounded-xl border border-border-subtle bg-slate-50 dark:bg-surface-elevated hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition"
           >
-            <CalendarDays className="w-3.5 h-3.5" />
-            <span>Agenda Semaine</span>
-          </button>
-          <button
-            onClick={() => setViewMode('day')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer font-medium ${
-              viewMode === 'day'
-                ? 'bg-surface text-blue-600 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span>Vue Jour</span>
-          </button>
-          <button
-            onClick={() => setViewMode('history')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer font-medium ${
-              viewMode === 'history'
-                ? 'bg-surface text-blue-600 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-            }`}
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Historique ({historySlots.length})</span>
-          </button>
-          <button
-            onClick={() => setViewMode('table')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition cursor-pointer font-medium ${
-              viewMode === 'table'
-                ? 'bg-surface text-blue-600 shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-            }`}
-          >
-            <List className="w-3.5 h-3.5" />
-            <span>Vue Liste</span>
-          </button>
+            <Users className="w-3.5 h-3.5 text-blue-600" />
+            <span>Moniteurs</span>
+          </Link>
         </div>
       </div>
 
-      {/* Mentor Schedule Tabs (1 tab per mentor) */}
-      <div className="bg-surface p-3 rounded-xl border border-border-subtle shadow-xs flex items-center gap-2 overflow-x-auto text-xs">
-        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1.5">
-          <UserCheck className="w-3.5 h-3.5" />
-          <span>Moniteurs :</span>
-        </span>
-        <button
-          onClick={() => setSelectedMentor('all')}
-          className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer shrink-0 border ${
-            selectedMentor === 'all'
-              ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900'
-              : 'bg-slate-50 dark:bg-surface-elevated text-slate-600 dark:text-slate-300 border-border-subtle hover:bg-slate-100'
-          }`}
-        >
-          Tous ({allSlotsWithStudent.filter((s) => s.status !== 'cancelled' && s.status !== 'absent').length}h)
-        </button>
-        {mentors.map((m) => {
-          const isMentorDrop = dropMentorTarget === m.name;
-          const isDropAllowed = !draggedSlot || isMentorEligibleForSlot(m, draggedSlot);
-          return (
-            <button
-              key={m.id}
-              onClick={() => setSelectedMentor(m.name)}
-              onDragOver={(e) => {
-                if (!draggedSlot) return;
-                e.preventDefault();
-                if (dropMentorTarget !== m.name) setDropMentorTarget(m.name);
-              }}
-              onDragLeave={() => {
-                if (dropMentorTarget === m.name) setDropMentorTarget(null);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (draggedSlot) {
-                  handleAssignMentor(draggedSlot, m.name);
-                  setDraggedSlot(null);
-                }
-                setDropMentorTarget(null);
-              }}
-              title={
-                draggedSlot && !isDropAllowed
-                  ? `${m.name} n'est pas habilité pour cette séance`
-                  : 'Cliquer pour voir son planning, ou glisser une séance compatible ici'
-              }
-              className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer shrink-0 border inline-flex items-center gap-1.5 ${
-                isMentorDrop
-                  ? isDropAllowed
-                    ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-400 scale-105'
-                    : 'bg-rose-600 text-white border-rose-600 ring-2 ring-rose-400'
-                  : draggedSlot && !isDropAllowed
-                  ? 'bg-slate-100 dark:bg-surface-elevated text-slate-400 border-border-subtle opacity-50'
-                  : selectedMentor === m.name
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                  : 'bg-slate-50 dark:bg-surface-elevated text-slate-700 dark:text-slate-200 border-border-subtle hover:bg-slate-100'
-              }`}
-            >
-              <span className="flex items-center gap-0.5">
-                {m.specialties.includes('code') && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${selectedMentor === m.name || isMentorDrop ? 'bg-white' : 'bg-blue-500'}`} />
-                )}
-                {m.specialties.includes('creneau') && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${selectedMentor === m.name || isMentorDrop ? 'bg-white' : 'bg-purple-500'}`} />
-                )}
-                {m.specialties.includes('circulation') && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${selectedMentor === m.name || isMentorDrop ? 'bg-white' : 'bg-emerald-500'}`} />
-                )}
-              </span>
-              <span>{m.name}</span>
-              <span className={`text-[10px] font-mono ${selectedMentor === m.name || isMentorDrop ? 'text-blue-100' : 'text-slate-400'}`}>
-                ({mentorCounts.get(m.name) || 0}h)
-              </span>
-            </button>
-          );
-        })}
-        <Link
-          href="/mentors"
-          className="ml-auto px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 shrink-0 transition"
-        >
-          + Gérer moniteurs &amp; capacités
-        </Link>
-      </div>
-
-      {/* Filter & Navigation Toolbar */}
-      <div className="bg-surface p-4 rounded-xl border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-4 text-xs">
+      {/* Simple Filter Bar */}
+      <div className="bg-surface px-4 py-3 rounded-xl border border-border-subtle shadow-xs flex items-center justify-between flex-wrap gap-3 text-xs">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-slate-400 font-medium">Discipline :</span>
           {[
             { id: 'all', label: 'Toutes', dot: '' },
-            { id: 'code', label: '1. Code', dot: 'bg-blue-500' },
-            { id: 'creneau', label: '2. Créneau', dot: 'bg-purple-500' },
-            { id: 'circulation', label: '3. Route', dot: 'bg-emerald-500' },
+            { id: 'code', label: '1. Code', dot: getDisciplineMeta('code').dotClass },
+            { id: 'creneau', label: '2. Créneau', dot: getDisciplineMeta('creneau').dotClass },
+            { id: 'circulation', label: '3. Route', dot: getDisciplineMeta('circulation').dotClass },
           ].map((f) => (
             <button
               key={f.id}
               onClick={() => setFilterType(f.id as typeof filterType)}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer font-medium border inline-flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer font-semibold border inline-flex items-center gap-1.5 ${
                 filterType === f.id
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-xs'
                   : 'bg-slate-50 dark:bg-surface-elevated text-slate-600 dark:text-slate-300 border-border-subtle hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               {f.dot && (
-                <span className={`w-2 h-2 rounded-full ${filterType === f.id ? 'bg-white' : f.dot}`} />
+                <span className={`w-2 h-2 rounded-full ${f.dot}`} />
               )}
               <span>{f.label}</span>
             </button>
           ))}
+
+          <select
+            value={selectedMentor}
+            onChange={(e) => setSelectedMentor(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated text-slate-700 dark:text-slate-200 font-semibold cursor-pointer"
+          >
+            <option value="all">Tous les moniteurs</option>
+            {mentors
+              .filter((m) => m.is_active)
+              .map((m) => (
+                <option key={m.id} value={m.name}>
+                  {m.name} ({mentorCounts.get(m.name) || 0}h)
+                </option>
+              ))}
+          </select>
         </div>
 
-        {/* Flexible Date & Week Navigation */}
-        {viewMode === 'agenda' && (
-          <div className="flex items-center gap-2 flex-wrap">
+        {/* Date / Week Navigation */}
+        {viewMode === 'day' && (
+          <div className="flex items-center gap-1.5">
             <button
-              onClick={() => shiftWeek(-1)}
-              className="p-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-              title="Semaine précédente"
+              onClick={() => shiftDay(-1)}
+              className="p-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              title="Jour précédent"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setAgendaAnchorDate(todayIso)}
-              className="px-3 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition cursor-pointer"
+              onClick={() => setDayViewDate(todayIso)}
+              className="px-3 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer"
             >
               Aujourd&apos;hui
             </button>
             <button
-              onClick={() => shiftWeek(1)}
-              className="p-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
-              title="Semaine suivante"
+              onClick={() => shiftDay(1)}
+              className="p-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              title="Jour suivant"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
-            <div className="w-40">
-              <DateInput
-                value={agendaAnchorDate}
-                onChange={(val) => val && setAgendaAnchorDate(val)}
-                className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-lg text-xs font-medium"
-                title="Aller à une date"
-              />
-            </div>
-          </div>
-        )}
-
-        {viewMode === 'day' && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setDayViewDate(todayIso)}
-              className="px-3 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition cursor-pointer"
-            >
-              Aujourd&apos;hui
-            </button>
-            <div className="w-40">
+            <div className="w-36">
               <DateInput
                 value={dayViewDate}
                 onChange={(val) => val && setDayViewDate(val)}
@@ -632,142 +588,230 @@ function SchedulePageContent() {
           </div>
         )}
 
+        {viewMode === 'agenda' && (
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => shiftWeek(-1)}
+              className="p-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              title="Semaine précédente"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setAgendaAnchorDate(todayIso)}
+              className="px-3 py-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer"
+            >
+              Cette semaine
+            </button>
+            <button
+              onClick={() => shiftWeek(1)}
+              className="p-1.5 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              title="Semaine suivante"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <div className="w-36">
+              <DateInput
+                value={agendaAnchorDate}
+                onChange={(val) => val && setAgendaAnchorDate(val)}
+                className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-lg text-xs font-medium"
+              />
+            </div>
+          </div>
+        )}
+
         {viewMode === 'history' && (
           <div className="flex items-center gap-1.5">
-            {[
-              { id: 'all', label: 'Tout' },
-              { id: 'completed', label: 'Effectuées' },
-              { id: 'absent', label: 'Absents' },
-              { id: 'cancelled', label: 'Annulées' },
-            ].map((hf) => (
+            {(['all', 'completed', 'absent', 'cancelled'] as const).map((hf) => (
               <button
-                key={hf.id}
-                onClick={() => setHistoryFilter(hf.id as typeof historyFilter)}
-                className={`px-2.5 py-1 rounded-lg border text-xs font-medium cursor-pointer transition ${
-                  historyFilter === hf.id
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900'
+                key={hf}
+                onClick={() => setHistoryFilter(hf)}
+                className={`px-2.5 py-1.5 rounded-lg border font-medium cursor-pointer ${
+                  historyFilter === hf
+                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900'
                     : 'bg-slate-50 dark:bg-surface-elevated text-slate-600 dark:text-slate-300 border-border-subtle'
                 }`}
               >
-                {hf.label}
+                {hf === 'all' ? 'Tout' : hf === 'completed' ? 'Effectuées' : hf === 'absent' ? 'Absents' : 'Annulées'}
               </button>
             ))}
           </div>
         )}
-
-        {viewMode === 'table' && (
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
-            <select
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-50 dark:bg-surface-elevated border border-border-subtle rounded-lg font-medium text-slate-700 dark:text-slate-200 text-xs"
-            >
-              <option value="all">Toutes les dates ({uniqueDates.length} jours)</option>
-              {uniqueDates.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
       </div>
 
-      {/* Resolution Feedback Banner */}
-      {resolutionNotice && (
+      {/* Feedback Banner */}
+      {notice && (
         <div
-          className={`p-3.5 rounded-xl border text-xs flex items-center justify-between gap-3 ${
-            resolutionNotice.type === 'free'
+          className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-3 ${
+            notice.type === 'success'
               ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
               : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200'
           }`}
         >
-          <span className="font-medium">{resolutionNotice.text}</span>
+          <div className="flex items-center gap-2 font-medium">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{notice.text}</span>
+          </div>
           <button
-            onClick={() => setResolutionNotice(null)}
-            className="px-2 py-0.5 rounded hover:bg-black/5 text-[11px] font-semibold cursor-pointer"
+            onClick={() => setNotice(null)}
+            className="text-[11px] font-semibold opacity-70 hover:opacity-100 cursor-pointer"
           >
             Fermer
           </button>
         </div>
       )}
 
-      {/* 1. WEEKLY TIME-GRID AGENDA VIEW WITH DRAG & DROP */}
+      {/* 1. TODAY / DAY VIEW (Default, simple attendance) */}
+      {viewMode === 'day' && (
+        <div className="bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs space-y-3">
+          <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+            <h2 className="font-bold text-sm text-slate-900 dark:text-white">
+              Séances du {formatShortFR(dayViewDate)} {dayViewDate === todayIso ? '(Aujourd’hui)' : ''}
+            </h2>
+            <span className="text-xs font-mono text-slate-400">{dayViewSlots.length} séance(s)</span>
+          </div>
+
+          {dayViewSlots.length > 0 ? (
+            <div className="space-y-2.5">
+              {dayViewSlots.map((slot) => {
+                const disc = getDisciplineMeta(slot.type);
+                return (
+                  <div
+                    key={slot.id}
+                    className={`p-3.5 rounded-xl border border-l-4 flex items-center justify-between flex-wrap gap-3 text-xs ${disc.borderLeftClass} ${
+                      slot.status === 'cancelled'
+                        ? 'bg-slate-50 dark:bg-surface-elevated/40 border-border-subtle opacity-60'
+                        : 'bg-surface border-border-subtle hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-surface-elevated text-slate-800 dark:text-slate-100 font-mono font-bold">
+                        {slot.time_start}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${disc.pillClass}`}>
+                        {disc.label}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] border ${getCategoryBadgeClass(slot.category)}`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${getCategoryDotClass(slot.category)}`} />
+                        <span>{slot.category}</span>
+                      </span>
+                      <div>
+                        <Link
+                          href={`/candidates/${slot.studentId}`}
+                          className="font-bold text-sm text-slate-900 dark:text-white hover:text-blue-600"
+                        >
+                          {slot.student_name}
+                        </Link>
+                        <span className="block text-[11px] text-slate-500">
+                          Moniteur : <strong>{slot.instructor_name}</strong>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {slot.status === 'scheduled' ? (
+                        <>
+                          <button
+                            onClick={() => requestStatusChange(slot, 'completed')}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Présent</span>
+                          </button>
+                          <button
+                            onClick={() => requestStatusChange(slot, 'absent')}
+                            className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5"
+                          >
+                            <UserX className="w-3.5 h-3.5" />
+                            <span>Absent</span>
+                          </button>
+                          <button
+                            onClick={() => requestStatusChange(slot, 'cancelled')}
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-surface-elevated text-slate-700 dark:text-slate-200 border border-border-subtle rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5"
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
+                            <span>Annulé</span>
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {statusBadge(slot.status)}
+                          <button
+                            onClick={() => requestStatusChange(slot, 'scheduled')}
+                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-surface-elevated text-slate-600 dark:text-slate-300 rounded-lg font-medium transition cursor-pointer flex items-center gap-1"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>Annuler</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 py-10 text-center italic">
+              Aucune séance prévue le {formatShortFR(dayViewDate)}.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* 2. SIMPLE WEEKLY AGENDA */}
       {viewMode === 'agenda' && (
         <div className="bg-surface rounded-2xl border border-border-subtle shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse min-w-[880px]">
+            <table className="w-full border-collapse min-w-[920px] text-xs">
               <thead>
                 <tr className="bg-slate-50 dark:bg-surface-elevated/70 border-b border-border-subtle">
-                  <th className="p-3 w-20 text-[10px] font-semibold uppercase tracking-wider text-slate-400 border-r border-border-subtle">
+                  <th className="py-3 px-3 text-left font-semibold text-slate-500 w-20 border-r border-border-subtle">
                     Heure
                   </th>
                   {weekDays.map((wd) => (
                     <th
                       key={wd.iso}
-                      onClick={() => {
-                        setDayViewDate(wd.iso);
-                        setViewMode('day');
-                      }}
-                      title="Cliquer pour ouvrir la vue jour"
-                      className={`p-3 text-center border-r border-border-subtle last:border-r-0 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition ${
-                        wd.isToday ? 'bg-blue-50/70 dark:bg-blue-950/40' : ''
+                      className={`py-2.5 px-2 text-center border-r border-border-subtle last:border-r-0 ${
+                        wd.isToday ? 'bg-sky-50/70 dark:bg-sky-950/30' : ''
                       }`}
                     >
-                      <span className={`font-semibold block ${wd.isToday ? 'text-blue-700 dark:text-blue-300' : 'text-slate-900 dark:text-white'}`}>
-                        {wd.label}
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400">{wd.shortDate}</span>
+                      <div className="font-bold text-slate-900 dark:text-white">{wd.label}</div>
+                      <div className="text-[11px] font-mono text-slate-500">{wd.shortDate}</div>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
                 {hourRows.map((row) => (
-                  <tr key={row.time} className={row.isLunch ? 'bg-slate-100/70 dark:bg-slate-900/40' : row.isLibre ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''}>
-                    <td className="p-2.5 font-mono text-[11px] font-semibold text-slate-500 border-r border-border-subtle align-top">
+                  <tr
+                    key={row.time}
+                    className={
+                      row.isLunch
+                        ? 'bg-slate-100/70 dark:bg-slate-900/40'
+                        : row.isLibre
+                        ? 'bg-emerald-50/30 dark:bg-emerald-950/10'
+                        : ''
+                    }
+                  >
+                    <td className="py-2 px-3 font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-300 border-r border-border-subtle align-top">
                       <div>{row.time}</div>
-                      <div className="text-[10px] text-slate-400 font-normal">{row.endTime}</div>
-                      {row.isLibre && (
-                        <span className="mt-1 inline-block px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-sans text-[9px] font-semibold">
-                          Libre
-                        </span>
-                      )}
+                      <div className="text-[10px] text-slate-400">{row.endTime}</div>
                     </td>
 
                     {row.isLunch ? (
-                      <td colSpan={weekDays.length} className="p-2.5 text-center text-[11px] text-slate-400 italic">
+                      <td
+                        colSpan={weekDays.length}
+                        className="py-2 text-center text-[11px] font-medium text-slate-400 italic"
+                      >
                         Pause déjeuner ({settings.lunch_break_start} – {settings.lunch_break_end})
                       </td>
                     ) : (
                       weekDays.map((wd) => {
                         const cellKey = `${wd.iso}_${row.time}`;
                         const cellSlots = slotsByCell.get(cellKey) || [];
-                        const activeInCell = cellSlots.filter(
-                          (s) => s.status !== 'cancelled' && s.status !== 'absent'
-                        );
-                        // Check capacity limit AND physical vehicle/category exclusivity per mentor in this hour
-                        const mentorSlotsMap = new Map<string, SlotWithStudent[]>();
-                        activeInCell.forEach((s) => {
-                          const list = mentorSlotsMap.get(s.instructor_name) || [];
-                          list.push(s);
-                          mentorSlotsMap.set(s.instructor_name, list);
-                        });
-                        const hasConflict = Array.from(mentorSlotsMap.values()).some((mSlots) => {
-                          const hasCode = mSlots.some((s) => s.type === 'code');
-                          const hasPractical = mSlots.some((s) => s.type !== 'code');
-                          if (hasCode && hasPractical) return true;
-                          if (hasPractical) {
-                            const first = mSlots[0];
-                            const mixedPractical = mSlots.some((s) => s.type !== first.type || s.category !== first.category);
-                            if (mixedPractical) return true;
-                            return mSlots.length > getSlotCapacityLimit(first.type, first.category);
-                          }
-                          return mSlots.length > getSlotCapacityLimit('code', mSlots[0].category);
-                        });
-                        const activePracticalCount = activeInCell.length;
-                        const isDropTarget = dropTargetKey === cellKey;
+                        const isDropHere = dropTargetKey === cellKey;
 
                         return (
                           <td
@@ -783,159 +827,72 @@ function SchedulePageContent() {
                               e.preventDefault();
                               handleDropOnCell(wd.iso, row.time, row.endTime);
                             }}
-                            className={`p-1.5 border-r border-border-subtle last:border-r-0 align-top min-w-[130px] min-h-[60px] transition-colors ${
-                              isDropTarget
-                                ? 'bg-blue-100/70 dark:bg-blue-900/40 ring-2 ring-inset ring-blue-500'
-                                : hasConflict
-                                ? 'bg-rose-50/50 dark:bg-rose-950/20'
-                                : wd.isToday
-                                ? 'bg-blue-50/20 dark:bg-blue-950/10'
-                                : ''
+                            className={`p-1.5 border-r border-border-subtle last:border-r-0 align-top min-h-[76px] w-[150px] group transition-colors ${
+                              isDropHere ? 'bg-sky-100/70 dark:bg-sky-900/40 ring-2 ring-inset ring-sky-500' : ''
                             }`}
                           >
-                            {hasConflict && (
-                              <div className="flex items-center gap-1 text-[9px] font-bold text-rose-600 dark:text-rose-400 mb-1 px-1">
-                                <AlertTriangle className="w-3 h-3" />
-                                <span>Conflit ({activePracticalCount})</span>
-                              </div>
-                            )}
                             <div className="space-y-1.5">
-                              {cellSlots.map((slot) => (
-                                <div
-                                  key={slot.id}
-                                  draggable
-                                  onDragStart={(e) => handleDragStart(e, slot)}
-                                  onDragEnd={() => {
-                                    setDraggedSlot(null);
-                                    setDropTargetKey(null);
-                                  }}
-                                  className={`p-2 rounded-lg border border-l-4 text-[11px] space-y-1.5 transition cursor-grab active:cursor-grabbing ${
-                                    slot.type === 'code'
-                                      ? 'border-l-blue-500'
-                                      : slot.type === 'creneau'
-                                      ? 'border-l-purple-500'
-                                      : 'border-l-emerald-500'
-                                  } ${
-                                    slot.status === 'absent'
-                                      ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/60'
-                                      : slot.status === 'cancelled'
-                                      ? 'bg-slate-100/80 dark:bg-surface-elevated border-border-subtle opacity-60'
-                                      : slot.type === 'code'
-                                      ? 'bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/60 hover:border-blue-400'
-                                      : slot.type === 'creneau'
-                                      ? 'bg-purple-50/70 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800/60 hover:border-purple-400'
-                                      : 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 hover:border-emerald-400'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between gap-1">
-                                    <div className="flex items-center gap-1 min-w-0">
-                                      <GripVertical className="w-3 h-3 text-slate-300 shrink-0" />
-                                      <Link
-                                        href={`/candidates/${slot.studentId}`}
-                                        className="font-semibold text-slate-900 dark:text-white hover:text-blue-600 truncate"
-                                      >
+                              {cellSlots.map((slot) => {
+                                const disc = getDisciplineMeta(slot.type);
+                                return (
+                                  <div
+                                    key={slot.id}
+                                    draggable
+                                    onDragStart={(e) => {
+                                      setDraggedSlot(slot);
+                                      e.dataTransfer.effectAllowed = 'move';
+                                      e.dataTransfer.setData('text/plain', slot.id);
+                                    }}
+                                    onDragEnd={() => {
+                                      setDraggedSlot(null);
+                                      setDropTargetKey(null);
+                                    }}
+                                    onClick={() => setActiveSlotId(slot.id)}
+                                    className={`p-2 rounded-lg border border-l-4 text-[11px] space-y-1 transition cursor-pointer ${disc.borderLeftClass} ${
+                                      slot.status === 'absent'
+                                        ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-300'
+                                        : slot.status === 'cancelled'
+                                        ? 'bg-slate-100/80 dark:bg-surface-elevated border-border-subtle opacity-60'
+                                        : disc.cardClass
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between gap-1">
+                                      <span className="font-bold text-slate-900 dark:text-white truncate">
                                         {slot.student_name}
-                                      </Link>
-                                    </div>
-                                    <span className={`px-1.5 py-0.2 rounded text-[9px] border shrink-0 ${getCategoryBadgeClass(slot.category)}`}>
-                                      {slot.category}
-                                    </span>
-                                  </div>
-
-                                  <div className="flex items-center justify-between gap-1 text-[10px]">
-                                    {(() => {
-                                      const eligibleMentors = mentors.filter((m) => isMentorEligibleForSlot(m, slot));
-                                      const canSwitch = eligibleMentors.length > 1 || (eligibleMentors.length === 1 && eligibleMentors[0].name !== slot.instructor_name);
-                                      return (
-                                        <select
-                                          value={slot.instructor_name}
-                                          disabled={!canSwitch}
-                                          onChange={(e) => handleAssignMentor(slot, e.target.value)}
-                                          onClick={(e) => e.stopPropagation()}
-                                          title={
-                                            canSwitch
-                                              ? 'Changer vers un autre moniteur éligible'
-                                              : 'Aucun autre moniteur éligible pour cette discipline/catégorie'
-                                          }
-                                          className={`bg-white/70 dark:bg-surface-elevated/80 border border-border-subtle rounded px-1 py-0.5 text-[9px] font-medium text-slate-600 dark:text-slate-300 max-w-[95px] truncate ${
-                                            canSwitch ? 'cursor-pointer' : 'opacity-70 cursor-not-allowed'
-                                          }`}
-                                        >
-                                          {!eligibleMentors.some((m) => m.name === slot.instructor_name) && (
-                                            <option value={slot.instructor_name}>{slot.instructor_name}</option>
-                                          )}
-                                          {eligibleMentors.map((m) => (
-                                            <option key={m.id} value={m.name}>{m.name}</option>
-                                          ))}
-                                        </select>
-                                      );
-                                    })()}
-                                    <span className="text-[9px] font-mono text-slate-400">1h</span>
-                                  </div>
-
-                                  <div className="flex items-center justify-between text-[10px]">
-                                    <div className="flex items-center gap-1 flex-wrap">
-                                      <span className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
-                                        slot.type === 'code'
-                                          ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300'
-                                          : slot.type === 'creneau'
-                                          ? 'bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300'
-                                          : 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300'
-                                      }`}>
-                                        {slot.type === 'code' ? 'Code' : slot.type === 'creneau' ? 'Créneau' : 'Route'}
                                       </span>
-                                      {slot.billing_type === 'free_makeup' && (
-                                        <span className="px-1 py-0.2 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[9px] font-semibold">
-                                          Offerte
-                                        </span>
-                                      )}
-                                      {slot.billing_type === 'paid_extra' && (
-                                        <span className="px-1 py-0.2 rounded bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-[9px] font-semibold">
-                                          Payante
-                                        </span>
-                                      )}
+                                      <span
+                                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] border shrink-0 ${getCategoryBadgeClass(slot.category)}`}
+                                      >
+                                        <span className={`w-1.5 h-1.5 rounded-full ${getCategoryDotClass(slot.category)}`} />
+                                        <span>{slot.category}</span>
+                                      </span>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                      {slot.status === 'scheduled' ? (
-                                        <>
-                                          <button
-                                            onClick={() => handleStatusChange(slot, 'completed')}
-                                            className="px-1.5 py-0.5 rounded bg-emerald-100/80 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-semibold hover:bg-emerald-200 cursor-pointer"
-                                            title="Marquer Effectuée"
-                                          >
-                                            ✓
-                                          </button>
-                                          <button
-                                            onClick={() => handleStatusChange(slot, 'absent')}
-                                            className="px-1.5 py-0.5 rounded bg-amber-100/80 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 font-semibold hover:bg-amber-200 cursor-pointer"
-                                            title="Absent candidat : compté sur lui + 1h payante ajoutée"
-                                          >
-                                            Abs
-                                          </button>
-                                          <button
-                                            onClick={() => handleStatusChange(slot, 'cancelled')}
-                                            className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 hover:bg-blue-100 hover:text-blue-700 cursor-pointer"
-                                            title="Annulée par l'école : comptée sur l'école + 1h gratuite offerte"
-                                          >
-                                            École
-                                          </button>
-                                        </>
-                                      ) : (
-                                        <button
-                                          onClick={() => handleStatusChange(slot, 'scheduled')}
-                                          className="text-[10px] font-semibold text-slate-500 hover:text-blue-600 inline-flex items-center gap-0.5 cursor-pointer"
-                                          title="Remettre en Planifiée"
-                                        >
-                                          <RotateCcw className="w-2.5 h-2.5" />
-                                          <span>
-                                            {slot.status === 'completed' ? 'Fait' : slot.status === 'absent' ? 'Absent' : 'École'}
-                                          </span>
-                                        </button>
-                                      )}
+
+                                    <div className="flex items-center justify-between gap-1">
+                                      <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${disc.pillClass}`}>
+                                        {disc.label}
+                                      </span>
+                                      <span className="text-[10px] text-slate-600 dark:text-slate-300 truncate">
+                                        {slot.instructor_name}
+                                      </span>
                                     </div>
+
+                                    {slot.status !== 'scheduled' && (
+                                      <div className="pt-0.5">{statusBadge(slot.status)}</div>
+                                    )}
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
+
+                              <button
+                                type="button"
+                                onClick={() => openQuickAdd(wd.iso, row.time, row.endTime)}
+                                className="w-full py-1 rounded-md border border-dashed border-transparent group-hover:border-slate-300 dark:group-hover:border-slate-700 text-[10px] font-medium text-transparent group-hover:text-slate-400 hover:!text-blue-600 hover:!border-blue-400 transition flex items-center justify-center gap-1 cursor-pointer"
+                                title="Ajouter une séance sur ce créneau"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>Ajouter</span>
+                              </button>
                             </div>
                           </td>
                         );
@@ -949,148 +906,43 @@ function SchedulePageContent() {
         </div>
       )}
 
-      {/* 2. FLEXIBLE DAY VIEW */}
-      {viewMode === 'day' && (
-        <div className="bg-surface p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-            <h3 className="font-semibold text-sm text-slate-900 dark:text-white">
-              Séances du {dayViewDate}
-            </h3>
-            <span className="text-xs font-mono text-slate-400">{dayViewSlots.length} séance(s)</span>
-          </div>
-
-          {dayViewSlots.length > 0 ? (
-            <div className="space-y-2.5">
-              {dayViewSlots.map((slot) => (
-                <div
-                  key={slot.id}
-                  className="p-3.5 rounded-xl border border-border-subtle bg-slate-50/70 dark:bg-surface-elevated/60 flex items-center justify-between flex-wrap gap-3 text-xs"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono font-semibold">
-                      {slot.time_start} – {slot.time_end}
-                    </span>
-                    <div>
-                      <Link href={`/candidates/${slot.studentId}`} className="font-semibold text-slate-900 dark:text-white hover:text-blue-600">
-                        {slot.student_name}
-                      </Link>
-                      <p className="text-[11px] text-slate-500">
-                        {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Circulation routière'} • Cat. {slot.category}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {(() => {
-                      const eligibleMentors = mentors.filter((m) => isMentorEligibleForSlot(m, slot));
-                      const canSwitch = eligibleMentors.length > 1 || (eligibleMentors.length === 1 && eligibleMentors[0].name !== slot.instructor_name);
-                      return (
-                        <select
-                          value={slot.instructor_name}
-                          disabled={!canSwitch}
-                          onChange={(e) => handleAssignMentor(slot, e.target.value)}
-                          className={`px-2 py-1 rounded-lg border border-border-subtle bg-white dark:bg-surface text-[11px] font-medium text-slate-700 dark:text-slate-200 ${
-                            canSwitch ? 'cursor-pointer' : 'opacity-65 cursor-not-allowed'
-                          }`}
-                          title={canSwitch ? 'Changer de moniteur' : 'Aucun autre moniteur éligible pour cette discipline/catégorie'}
-                        >
-                          {!eligibleMentors.some((m) => m.name === slot.instructor_name) && (
-                            <option value={slot.instructor_name}>{slot.instructor_name}</option>
-                          )}
-                          {eligibleMentors.map((m) => (
-                            <option key={m.id} value={m.name}>{m.name}</option>
-                          ))}
-                        </select>
-                      );
-                    })()}
-                    {statusBadge(slot.status)}
-                    <button
-                      onClick={() => handleStatusChange(slot, 'completed')}
-                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg font-medium transition cursor-pointer flex items-center gap-1"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Effectuée</span>
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(slot, 'absent')}
-                      className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg font-medium transition cursor-pointer flex items-center gap-1"
-                      title="Comptée sur le candidat + 1h payante ajoutée"
-                    >
-                      <UserX className="w-3.5 h-3.5" />
-                      <span>Absent (+1h payante)</span>
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(slot, 'cancelled')}
-                      className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 border border-border-subtle rounded-lg font-medium transition cursor-pointer flex items-center gap-1"
-                      title="Comptée sur l'école + 1h gratuite offerte"
-                    >
-                      <XCircle className="w-3.5 h-3.5" />
-                      <span>Annulée École (+1h gratuite)</span>
-                    </button>
-                    {slot.status !== 'scheduled' && (
-                      <button
-                        onClick={() => handleStatusChange(slot, 'scheduled')}
-                        className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg font-medium transition cursor-pointer flex items-center gap-1"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Planifiée</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 py-10 text-center italic">
-              Aucune séance programmée pour le {dayViewDate}.
-            </p>
-          )}
-        </div>
-      )}
-
       {/* 3. HISTORY VIEW */}
       {viewMode === 'history' && (
         <div className="bg-surface rounded-2xl border border-border-subtle shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-border-subtle flex items-center justify-between">
-            <h3 className="font-semibold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-              <History className="w-4 h-4 text-blue-600" />
-              <span>Historique des Séances (Effectuées, Absences &amp; Annulations)</span>
-            </h3>
-            <span className="text-xs font-mono text-slate-400">{historySlots.length} entrée(s)</span>
-          </div>
-
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-surface-elevated/70 text-slate-500 dark:text-slate-400 border-b border-border-subtle text-[10px] uppercase font-semibold tracking-wider">
+              <thead className="bg-slate-50 dark:bg-surface-elevated/70 text-slate-500 border-b border-border-subtle text-[10px] uppercase font-semibold">
                 <tr>
                   <th className="py-3 px-4">Date &amp; Heure</th>
                   <th className="py-3 px-4">Candidat</th>
                   <th className="py-3 px-4">Discipline</th>
                   <th className="py-3 px-4">Statut</th>
-                  <th className="py-3 px-4 text-right">Modifier</th>
+                  <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
                 {historySlots.map((slot) => (
-                  <tr key={slot.id} className="hover:bg-slate-50/70 dark:hover:bg-surface-elevated/50 transition">
+                  <tr key={slot.id} className="hover:bg-slate-50/70 dark:hover:bg-surface-elevated/50">
                     <td className="py-3 px-4 font-mono">
-                      <span className="font-medium text-slate-900 dark:text-white block">{slot.date}</span>
-                      <span className="text-[11px] text-slate-400">{slot.time_start} - {slot.time_end}</span>
+                      <span className="font-semibold block">{slot.date}</span>
+                      <span className="text-[11px] text-slate-400">{slot.time_start} – {slot.time_end}</span>
                     </td>
                     <td className="py-3 px-4">
-                      <Link href={`/candidates/${slot.studentId}`} className="font-medium text-slate-900 dark:text-white hover:text-blue-600">
+                      <Link href={`/candidates/${slot.studentId}`} className="font-semibold hover:text-blue-600">
                         {slot.student_name}
                       </Link>
                       <span className="text-[10px] text-slate-400 block">Cat. {slot.category}</span>
                     </td>
-                    <td className="py-3 px-4 capitalize text-slate-700 dark:text-slate-300">
-                      {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Circulation routière'}
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${getDisciplineMeta(slot.type).pillClass}`}>
+                        {getDisciplineMeta(slot.type).fullLabel}
+                      </span>
                     </td>
                     <td className="py-3 px-4">{statusBadge(slot.status)}</td>
                     <td className="py-3 px-4 text-right">
                       <button
-                        onClick={() => handleStatusChange(slot, 'scheduled')}
-                        className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg text-[10px] font-medium border border-border-subtle transition cursor-pointer inline-flex items-center gap-1"
+                        onClick={() => requestStatusChange(slot, 'scheduled')}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg text-[10px] font-semibold border border-border-subtle cursor-pointer inline-flex items-center gap-1"
                       >
                         <RotateCcw className="w-3 h-3" />
                         <span>Reprogrammer</span>
@@ -1101,7 +953,7 @@ function SchedulePageContent() {
                 {historySlots.length === 0 && (
                   <tr>
                     <td colSpan={5} className="py-10 text-center text-slate-400 italic">
-                      Aucune séance clôturée dans l&apos;historique.
+                      Aucune séance clôturée.
                     </td>
                   </tr>
                 )}
@@ -1111,95 +963,268 @@ function SchedulePageContent() {
         </div>
       )}
 
-      {/* 4. TABLE VIEW */}
-      {viewMode === 'table' && (
-        <div className="bg-surface rounded-2xl border border-border-subtle shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-surface-elevated/70 text-slate-500 dark:text-slate-400 border-b border-border-subtle text-[10px] uppercase font-semibold tracking-wider">
-                <tr>
-                  <th className="py-3 px-4">Date &amp; Heure</th>
-                  <th className="py-3 px-4">Candidat</th>
-                  <th className="py-3 px-4">Discipline</th>
-                  <th className="py-3 px-4">Moniteur</th>
-                  <th className="py-3 px-4">Statut</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
-                {filteredSlots.map((slot) => (
-                  <tr key={slot.id} className="hover:bg-slate-50/70 dark:hover:bg-surface-elevated/50 transition">
-                    <td className="py-3 px-4 font-mono">
-                      <span className="font-medium text-slate-900 dark:text-white block">{slot.date}</span>
-                      <span className="text-[11px] text-blue-600 dark:text-blue-400">
-                        {slot.time_start} - {slot.time_end}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Link href={`/candidates/${slot.studentId}`} className="font-medium text-slate-900 dark:text-white hover:text-blue-600 transition">
-                        {slot.student_name}
-                      </Link>
-                    </td>
-                    <td className="py-3 px-4 capitalize text-slate-700 dark:text-slate-300">
-                      {slot.type === 'code' ? 'Code théorique' : slot.type === 'creneau' ? 'Créneau sur piste' : 'Circulation routière'}
-                    </td>
-                    <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
-                      {(() => {
-                        const eligibleMentors = mentors.filter((m) => isMentorEligibleForSlot(m, slot));
-                        const canSwitch = eligibleMentors.length > 1 || (eligibleMentors.length === 1 && eligibleMentors[0].name !== slot.instructor_name);
-                        return (
-                          <select
-                            value={slot.instructor_name}
-                            disabled={!canSwitch}
-                            onChange={(e) => handleAssignMentor(slot, e.target.value)}
-                            className={`px-2 py-1 rounded-lg border border-border-subtle bg-slate-50 dark:bg-surface-elevated text-xs font-medium text-slate-700 dark:text-slate-200 ${
-                              canSwitch ? 'cursor-pointer' : 'opacity-65 cursor-not-allowed'
-                            }`}
-                            title={canSwitch ? 'Changer de moniteur' : 'Aucun autre moniteur éligible'}
-                          >
-                            {!eligibleMentors.some((m) => m.name === slot.instructor_name) && (
-                              <option value={slot.instructor_name}>{slot.instructor_name}</option>
-                            )}
-                            {eligibleMentors.map((m) => (
-                              <option key={m.id} value={m.name}>{m.name}</option>
-                            ))}
-                          </select>
-                        );
-                      })()}
-                    </td>
-                    <td className="py-3 px-4">{statusBadge(slot.status)}</td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {slot.status !== 'completed' && (
-                          <button
-                            onClick={() => handleStatusChange(slot, 'completed')}
-                            className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded text-[10px] font-medium border border-emerald-200 transition cursor-pointer"
-                          >
-                            Fait
-                          </button>
-                        )}
-                        {slot.status !== 'absent' && (
-                          <button
-                            onClick={() => handleStatusChange(slot, 'absent')}
-                            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded text-[10px] font-medium border border-amber-200 transition cursor-pointer"
-                          >
-                            Absent
-                          </button>
-                        )}
-                        <button
-                          onClick={() => deleteScheduleSlot(slot.studentId, slot.id)}
-                          className="p-1 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded transition cursor-pointer"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* MODAL 1: Clicked Card Actions */}
+      {activeSlot && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-surface rounded-2xl w-full max-w-md border border-border-subtle shadow-2xl p-5 space-y-4 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${getDisciplineMeta(activeSlot.type).pillClass}`}>
+                    {getDisciplineMeta(activeSlot.type).fullLabel}
+                  </span>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] border ${getCategoryBadgeClass(activeSlot.category)}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${getCategoryDotClass(activeSlot.category)}`} />
+                    <span>{activeSlot.category}</span>
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white mt-2">
+                  {activeSlot.student_name}
+                </h3>
+                <p className="text-slate-500 font-mono mt-0.5">
+                  {formatShortFR(activeSlot.date)} • {activeSlot.time_start} – {activeSlot.time_end}
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveSlotId(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-elevated cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Moniteur assigné :
+              </label>
+              <select
+                value={activeSlot.instructor_name}
+                onChange={(e) => handleAssignMentor(activeSlot, e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-border-subtle bg-slate-50 dark:bg-surface-elevated font-semibold"
+              >
+                {!mentors.some((m) => m.name === activeSlot.instructor_name) && (
+                  <option value={activeSlot.instructor_name}>{activeSlot.instructor_name}</option>
+                )}
+                {mentors
+                  .filter((m) => isMentorEligibleForSlot(m, activeSlot.type, activeSlot.category))
+                  .map((m) => (
+                    <option key={m.id} value={m.name}>{m.name}</option>
+                  ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              <button
+                onClick={() => {
+                  requestStatusChange(activeSlot, 'completed');
+                  setActiveSlotId(null);
+                }}
+                className="py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer"
+              >
+                Présent
+              </button>
+              <button
+                onClick={() => {
+                  const s = activeSlot;
+                  setActiveSlotId(null);
+                  requestStatusChange(s, 'absent');
+                }}
+                className="py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-semibold cursor-pointer"
+              >
+                Absent
+              </button>
+              <button
+                onClick={() => {
+                  const s = activeSlot;
+                  setActiveSlotId(null);
+                  requestStatusChange(s, 'cancelled');
+                }}
+                className="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-surface-elevated text-slate-700 dark:text-slate-200 border border-border-subtle font-semibold cursor-pointer"
+              >
+                Annulé
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
+              <Link
+                href={`/candidates/${activeSlot.studentId}`}
+                className="text-blue-600 font-semibold hover:underline"
+              >
+                Ouvrir le dossier candidat →
+              </Link>
+              {isOwner && (
+                <button
+                  onClick={() => {
+                    deleteScheduleSlot(activeSlot.studentId, activeSlot.id);
+                    setActiveSlotId(null);
+                    setNotice({ type: 'success', text: 'Séance supprimée.' });
+                  }}
+                  className="text-rose-600 hover:text-rose-700 font-semibold inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Supprimer</span>
+                </button>
+              )}
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* MODAL 2: Confirmation before Absent (paid) or Cancelled (free) */}
+      {pendingResolution && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-surface rounded-2xl w-full max-w-sm border border-border-subtle shadow-2xl p-5 space-y-4 text-xs">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              {pendingResolution.action === 'absent'
+                ? `Marquer ${pendingResolution.slot.student_name} absent ?`
+                : `Annuler la séance de ${pendingResolution.slot.student_name} ?`}
+            </h3>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+              {pendingResolution.action === 'absent'
+                ? 'Le système va compter cette heure comme absente et ajouter automatiquement 1h de rattrapage payante au prochain créneau libre.'
+                : 'Annulation par l’auto-école : le système va ajouter automatiquement 1h gratuite (0 DZD) au prochain créneau libre.'}
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setPendingResolution(null)}
+                className="px-3.5 py-2 rounded-xl border border-border-subtle bg-slate-50 dark:bg-surface-elevated font-semibold cursor-pointer"
+              >
+                Retour
+              </button>
+              <button
+                onClick={() => {
+                  executeStatusChange(pendingResolution.slot, pendingResolution.action);
+                  setPendingResolution(null);
+                }}
+                className={`px-3.5 py-2 rounded-xl font-semibold text-white cursor-pointer ${
+                  pendingResolution.action === 'absent'
+                    ? 'bg-amber-600 hover:bg-amber-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: Quick Add 1h Session */}
+      {quickAddCell && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <form
+            onSubmit={handleQuickAddSubmit}
+            className="bg-surface rounded-2xl w-full max-w-md border border-border-subtle shadow-2xl p-5 space-y-4 text-xs"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Ajouter une séance (1h)
+                </h3>
+                <p className="text-[11px] text-slate-500 font-mono">
+                  {formatShortFR(quickAddCell.date)} • {quickAddCell.timeStart} – {quickAddCell.timeEnd}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuickAddCell(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-1">1. Candidat</label>
+              <select
+                required
+                value={quickAddStudentId}
+                onChange={(e) => {
+                  const nextId = e.target.value;
+                  setQuickAddStudentId(nextId);
+                  const st = students.find((s) => s.id === nextId);
+                  if (st) {
+                    const elig = mentors.filter((m) => isMentorEligibleForSlot(m, quickAddType, st.requested_category));
+                    setQuickAddMentor(elig[0]?.name || '');
+                  }
+                }}
+                className="w-full px-3 py-2 rounded-xl border border-border-subtle bg-slate-50 dark:bg-surface-elevated font-semibold"
+              >
+                {students.map((st) => (
+                  <option key={st.id} value={st.id}>
+                    {st.first_name} {st.last_name} (Cat. {st.requested_category})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-1">2. Discipline</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['code', 'creneau', 'circulation'] as SessionDiscipline[]).map((t) => {
+                  const meta = getDisciplineMeta(t);
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => {
+                        setQuickAddType(t);
+                        if (quickAddSelectedStudent) {
+                          const elig = mentors.filter((m) =>
+                            isMentorEligibleForSlot(m, t, quickAddSelectedStudent.requested_category)
+                          );
+                          setQuickAddMentor(elig[0]?.name || '');
+                        }
+                      }}
+                      className={`py-2 rounded-xl border font-bold cursor-pointer transition ${
+                        quickAddType === t
+                          ? `${meta.pillClass} border-transparent`
+                          : 'bg-slate-50 dark:bg-surface-elevated border-border-subtle text-slate-600'
+                      }`}
+                    >
+                      {meta.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-1">3. Moniteur</label>
+              <select
+                required
+                value={quickAddMentor}
+                onChange={(e) => setQuickAddMentor(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-border-subtle bg-slate-50 dark:bg-surface-elevated font-semibold"
+              >
+                {quickAddEligibleMentors.length === 0 && (
+                  <option value="">Aucun moniteur habilité</option>
+                )}
+                {quickAddEligibleMentors.map((m) => (
+                  <option key={m.id} value={m.name}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setQuickAddCell(null)}
+                className="px-4 py-2 rounded-xl border border-border-subtle bg-slate-50 font-semibold cursor-pointer"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={!quickAddStudentId || !quickAddMentor}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-semibold cursor-pointer"
+              >
+                Ajouter la séance
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>
